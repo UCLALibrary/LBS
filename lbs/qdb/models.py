@@ -24,3 +24,9 @@ class subcodes(models.Model):
     code = models.CharField(max_length=4)
     titles = models.TextField()
     notes = models.TextField()
+
+class accounts(models.Model):
+    account = CharField(max_length=50)
+    cost_center = CharField(max_length=50)
+    title = TextField()
+    unit = models.ForeignKey(Units)
