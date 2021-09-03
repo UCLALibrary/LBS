@@ -20,3 +20,7 @@ class Recipients(models.Model):
     recipient = models.ForeignKey(Staff, on_delete=models.CASCADE)
     role = models.CharField(max_length=100)
 
+class subcodes(models.Model):
+    code = models.CharField(max_length=4)
+    titles = models.TextField()
+    notes = models.TextField()
