@@ -8,22 +8,22 @@ class Staff(models.Model):
     def __str__(self):
         return self.name
 
-class Units(models.Model):
+class Unit(models.Model):
     name = models.CharField(max_length=100)
-    members = models.ManyToManyField(Staff, through = 'Recipients')
+    members = models.ManyToManyField(Staff, through = 'Recipient')
 
     def __str__(self):
         return self.name
 
-class Recipients(models.Model):
-    unit = models.ForeignKey(Units, on_delete=models.CASCADE)
+class Recipient(models.Model):
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     recipient = models.ForeignKey(Staff, on_delete=models.CASCADE)
     role = models.CharField(max_length=100)
     
     def __str__(self):
         return self.recipient
 
-class Subcodes(models.Model):
+class Subcode(models.Model):
     code = models.CharField(max_length=4)
     titles = models.TextField()
     notes = models.TextField()
