@@ -1,7 +1,7 @@
 from django.db import models
 
-
 class Staff(models.Model):
+    staff_id = models.IntegerField()
     name = models.CharField(max_length=100)
     email = models.CharField(max_length=100)
 
@@ -32,10 +32,10 @@ class Subcode(models.Model):
         return self.code
     
 class Accounts(models.Model):
-    account = CharField(max_length=6)
-    cost_center = CharField(max_length=2)
-    title = TextField()
-    unit = models.ForeignKey(Units)
+    account = models.CharField(max_length=6)
+    cost_center = models.CharField(max_length=2)
+    title = models.TextField()
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.account
