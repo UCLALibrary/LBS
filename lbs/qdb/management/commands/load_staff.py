@@ -2,7 +2,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from qdb.models import Staff, Unit, Accounts, Subcode 
+from qdb.models import Staff, Unit, Accounts, Subcode, Recipient 
 
 import csv
 
@@ -124,12 +124,20 @@ def _get_unit(name, head, aul):
     unit, created = Unit.objects.get_or_create(name=name)
     if head:
         member1 = Staff.objects.get(staff_id=head)
-        #set role to head?
         unit.members.add(member1)
+        unit.save()
+        #add roles to recipient table at this step
+        recip = Recipient.objects.get(recipient = member1, unit = unit)
+        recip.role = "head"
+        recip.save()
     if aul:
         member2 = Staff.objects.get(staff_id=aul)
-        #set role to aul?
         unit.members.add(member2)
+        unit.save()
+        #add roles to recipient table at this step
+        recip = Recipient.objects.get(recipient = member2, unit = unit)
+        recip.role = "aul"
+        recip.save()        
 
     unit.save()
     return unit
