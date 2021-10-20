@@ -15,16 +15,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Recipient',
             fields=[
-                ('id', models.BigAutoField(auto_created=True,
-                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('role', models.CharField(max_length=100)),
             ],
         ),
         migrations.CreateModel(
             name='Staff',
             fields=[
-                ('id', models.BigAutoField(auto_created=True,
-                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100)),
                 ('email', models.CharField(max_length=100)),
             ],
@@ -32,8 +30,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Subcode',
             fields=[
-                ('id', models.BigAutoField(auto_created=True,
-                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('code', models.CharField(max_length=4)),
                 ('titles', models.TextField()),
                 ('notes', models.TextField()),
@@ -42,35 +39,29 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Unit',
             fields=[
-                ('id', models.BigAutoField(auto_created=True,
-                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100)),
-                ('members', models.ManyToManyField(
-                    through='qdb.Recipient', to='qdb.Staff')),
+                ('members', models.ManyToManyField(through='qdb.Recipient', to='qdb.Staff')),
             ],
         ),
         migrations.AddField(
             model_name='recipient',
             name='recipient',
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to='qdb.staff'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='qdb.staff'),
         ),
         migrations.AddField(
             model_name='recipient',
             name='unit',
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to='qdb.unit'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='qdb.unit'),
         ),
         migrations.CreateModel(
-            name='Account',
+            name='Accounts',
             fields=[
-                ('id', models.BigAutoField(auto_created=True,
-                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('account', models.CharField(max_length=6)),
                 ('cost_center', models.CharField(max_length=2)),
                 ('title', models.TextField()),
-                ('unit', models.ForeignKey(
-                    on_delete=django.db.models.deletion.CASCADE, to='qdb.unit')),
+                ('unit', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='qdb.unit')),
             ],
         ),
     ]
