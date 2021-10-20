@@ -27,7 +27,7 @@ class Recipient(models.Model):
     role = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.recipient
+        return self.recipient.name
 
 
 class Subcode(models.Model):
