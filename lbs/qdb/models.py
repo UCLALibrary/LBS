@@ -6,6 +6,9 @@ class Staff(models.Model):
     name = models.CharField(max_length=100)
     email = models.CharField(max_length=100)
 
+    class Meta:
+        verbose_name_plural = "Staff"
+
     def __str__(self):
         return self.name
 
