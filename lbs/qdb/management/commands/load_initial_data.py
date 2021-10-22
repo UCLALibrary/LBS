@@ -17,14 +17,13 @@ def populate_persons(self, staff_file):
 
         for row in reader:
             # Get relevant data from CSV
-            staff_id = row["id"]
             name = row["name"]
             email = row["email"]
 
             self.stdout.write(f"\tProcessing {name}...")
 
             # Staff
-            person = _create_person(staff_id, name, email)
+            person = _create_person(name, email)
 
 
 def populate_units(self, unit_file):
@@ -114,9 +113,9 @@ def populate_subcodes(self):
         sc.save()
 
 
-def _create_person(staff_id, name, email):
+def _create_person(name, email):
     # Staff (persons) might already exist, via small initial load
-    staff, created = Staff.objects.get_or_create(staff_id=staff_id, name=name,
+    staff, created = Staff.objects.get_or_create(name=name,
                                                  email=email)
     staff.save()
     return staff
@@ -126,7 +125,7 @@ def _create_unit(name, head, aul):
     # units might already exist
     unit, created = Unit.objects.get_or_create(name=name)
     if head:
-        member = Staff.objects.get(staff_id=head)
+        member = Staff.objects.get(id=head)
         unit.members.add(member)
         unit.save()
         # add roles to recipient table at this step
@@ -134,7 +133,7 @@ def _create_unit(name, head, aul):
         recip.role = "head"
         recip.save()
     if aul:
-        member = Staff.objects.get(staff_id=aul)
+        member = Staff.objects.get(id=aul)
         unit.members.add(member)
         unit.save()
         # add roles to recipient table at this step
