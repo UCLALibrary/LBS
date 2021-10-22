@@ -2,7 +2,6 @@ from django.db import models
 
 
 class Staff(models.Model):
-    staff_id = models.IntegerField()
     name = models.CharField(max_length=100)
     email = models.CharField(max_length=100)
 

@@ -29,7 +29,7 @@ class RecipientAdmin(admin.ModelAdmin):
     ordering = ('recipient_id', 'role',)
 
     def name(self, obj):
-        result = Staff.objects.filter(staff_id=getattr(obj, "recipient_id"))[0]
+        result = Staff.objects.filter(id=getattr(obj, "recipient_id"))[0]
         return result
 
     def unit(self, obj):
