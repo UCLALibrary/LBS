@@ -22,8 +22,13 @@ class ModelsTestCase(TestCase):
         self.assertEqual(unit.name, 'Oral History')
 
     def test_subcode(self):
-        code = Subcode.objects.create(code="1234")
-        self.assertEqual(str(code), "1234")
+        subcode = Subcode.objects.create(code="1234")
+        self.assertEqual(str(subcode), "1234")
+
+        subcode = Subcode.objects.create(code="12345")
+        with self.assertRaises(ValueError):
+            TestsRange.tests_range(subcode)
+
         subcode = Subcode.objects.get(pk=1)
         self.assertEqual(str(subcode), '00')
         self.assertEqual(subcode.titles, 'Salaries - Academic')
@@ -33,6 +38,7 @@ class ModelsTestCase(TestCase):
     def test_account(self):
         account = Account.objects.create(
             account="123456", unit=Unit.objects.get(pk=1))
+        self.assertEqual(str(account), "123456")
         self.assertEqual(str(account), "123456")
         account = Account.objects.get(pk=2)
         self.assertEqual(str(account), '436000')
@@ -54,3 +60,10 @@ class TestsUrls(TestCase):
         response = self.client.get('/admin')
         self.assertEqual(response.status_code, 301)
         ###self.assertEqual(response.status_code, 200)
+
+
+class TestsRange(object):
+    def tests_range(i):
+        range_1 = range(1, 5, 1)
+        if len(str(i)) not in range_1:
+            raise ValueError
