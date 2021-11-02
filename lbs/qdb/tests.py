@@ -1,5 +1,25 @@
 from django.test import TestCase
 from .models import Staff, Unit, Recipient, Subcode, Account
+from .admin import RecipientAdmin
+
+
+class AdminTestCase(TestCase):
+
+    fixtures = ["sample_data.json"]
+    nameunit = Unit.objects.get(name='Oral History')
+
+    def test_recipientadmin(self):
+        recipient = Recipient.objects.get(pk=1)
+        self.assertEqual(recipient.recipient_id, 32)
+        self.assertEqual(recipient.unit_id, 1)
+
+        namestaff = Staff.objects.get(name='Todd Grappone')
+        nameobj = Recipient.objects.get(id=namestaff.id)
+        recipient = RecipientAdmin.name(RecipientAdmin, nameobj)
+        self.assertEqual(str(recipient), str(namestaff))
+
+        unit = Recipient.objects.get(pk=1)
+        self.assertEqual(str(unit.unit_id), '1')
 
 
 class ModelsTestCase(TestCase):
@@ -59,7 +79,7 @@ class TestsUrls(TestCase):
     def test_testadminpage(self):
         response = self.client.get('/admin')
         self.assertEqual(response.status_code, 301)
-        ###self.assertEqual(response.status_code, 200)
+        # self.assertEqual(response.status_code, 200)
 
 
 class TestsRange(object):
