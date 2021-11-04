@@ -31,7 +31,7 @@ class DataLoadTestCase(TestCase):
 
 
 class AdminTestCase(TestCase):
-    fixtures = ["sample_data.json"]
+    fixtures = ["qdb/fixtures/sample_data.json"]
     nameunit = Unit.objects.get(name='Oral History')
 
     def test_recipientadmin(self):
@@ -45,12 +45,12 @@ class AdminTestCase(TestCase):
         self.assertEqual(str(recipient), str(namestaff))
 
         unit = Recipient.objects.get(pk=1)
-        self.assertEqual(str(unit.unit_id), '1')
+        self.assertEqual(unit.unit_id, 1)
 
 
 class ModelsTestCase(TestCase):
 
-    fixtures = ["sample_data.json"]
+    fixtures = ["qdb/fixtures/sample_data.json"]
 
     def test_staff(self):
         name = Staff.objects.create(name="Jane Bruin")
@@ -70,10 +70,6 @@ class ModelsTestCase(TestCase):
     def test_subcode(self):
         subcode = Subcode.objects.create(code="1234")
         self.assertEqual(str(subcode), "1234")
-
-        subcode = Subcode.objects.create(code="12345")
-        with self.assertRaises(ValueError):
-            TestsRange.tests_range(subcode)
 
         subcode = Subcode.objects.get(pk=1)
         self.assertEqual(str(subcode), '00')
@@ -106,10 +102,3 @@ class TestsUrls(TestCase):
         response = self.client.get('/admin')
         self.assertEqual(response.status_code, 301)
         # self.assertEqual(response.status_code, 200)
-
-
-class TestsRange(object):
-    def tests_range(i):
-        range_1 = range(1, 5, 1)
-        if len(str(i)) not in range_1:
-            raise ValueError
