@@ -3,21 +3,31 @@ from qdb.models import Staff, Unit, Account, Subcode, Recipient
 from .admin import RecipientAdmin
 import csv
 
+from django.core.management import call_command
+
 
 class DataLoadTestCase(TestCase):
 
     def test_dataload(self):
-        with open("qdb/fixtures/staff.csv", encoding="utf-8-sig", newline="") as csvfile:
-            reader = csv.DictReader(csvfile, dialect="excel")
-            csv_count = 0
-            for row in reader:
-                name = row["name"]
-                email = row["email"]
-                person = _create_person(name, email)
-                csv_count += 1
+
+        call_command('load_initial_data', 'qdb/fixtures/staff.csv',
+                     'qdb/fixtures/unit.csv', 'qdb/fixtures/accounts.csv')
+
         staff_count = Staff.objects.all().count()
+        unit_count = Unit.objects.all().count()
+        account_count = Account.objects.all().count()
         #print(staff_count, "--->staff_count")
-        self.assertEqual(staff_count, csv_count)
+
+        with open(r"qdb/fixtures/accounts.csv", 'r') as fp:
+            csv_accounts_count = len(fp.readlines()) - 1
+        with open(r"qdb/fixtures/staff.csv", 'r') as fp:
+            csv_staff_count = len(fp.readlines()) - 1
+        with open(r"qdb/fixtures/unit.csv", 'r') as fp:
+            csv_unit_count = len(fp.readlines()) - 1
+
+        self.assertEqual(account_count, csv_accounts_count)
+        self.assertEqual(staff_count, csv_staff_count)
+        self.assertEqual(unit_count, csv_unit_count)
 
 
 class AdminTestCase(TestCase):
@@ -103,11 +113,3 @@ class TestsRange(object):
         range_1 = range(1, 5, 1)
         if len(str(i)) not in range_1:
             raise ValueError
-
-
-def _create_person(name, email):
-    # Staff (persons) might already exist, via small initial load
-    staff, created = Staff.objects.get_or_create(name=name,
-                                                 email=email)
-    staff.save()
-    return staff
