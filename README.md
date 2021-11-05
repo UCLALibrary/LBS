@@ -44,8 +44,10 @@ python3 manage.py runserver
 [http://localhost:8000/admin/](http://localhost:8000/admin/)
 
 6. Open your editor and create/edit relevant files
-
+```
 /path/to/your/projects/LBS/lbs/qdb/
+```
+
 - admin.py
 - models.py
 - tests.py
