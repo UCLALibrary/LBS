@@ -41,7 +41,7 @@ python3 manage.py runserver
 
 5. Open the Django project in the browser
 
-[localhost:8000/admin/](localhost:8000/admin/)
+[http://localhost:8000/admin/](http://localhost:8000/admin/)
 
 6. Open your editor and create/edit relevant files
 
