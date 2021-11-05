@@ -60,7 +60,7 @@ python3 manage.py runserver
 ## Developer Tips
 
 1. Work with the underlying SQLite database in the project directory
-     - install an independent db browser such as **[DB Browser for SQLite](https://sqlitebrowser.org/{panel})**
+     - install an independent db browser such as **[DB Browser for SQLite](https://sqlitebrowser.org)**
 
 2. The imported data is from CSV files dumped from the existing reporting system
 
