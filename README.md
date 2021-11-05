@@ -46,11 +46,11 @@ python3 manage.py runserver
 6. Open your editor and create/edit relevant files
 
 /path/to/your/projects/LBS/lbs/qdb/
-    admin.py
-    models.py
-    tests.py
-    views.py
-    etc ...
+    - admin.py
+    - models.py
+    - tests.py
+    - views.py
+    - etc ...
 
 ## Docker
 ...
