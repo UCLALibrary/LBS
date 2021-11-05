@@ -95,10 +95,3 @@ class ModelsTestCase(TestCase):
             unit=Unit.objects.get(pk=1), recipient=Staff.objects.get(pk=1))
         self.assertEqual(str(recipient), "Sharon Farb")
         self.assertEqual(str(recipient.unit), "Oral History")
-
-
-class TestsUrls(TestCase):
-    def test_testadminpage(self):
-        response = self.client.get('/admin')
-        self.assertEqual(response.status_code, 301)
-        # self.assertEqual(response.status_code, 200)
