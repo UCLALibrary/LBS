@@ -31,7 +31,7 @@ class DataLoadTestCase(TestCase):
 
 
 class AdminTestCase(TestCase):
-    fixtures = ["qdb/fixtures/sample_data.json"]
+    fixtures = ["sample_data.json"]
     nameunit = Unit.objects.get(name='Oral History')
 
     def test_recipientadmin(self):
@@ -50,7 +50,7 @@ class AdminTestCase(TestCase):
 
 class ModelsTestCase(TestCase):
 
-    fixtures = ["qdb/fixtures/sample_data.json"]
+    fixtures = ["sample_data.json"]
 
     def test_staff(self):
         name = Staff.objects.create(name="Jane Bruin")
