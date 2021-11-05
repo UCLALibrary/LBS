@@ -1,4 +1,4 @@
-#Automated QDB reporting
+# Automated QDB reporting
 
 LBS needs several monthly financial reports. Currently, a report is manually created and delivered via email to each FAU manager using legacy software and Jasper.
 
@@ -20,14 +20,14 @@ The new system is to be built using the Django framework.
 2. Clone this repository
 
 ```
-cd .../projects
+cd /path/to/your/projects
 git clone git@github.com:UCLALibrary/LBS.git
 ```
 
 3. Setup the Django environment
 
 ```
-cd .../projects/LBS/lbs
+cd /path/to/your/projects/LBS/lbs
 python3 manage.py migrate
 python3 manage.py load_initial_data qdb/fixtures/staff.csv qdb/fixtures/unit.csv qdb/fixtures/accounts.csv
 python3 manage.py createsuperuser
@@ -41,11 +41,11 @@ python3 manage.py runserver
 
 5. Open the Django project in the browser
 
-[localhost:8000](localhost:8000)
+[localhost:8000/admin/](localhost:8000/admin/)
 
 6. Open your editor and create/edit relevant files
 
-.../projects/LBS/lbs/qdb/
+/path/to/your/projects/LBS/lbs/qdb/
     admin.py
     models.py
     tests.py
@@ -75,7 +75,7 @@ python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtur
 ## Testing
 1. Run tests from the command line
 ```
-cd .../projects/LBS/lbs
+cd /path/to/your/projects/LBS/lbs
 python3 manage.py test
 ```
 
