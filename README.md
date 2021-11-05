@@ -62,6 +62,16 @@ python3 manage.py runserver
 
 2. The imported data is from CSV files dumped from the existing reporting system
 
+3. The fixture file for testing was created with the following:
+```
+python3 manage.py dumpdata --indent 4 --output qdb/fixtures/sample_data.json
+```
+
+If "contenttype" errors appear while testing, the contenttype may be left out during file creation:
+```
+python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtures/sample_data.json
+```
+
 ## Testing
 1. Run tests from the command line
 ```
