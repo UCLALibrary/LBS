@@ -18,25 +18,37 @@ The new system is to be built using the Django framework.
 	- https://docs.python-guide.org/
 
 2. Clone this repository
-
 ```
 cd /path/to/your/projects
 git clone git@github.com:UCLALibrary/LBS.git
 ```
 
-3. Setup the Django environment
+3. Create virtual environment
+```
+cd /path/to/your/projects/LBS
+python3 -m venv ENV
+source ENV/bin/activate
+```
 
+4. Update pip and install the project's packages
 ```
 cd /path/to/your/projects/LBS/lbs
-python3 manage.py migrate
-python3 manage.py load_initial_data qdb/fixtures/staff.csv qdb/fixtures/unit.csv qdb/fixtures/accounts.csv
-python3 manage.py createsuperuser
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-4. Run the Django project
-
+5. Setup the Django environment
 ```
-python3 manage.py runserver
+cd /path/to/your/projects/LBS/lbs
+python manage.py migrate
+python manage.py load_initial_data qdb/fixtures/staff.csv qdb/fixtures/unit.csv qdb/fixtures/accounts.csv
+python manage.py createsuperuser
+```
+
+6. Run the Django project
+```
+cd /path/to/your/projects/LBS/lbs
+python manage.py runserver
 ```
 
 5. Open the Django project in the browser
