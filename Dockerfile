@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r lbs/requirements.txt --user --no-warn-script-l
 
 EXPOSE 8000
 
-CMD [ "sh", "python lbs/manage.py runserver" ]
+CMD [ "python", "lbs/manage.py", "runserver" ]
