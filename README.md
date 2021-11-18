@@ -74,6 +74,49 @@ If "contenttype" errors appear while testing, the contenttype may be left out du
 python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtures/sample_data.json
 ```
 
+4. The reports are generate by a management script which can be run manually for development and testing.
+    - set the environment variables
+
+```nano .env/local.env```
+
+```
+##### Required, for database access
+export QDB_DB_SERVER="obiwan.qdb.ucla.edu"
+export QDB_DB_DATABASE="qdb"
+export QDB_DB_USER="mgrlib"
+export QDB_DB_PASSWORD="<ASK>"
+
+##### Optional, for sending email
+export QDB_SMTP_SERVER="smtp.gmail.com"
+export QDB_PORT=587
+export QDB_FROM_ADDRESS="qdb.test.ucla.@gmail.com"
+export QDB_PASSWORD="<ASK>"
+
+#####Optional (application sets 'dev' by default)
+export QDB_ENV=dev
+```
+
+  - Source the local.env file
+
+```source .env/local.env```
+
+  - run the VPN if you are outside of the UCLA ip space
+  - run the script with different flags to test:
+ 
+```
+python3 manage.py run_qdb_reporter -l
+python3 manage.py run_qdb_reporter -y 2017 -m 5 -u 6 -r
+```
+
+```
+-l --list_units - List all the units
+-y --year - Year of the report
+-m --month - Month number of the report
+-u --units - Unit ID number; if omitted all units will receive reports
+-e --email - Email the report to the recipients
+-r --list_recipients - Display the list of people to email for each report
+```
+
 ## Testing
 1. Run tests from the command line
 ```

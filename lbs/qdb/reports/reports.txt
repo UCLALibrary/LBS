@@ -1,0 +1,3 @@
+Generated reports are placed in this directory and then attached to email(s).
+
+This description file serves an additional purpose of causing directory creation before the first report is generated.
