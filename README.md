@@ -27,6 +27,7 @@ git clone git@github.com:UCLALibrary/LBS.git
 ```
 cd /path/to/your/projects/LBS
 python3 -m venv ENV
+# This needs to be activated every time you work with the application
 source ENV/bin/activate
 ```
 
@@ -51,11 +52,11 @@ cd /path/to/your/projects/LBS/lbs
 python manage.py runserver
 ```
 
-5. Open the Django project in the browser
+7. Open the Django project in the browser
 
 [http://localhost:8000/admin/](http://localhost:8000/admin/)
 
-6. Open your editor and create/edit relevant files
+8. Open your editor and create/edit relevant files
 ```
 /path/to/your/projects/LBS/lbs/qdb/
 ```
@@ -66,8 +67,44 @@ python manage.py runserver
 - views.py
 - etc ...
 
+9. Deactivate the virtual environment when done working
+```
+deactivate
+```
+
 ## Docker
-...
+
+These are preliminary instructions, creating a single image only.  External database support will be added later.
+This assumes you've already set up the project as above.
+
+1. (Re)build the docker image
+```
+cd /path/to/your/projects/LBS
+docker build . -t qdb-ui
+``` 
+
+2. Run the image
+```
+# This creates and starts a container called qdb
+# and exposes port 8000 from the container to the host.
+# Runs interactively but not detached; press CTRL-C when done, to stop the Django application.
+docker run -it -p 8000:8000 --name qdb qdb-ui
+```
+
+3. Connect to the application
+
+[http://localhost:8000/admin/](http://localhost:8000/admin/)
+
+4. Start & stop the container as needed
+```
+docker start qdb
+docker stop qdb
+```
+
+5. Or remove the container, if you prefer running via `docker run`
+```
+docker rm qdb
+```
 
 ## Developer Tips
 
