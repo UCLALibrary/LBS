@@ -84,7 +84,7 @@ python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtur
 export QDB_DB_SERVER="obiwan.qdb.ucla.edu"
 export QDB_DB_DATABASE="qdb"
 export QDB_DB_USER="mgrlib"
-export QDB_DB_PASSWORD="srKard21"
+export QDB_DB_PASSWORD="<ASK>"
 
 ##### Optional, for sending email
 export QDB_SMTP_SERVER="smtp.gmail.com"
