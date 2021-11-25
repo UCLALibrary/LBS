@@ -75,35 +75,40 @@ deactivate
 ## Docker
 
 These are preliminary instructions, creating a single image only.  External database support will be added later.
-This assumes you've already set up the project as above.
+This assumes you've already set up the project as above, so that the local sqlite database has been populated.
 
-1. (Re)build the docker image
+Code is automatically mounted in the django container, so local changes are reflected in the running system.
+
+1. (Re)build using docker-compose
 ```
 cd /path/to/your/projects/LBS
-docker build . -t qdb-ui
+# If you just want to rebuild:
+docker-compose build
+# Normally, build and run application
+# Leave off the -d to see output in console.
+docker-compose up --build -d
 ``` 
 
-2. Run the image
-```
-# This creates and starts a container called qdb
-# and exposes port 8000 from the container to the host.
-# Runs interactively but not detached; press CTRL-C when done, to stop the Django application.
-docker run -it -p 8000:8000 --name qdb qdb-ui
-```
-
-3. Connect to the application
+2. Connect to the application
 
 [http://localhost:8000/admin/](http://localhost:8000/admin/)
 
-4. Start & stop the container as needed
+3. Run commands in the django container as needed
 ```
-docker start qdb
-docker stop qdb
+# General-purpose shell
+docker-compose exec django bash
+# Django management commands
+docker-compose exec django python lbs/manage.py migrate
 ```
 
-5. Or remove the container, if you prefer running via `docker run`
+4. Stop the application and shut down containers
 ```
-docker rm qdb
+docker-compose down
+```
+
+5. Clean up untagged images, which can be left after repeated builds
+```
+docker rmi $(docker images -q --filter "dangling=true")
 ```
 
 ## Developer Tips
