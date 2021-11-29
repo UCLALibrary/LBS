@@ -147,7 +147,7 @@ export QDB_FROM_ADDRESS="qdb.test.ucla.@gmail.com"
 export QDB_PASSWORD="<ASK>"
 
 #####Optional (application sets 'dev' by default)
-export QDB_ENV=dev
+export DJANGO_RUN_ENV=dev
 ```
 
   - Source the local.env file
