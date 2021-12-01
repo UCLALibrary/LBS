@@ -2,7 +2,7 @@ import os
 
 # Environment
 # Can be 'dev', 'test', 'prod'
-ENV = os.environ.get('QDB_ENV', 'dev')
+ENV = os.environ.get('DJANGO_RUN_ENV', 'dev')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
