@@ -74,10 +74,9 @@ deactivate
 
 ## Docker
 
-These are preliminary instructions, creating a single image only.  External database support will be added later.
-This assumes you've already set up the project as above, so that the local sqlite database has been populated.
-
-Code is automatically mounted in the django container, so local changes are reflected in the running system.
+This is the preferred way to run the project for development.
+* Code is automatically mounted in the django container, so local changes are reflected in the running system.
+* Data is stored in postgres and persisted to a local volume.
 
 1. (Re)build using docker-compose
 ```
@@ -87,6 +86,8 @@ docker-compose build
 # Normally, build and run application
 # Leave off the -d to see output in console.
 docker-compose up --build -d
+# If rebuilding is not needed:
+docker-compose up -d
 ``` 
 
 2. Connect to the application
@@ -98,10 +99,14 @@ docker-compose up --build -d
 # General-purpose shell
 docker-compose exec django bash
 # Django management commands
+docker-compose exec django python lbs/manage.py
+# The first time, moving to postgres, run these 3:
 docker-compose exec django python lbs/manage.py migrate
+docker-compose exec django python lbs/manage.py createsuperuser
+docker-compose exec django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
 ```
 
-4. Stop the application and shut down containers
+4. Stop the application; shuts down and removes containers, but not volumes with data
 ```
 docker-compose down
 ```

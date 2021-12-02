@@ -2,6 +2,9 @@ FROM python:3.8-slim-bullseye
 
 RUN apt-get update
 
+# Install dependencies needed to build psycopg2 python module
+RUN apt-get install -y gcc python3-dev libpq-dev
+
 # Create django user and switch context to that user
 RUN useradd -c "django app user" -d /home/django -s /bin/bash -m django
 USER django

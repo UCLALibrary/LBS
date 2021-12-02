@@ -5,3 +5,4 @@ sqlparse==0.4.1
 arrow==1.2.1
 python-tds==1.11.0
 openpyxl==3.0.9
+psycopg2==2.9.2
