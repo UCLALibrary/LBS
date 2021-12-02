@@ -103,7 +103,7 @@ docker-compose exec django python lbs/manage.py
 # The first time, moving to postgres, run these 3:
 docker-compose exec django python lbs/manage.py migrate
 docker-compose exec django python lbs/manage.py createsuperuser
-docker-compose exec django python lbs/manage.py createsuperuser load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
+docker-compose exec django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
 ```
 
 4. Stop the application; shuts down and removes containers, but not volumes with data
