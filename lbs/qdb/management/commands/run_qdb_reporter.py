@@ -26,6 +26,7 @@ class Command(BaseCommand):
         month = options["month"]
         units = options["units"]
         email = options["email"]
+        print(month)
         list_recipients = options["list_recipients"]
         # using code from __main__ of orchestrator
         try:
@@ -33,10 +34,11 @@ class Command(BaseCommand):
                 DB_FILE, REPORTS_DIR, DEFAULT_RECIPIENTS)
             if list_units is True:
                 print(orchestrator.list_units())
-                exit(0)
+                return
             yyyymm = orchestrator.validate_date(year, month, yyyymm=True)
             units = orchestrator.validate_units(units)
             orchestrator.run(yyyymm, units, send_email=email,
                              list_recipients=list_recipients)
+            return
         except ValueError as e:
             exit(e)
