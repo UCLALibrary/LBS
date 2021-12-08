@@ -26,7 +26,6 @@ class Command(BaseCommand):
         month = options["month"]
         units = options["units"]
         email = options["email"]
-        print(month)
         list_recipients = options["list_recipients"]
         # using code from __main__ of orchestrator
         try:

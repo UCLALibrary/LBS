@@ -4,23 +4,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>LBS QDB Reports</title>
 </head>
 <body>
     <form method="post">
         {% csrf_token %}
-        {{ form }}
-
-        <select name="prefer_car_model" id="id_prefer_car_model" required>
-            <option value="0" selected disabled> Select Car model </option>
-            {% for obj in objectlist %}
-                <option value="{{ obj.name }}">{{ obj.name }} </option>
-            {% endfor %}
-        </select>
-
-
+        {{ form.as_p }} 
         <button type="submit">submit</button>
     </form>
-
 </body>
 </html>
