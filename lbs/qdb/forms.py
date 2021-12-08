@@ -8,9 +8,19 @@ MONTHS = [
 ]
 currentDateTime = datetime.datetime.now()
 date = currentDateTime.date()
+month_default = 1
+month_now = int(date.strftime("%m"))
 year = int(date.strftime("%Y"))
+year_default = year
+
+if month_now == 1:
+    month_default = 12
+    year_default = year - 1
+elif month_now > 1 and month_now < 13:
+    month_default = month_now - 1
+
 YEARS = [(year, year)]
-for i in range(1, 11):
+for i in range(1, 3):
     YEARS.append((year-i, year-i))
 YEARS = tuple(YEARS)
 
@@ -19,6 +29,6 @@ class ReportForm(forms.Form):
     unit = forms.ModelChoiceField(
         queryset=Unit.objects.all().order_by('name'), initial=1)
     year = forms.ChoiceField(
-        choices=YEARS)
+        choices=YEARS, initial=year_default)
     month = forms.ChoiceField(
-        choices=MONTHS)
+        choices=MONTHS, initial=month_default)

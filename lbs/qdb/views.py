@@ -28,5 +28,5 @@ def report(request):
 
 def run_qdb_reporter(unit_from_form, month_from_form, year_from_form):
     call_command('run_qdb_reporter', year=int(year_from_form),
-                 month=int(month_from_form), units=[unit_from_form], list_units=True)
+                 month=int(month_from_form), units=[unit_from_form])
     # append , list_units=True for testing
