@@ -56,7 +56,6 @@ class Orchestrator():
         return '\n'.join(msg)
 
     def validate_units(self, unit_ids=None):
-        print(unit_ids)
         if unit_ids is None:
             return self.get_all_units()
         qms = ','.join(['?']*len(unit_ids))
