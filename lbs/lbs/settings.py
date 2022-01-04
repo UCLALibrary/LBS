@@ -87,7 +87,7 @@ if os.getenv("DJANGO_RUN_ENV") == 'dev':
         }
     }
 else:
-    # Update this to the Prod database after is is available
+    # Update this to the Prod database after is available
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
