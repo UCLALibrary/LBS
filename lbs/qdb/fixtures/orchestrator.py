@@ -6,14 +6,14 @@ import os
 import psycopg2
 from sys import exit
 
-from qdb.fixtures.settings import DB_FILE, REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.fixtures.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
 from qdb.fixtures import fetcher, formatter, sender
 from qdb.fixtures.parser import Parser
 
 
 class Orchestrator():
 
-    def __init__(self, db_file, reports_dir, recipients):
+    def __init__(self, reports_dir, recipients):
         self.reports_dir = reports_dir
         self.recipients = recipients
 
@@ -203,7 +203,7 @@ if __name__ == "__main__":  # pragma: no cover
                     help="Display the list of people to email for each report")
     args = ap.parse_args()
     try:
-        orchestrator = Orchestrator(DB_FILE, REPORTS_DIR, DEFAULT_RECIPIENTS)
+        orchestrator = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
         if args.list_units is True:
             print(orchestrator.list_units())
             exit(0)
