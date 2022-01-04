@@ -21,10 +21,6 @@ DB_DATABASE = os.environ['QDB_DB_DATABASE']
 DB_USER = os.environ['QDB_DB_USER']
 DB_PASSWORD = os.environ['QDB_DB_PASSWORD']
 
-# Lookup Table
-DB_FILE = os.path.join('db.sqlite3')
-TEST_DB_FILE = os.path.join(BASE_DIR, 'fixtures', 'test_lookup.db')
-
 # Folder for reports
 REPORTS_DIR = os.path.join(BASE_DIR, 'reports')
 
@@ -43,6 +39,7 @@ SLDS_CONTACT_EMAIL = "joshuagomez@library.ucla.edu"
 TEST_RECIPIENT = os.environ.get('QDB_TEST_RECIPIENT', FROM_ADDRESS)
 
 DEV_RECIPIENTS = [
+    'darrowco@library.ucla.edu',  # Darrow Cole
     'joshuagomez@library.ucla.edu',  # Joshua Gomez
     'akohler@library.ucla.edu'  # Andy Kohler
 ]
