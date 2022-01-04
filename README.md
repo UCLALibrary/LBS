@@ -118,8 +118,7 @@ docker rmi $(docker images -q --filter "dangling=true")
 
 ## Developer Tips
 
-1. Work with the underlying SQLite database in the project directory
-     - install an independent db browser such as **[DB Browser for SQLite](https://sqlitebrowser.org)**
+1. Work with the underlying PostgreSQL database in its own docker container
 
 2. The imported data is from CSV files dumped from the existing reporting system
 

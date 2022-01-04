@@ -16,23 +16,15 @@ class Orchestrator():
     def __init__(self, reports_dir, recipients):
         self.reports_dir = reports_dir
         self.recipients = recipients
-
         self.conn = self.get_conn()
-        print(f"CONN: {self.conn}")
-
         self.cursor = self.conn.cursor()
-        print(f"CURSOR: {self.cursor}")
-
         self.cursor.execute(
             'SELECT * FROM qdb_unit ORDER BY name')
-
         fetch_results = self.cursor.fetchall()
-        print(f"FETCH_RESULTS: {fetch_results}")
 
     def get_conn(self):
         conn = psycopg2.connect(
             "host=db dbname=qdb user=qdb_user password=dev_qdb_pass")
-        # conn.row_factory = sqlite3.Row
         return conn
 
     def validate_date(self, year=None, month=None, yyyymm=False):
