@@ -118,11 +118,20 @@ docker rmi $(docker images -q --filter "dangling=true")
 
 ## Developer Tips
 
-1. Work with the underlying PostgreSQL database in its own docker container
+1. Make two changes to the .docker-compose_django.env file to generate test reports from a web browser running on your local dev environment.
+  - Set:
+```DJANGO_RUN_ENV=prod```
+```QDB_DB_PASSWORD=[insert_password_here]```
 
-2. The imported data is from CSV files dumped from the existing reporting system
+  - Do not commit these temporary changes
+  - Browse to the Report Form on your local machine:
+[http://http://localhost:8000/qdb/report/](http://http://localhost:8000/qdb/report/)
 
-3. The fixture file for testing was created with the following:
+2. Work with the underlying PostgreSQL database in its own docker container
+
+3. The imported data is from CSV files dumped from the existing reporting system
+
+4. The fixture file for testing was created with the following:
 ```
 python3 manage.py dumpdata --indent 4 --output qdb/fixtures/sample_data.json
 ```
@@ -132,8 +141,8 @@ If "contenttype" errors appear while testing, the contenttype may be left out du
 python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtures/sample_data.json
 ```
 
-4. The reports are generate by a management script which can be run manually for development and testing.
-    - set the environment variables
+5. The reports are generate by a management script which can be run manually for development and testing.
+  - set the environment variables
 
 ```nano .env/local.env```
 
