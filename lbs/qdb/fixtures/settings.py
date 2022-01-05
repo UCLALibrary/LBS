@@ -1,5 +1,14 @@
 import os
 
+# Support docker secret files by reading the secret from file
+# https://en.ovcharov.me/2021/09/30/use-docker-secrets-in-django/
+def get_secret(key, default):
+    value = os.getenv(key, default)
+    if os.path.isfile(value):
+        with open(value) as f:
+            return f.read().strip()
+    return value
+
 # Environment
 # Can be 'dev', 'test', 'prod'
 ENV = os.environ.get('DJANGO_RUN_ENV', 'dev')
@@ -19,7 +28,7 @@ PASSWORD = os.environ['QDB_PASSWORD']
 DB_SERVER = os.environ['QDB_DB_SERVER']
 DB_DATABASE = os.environ['QDB_DB_DATABASE']
 DB_USER = os.environ['QDB_DB_USER']
-DB_PASSWORD = os.environ['QDB_DB_PASSWORD']
+DB_PASSWORD = get_secret('QDB_DB_PASSWORD_FILE', '')
 
 # Folder for reports
 REPORTS_DIR = os.path.join(BASE_DIR, 'reports')
