@@ -6,33 +6,25 @@ import os
 import psycopg2
 from sys import exit
 
-from qdb.fixtures.settings import DB_FILE, REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.fixtures.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
 from qdb.fixtures import fetcher, formatter, sender
 from qdb.fixtures.parser import Parser
 
 
 class Orchestrator():
 
-    def __init__(self, db_file, reports_dir, recipients):
+    def __init__(self, reports_dir, recipients):
         self.reports_dir = reports_dir
         self.recipients = recipients
-
         self.conn = self.get_conn()
-        print(f"CONN: {self.conn}")
-
         self.cursor = self.conn.cursor()
-        print(f"CURSOR: {self.cursor}")
-
         self.cursor.execute(
             'SELECT * FROM qdb_unit ORDER BY name')
-
         fetch_results = self.cursor.fetchall()
-        print(f"FETCH_RESULTS: {fetch_results}")
 
     def get_conn(self):
         conn = psycopg2.connect(
             "host=db dbname=qdb user=qdb_user password=dev_qdb_pass")
-        # conn.row_factory = sqlite3.Row
         return conn
 
     def validate_date(self, year=None, month=None, yyyymm=False):
@@ -72,16 +64,9 @@ class Orchestrator():
         if unit_ids is None:
             return self.get_all_units()
         qms = ','.join(['%s']*len(unit_ids))
-        print(f"unit_ids: {len(unit_ids)}")
-        print(f"QMS: {qms}")
-        print(f"self.cursor: {self.cursor}")
-        self.cursor.execute(
-            f'SELECT * FROM qdb_unit WHERE id IN ({qms})', unit_ids)
-        ###cmd = "SELECT * FROM qdb_unit WHERE id IN (%s) AND unit_ids"
-        ###self.cursor.execute(cmd, (qms))
+        cmd = f'SELECT * FROM qdb_unit WHERE id IN ({qms})'
+        self.cursor.execute(cmd, unit_ids)
         rows = self.cursor.fetchall()
-        print(f"rows: {rows}")
-
         if len(rows) < len(unit_ids):
             bad_ids = set(unit_ids) - set([r['id'] for r in rows])
             raise ValueError(f"ERROR: Unit ID does not exist {bad_ids}")
@@ -95,20 +80,17 @@ class Orchestrator():
             WHERE qdb_account.cost_center != 'LM'
             AND qdb_account.cost_center != ''
             AND qdb_account.unit_id = qdb_unit.id
-            AND qdb_unit.id = (%s)
+            AND qdb_unit.id = %s
             GROUP BY qdb_account.account
             UNION
             SELECT qdb_account.account, qdb_account.cost_center AS cc_list
             FROM qdb_account, qdb_unit
             WHERE qdb_account.cost_center = 'LM'
             AND qdb_account.unit_id = qdb_unit.id
-            AND qdb_unit.id = (%s)'''
-        self.cursor.execute(cmd, (unit_id, unit_id))
+            AND qdb_unit.id = %s'''
+        self.cursor.execute(cmd, [unit_id, unit_id])
         results = self.cursor.fetchall()
-        print(f'unit_id: {unit_id}')
-        print(f'results: {results}')
-        print(f'CURSOR: {self.cursor}')
-        return [(row[0], row[1].split(',')) for row in results]
+        return [(row[0], row[1].split(',')) for row in sorted(results)]
 
     def cleanup_reports_dir(self):
         for f in os.listdir(self.reports_dir):
@@ -120,26 +102,18 @@ class Orchestrator():
                 print(f'Could not delete from reports directory: {f}')
 
     def get_recipients(self, unit_id, unit_name):
-        print(unit_id)
-        print(unit_name)
         recipients = set(self.recipients)
         cmd = '''
             SELECT email
             FROM qdb_staff, qdb_unit, qdb_recipient
-            WHERE qdb_recipient.unit_id = (%s)
-            AND qdb_staff.name != (%s) '''
+            WHERE qdb_recipient.unit_id = %s
+            AND qdb_staff.name != %s'''
         if unit_name == 'LBS':
-            cmd += "AND (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')"
+            cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')"
         else:
-            cmd += "AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul'));"
-
-        print(cmd)
-
-        results = self.cursor.execute(cmd, (unit_id, UL_NAME))
-
-        print(results)
-
-        ###recipients.update([r['email'] for r in results.fetchall()])
+            cmd += " AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul'))"
+        self.cursor.execute(cmd, [unit_id, UL_NAME])
+        recipients.update([r[0] for r in self.cursor.fetchall()])
         return recipients
 
     def generate_filename(self, unit_name, yyyymm):
@@ -147,26 +121,22 @@ class Orchestrator():
         return os.path.join(self.reports_dir, name)
 
     def run(self, yyyymm, units, send_email=False, override_recipients=None, list_recipients=False):
-        # return
         for unit in units:
             unit_id = unit[0]
             unit_name = unit[1]
-            print(f'unit: {unit}')
-            print(f'unit[0]: {unit[0]}')
-            print(f'unit[1]: {unit[1]}')
             if override_recipients is not None:
                 recipients = override_recipients
             else:
-                recipients = self.get_recipients(unit[0], unit[1])
+                recipients = self.get_recipients(unit_id, unit_name)
             if list_recipients is True:
-                print(f"{unit[1]} recipients:")
+                print(f"{unit_name} recipients:")
                 for r in sorted(recipients):
                     print(f'-- {r}')
                 continue
-            parser = Parser(yyyymm, unit[1])
-            for account, cc_list in self.get_accounts_for_unit(unit[0]):
+            parser = Parser(yyyymm, unit_name)
+            for account, cc_list in self.get_accounts_for_unit(unit_id):
                 print(
-                    f'running {yyyymm} report of {account}{cc_list} for unit {unit[1]}')
+                    f'running {yyyymm} report of {account}{cc_list} for unit {unit_name}')
                 rows = fetcher.get_qdb_data(yyyymm, account, cc_list)
                 if len(rows) == 0:  # pragma: no cover
                     print(f'No data from QDB for {account}{cc_list}')
@@ -177,7 +147,7 @@ class Orchestrator():
             if len(parser.data['accounts']) == 0:  # pragma: no cover
                 print(f'All accounts empty. No report generated for {unit}')
                 continue
-            filename = self.generate_filename(unit[1], yyyymm)
+            filename = self.generate_filename(unit_name, yyyymm)
             formatter.generate_report(parser.data, filename)
             if send_email is True:
                 sender.send_report(parser.data, filename, recipients)
@@ -203,7 +173,7 @@ if __name__ == "__main__":  # pragma: no cover
                     help="Display the list of people to email for each report")
     args = ap.parse_args()
     try:
-        orchestrator = Orchestrator(DB_FILE, REPORTS_DIR, DEFAULT_RECIPIENTS)
+        orchestrator = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
         if args.list_units is True:
             print(orchestrator.list_units())
             exit(0)

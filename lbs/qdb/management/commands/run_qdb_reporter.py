@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from qdb.fixtures.orchestrator import Orchestrator
-from qdb.fixtures.settings import DB_FILE, REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.fixtures.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
 
 
 class Command(BaseCommand):
@@ -29,8 +29,7 @@ class Command(BaseCommand):
         list_recipients = options["list_recipients"]
         # using code from __main__ of orchestrator
         try:
-            orchestrator = Orchestrator(
-                DB_FILE, REPORTS_DIR, DEFAULT_RECIPIENTS)
+            orchestrator = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
             if list_units is True:
                 print(orchestrator.list_units())
                 return
