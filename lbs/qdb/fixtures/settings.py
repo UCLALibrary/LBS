@@ -2,12 +2,15 @@ import os
 
 # Support docker secret files by reading the secret from file
 # https://en.ovcharov.me/2021/09/30/use-docker-secrets-in-django/
+
+
 def get_secret(key, default):
     value = os.getenv(key, default)
     if os.path.isfile(value):
         with open(value) as f:
             return f.read().strip()
     return value
+
 
 # Environment
 # Can be 'dev', 'test', 'prod'
