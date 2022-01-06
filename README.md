@@ -118,14 +118,11 @@ docker rmi $(docker images -q --filter "dangling=true")
 
 ## Developer Tips
 
-1. Make two changes to the .docker-compose_django.env file to generate test reports from a web browser running on your local dev environment.
-  - Set:
-```DJANGO_RUN_ENV=prod```
-```QDB_DB_PASSWORD=[insert_password_here]```
-
-  - Do not commit these temporary changes
+1. TEMPORARY - Create secret_qdb_password.txt in the app directory (qdb) contining the password on a single line
+  - Do not commit this file (file names containing "secret" are in the .gitignore file)
   - Browse to the Report Form on your local machine:
 [http://http://localhost:8000/qdb/report/](http://http://localhost:8000/qdb/report/)
+  - Docker secrets will replace this once it is configured
 
 2. Work with the underlying PostgreSQL database in its own docker container
 
