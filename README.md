@@ -118,11 +118,11 @@ docker rmi $(docker images -q --filter "dangling=true")
 
 ## Developer Tips
 
-1. TEMPORARY - Create secret_qdb_password.txt in the app directory (qdb) contining the password on a single line
-  - Do not commit this file (file names containing "secret" are in the .gitignore file)
+1. TEMPORARY - Create secret_qdb_password.txt in the project root directory (/path/to/projects/LBS) contining the QDB password on a single line
+  - Do not commit this file (file names containing "secret" are excluded via the .gitignore file)
   - Browse to the Report Form on your local machine:
 [http://http://localhost:8000/qdb/report/](http://http://localhost:8000/qdb/report/)
-  - Docker secrets will replace this once it is configured
+  - Secret management should be improved for production deployment.
 
 2. Work with the underlying PostgreSQL database in its own docker container
 
