@@ -7,11 +7,15 @@
     <title>LBS QDB Reports</title>
 </head>
 <body>
-    <h1>QDB Reports</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }} 
-        <button type="submit">submit</button>
-    </form>
+    {% if user.is_authenticated %}
+        <h1>QDB Reports</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }} 
+            <button type="submit">submit</button>
+        </form>
+    {% else %}
+        <a href="/login">Please login first</a>
+    {% endif %}
 </body>
 </html>
