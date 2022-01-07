@@ -7,6 +7,7 @@ from .models import Unit
 from .forms import ReportForm
 
 
+@login_required
 def report(request):
     request.user
     if request.method == 'POST':
