@@ -9,6 +9,8 @@
 <body>
     {% if user.is_authenticated %}
         <h1>QDB Reports</h1>
+        You are logged in as: {{ user.username }} <a href="/logout">logout</a>
+        <br><br>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }} 

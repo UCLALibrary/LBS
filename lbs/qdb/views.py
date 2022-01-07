@@ -8,6 +8,7 @@ from .forms import ReportForm
 
 
 def report(request):
+    request.user
     if request.method == 'POST':
         submitbutton = request.POST.get("submit")
         form = ReportForm(request.POST or None)
@@ -20,7 +21,7 @@ def report(request):
         context = {'form': form, 'unit': unit, 'month': month,
                    'year': year, 'submitbutton': submitbutton}
 
-        return render(request, 'form.html', context)
+        return render(request, 'form.html', user, context)
     else:
         form = ReportForm()
         return render(request, 'form.html', {'form': form})
