@@ -1,23 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-us" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LBS QDB Reports</title>
+<title>QDB Report | QDB</title>
+<link rel="stylesheet" type="text/css" href="/static/admin/css/base.css">
+<link rel="stylesheet" type="text/css" href="/static/admin/css/dashboard.css">
+<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="stylesheet" type="text/css" href="/static/admin/css/responsive.css">
+<meta name="robots" content="NONE,NOARCHIVE">
 </head>
-<body>
-    {% if user.is_authenticated %}
-        <h1>QDB Reports</h1>
-        You are logged in as: {{ user.username }} <a href="/logout">logout</a>
-        <br><br>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }} 
-            <button type="submit">submit</button>
-        </form>
-    {% else %}
-        <a href="/login">Please login first</a>
-    {% endif %}
+
+<body class=" dashboard" data-admin-utc-offset="0">
+<!-- Container -->
+<div id="container">
+
+    <!-- Header -->
+    <div id="header">
+        <div id="branding">
+            <h1 id="site-name"><a href="/admin/">QDB Reports</a></h1>
+        </div>
+        <div id="user-tools">
+            Welcome,
+            <strong>{{request.user.username}}</strong>.
+            <a href="/qdb/logout/">Log out</a>
+        </div>
+    </div>
+    <!-- END Header -->
+
+    <div class="main shifted" id="main">
+      <div class="content">
+        <!-- Content -->
+        <div id="content" class="colMS">
+            <h1>QDB report submission form</h1>
+            <div id="content-main">
+                <div class="app-auth module">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }} 
+                        <button type="submit">Submit</button>
+                    </form>
+                </div>
+            </div>
+            <br class="clear">
+        </div>
+        <!-- END Content -->
+        <div id="footer"></div>
+      </div>
+    </div>
+</div>
+<!-- END Container -->
 </body>
 </html>
