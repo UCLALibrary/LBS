@@ -88,6 +88,7 @@ docker-compose build
 docker-compose up --build -d
 # If rebuilding is not needed:
 docker-compose up -d
+# If the secrets file is being used, put it in place before building
 ``` 
 
 2. Connect to the application
