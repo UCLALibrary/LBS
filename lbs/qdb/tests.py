@@ -10,19 +10,19 @@ class DataLoadTestCase(TestCase):
 
     def test_dataload(self):
 
-        call_command('load_initial_data', 'qdb/fixtures/staff.csv',
-                     'qdb/fixtures/unit.csv', 'qdb/fixtures/accounts.csv')
+        call_command('load_initial_data', 'qdb/scripts/staff.csv',
+                     'qdb/scripts/unit.csv', 'qdb/scripts/accounts.csv')
 
         staff_count = Staff.objects.all().count()
         unit_count = Unit.objects.all().count()
         account_count = Account.objects.all().count()
         #print(staff_count, "--->staff_count")
 
-        with open(r"qdb/fixtures/accounts.csv", 'r') as fp:
+        with open(r"qdb/scripts/accounts.csv", 'r') as fp:
             csv_accounts_count = len(fp.readlines()) - 1
-        with open(r"qdb/fixtures/staff.csv", 'r') as fp:
+        with open(r"qdb/scripts/staff.csv", 'r') as fp:
             csv_staff_count = len(fp.readlines()) - 1
-        with open(r"qdb/fixtures/unit.csv", 'r') as fp:
+        with open(r"qdb/scripts/unit.csv", 'r') as fp:
             csv_unit_count = len(fp.readlines()) - 1
 
         self.assertEqual(account_count, csv_accounts_count)
@@ -31,7 +31,7 @@ class DataLoadTestCase(TestCase):
 
 
 class AdminTestCase(TestCase):
-    fixtures = ["sample_data.json"]
+    scripts = ["sample_data.json"]
     nameunit = Unit.objects.get(name='Oral History')
 
     def test_recipientadmin(self):
@@ -50,7 +50,7 @@ class AdminTestCase(TestCase):
 
 class ModelsTestCase(TestCase):
 
-    fixtures = ["sample_data.json"]
+    scripts = ["sample_data.json"]
 
     def test_staff(self):
         name = Staff.objects.create(name="Jane Bruin")

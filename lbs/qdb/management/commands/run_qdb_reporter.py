@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
-from qdb.fixtures.orchestrator import Orchestrator
-from qdb.fixtures.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.scripts.orchestrator import Orchestrator
+from qdb.scripts.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
 
 
 class Command(BaseCommand):

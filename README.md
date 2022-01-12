@@ -42,7 +42,7 @@ pip install -r requirements.txt
 ```
 cd /path/to/your/projects/LBS/lbs
 python manage.py migrate
-python manage.py load_initial_data qdb/fixtures/staff.csv qdb/fixtures/unit.csv qdb/fixtures/accounts.csv
+python manage.py load_initial_data qdb/scripts/staff.csv qdb/scripts/unit.csv qdb/scripts/accounts.csv
 python manage.py createsuperuser
 ```
 
@@ -104,7 +104,7 @@ docker-compose exec django python lbs/manage.py
 # The first time, moving to postgres, run these 3:
 docker-compose exec django python lbs/manage.py migrate
 docker-compose exec django python lbs/manage.py createsuperuser
-docker-compose exec django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
+docker-compose exec django python lbs/manage.py load_initial_data lbs/qdb/scripts/staff.csv lbs/qdb/scripts/unit.csv lbs/qdb/scripts/accounts.csv
 ```
 
 4. Stop the application; shuts down and removes containers, but not volumes with data
@@ -131,12 +131,12 @@ docker rmi $(docker images -q --filter "dangling=true")
 
 4. The fixture file for testing was created with the following:
 ```
-python3 manage.py dumpdata --indent 4 --output qdb/fixtures/sample_data.json
+python3 manage.py dumpdata --indent 4 --output qdb/scripts/sample_data.json
 ```
 
 If "contenttype" errors appear while testing, the contenttype may be left out during file creation:
 ```
-python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtures/sample_data.json
+python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/scripts/sample_data.json
 ```
 
 5. The reports are generate by a management script which can be run manually for development and testing.
