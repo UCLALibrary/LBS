@@ -6,9 +6,9 @@ import os
 import psycopg2
 from sys import exit
 
-from qdb.fixtures.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
-from qdb.fixtures import fetcher, formatter, sender
-from qdb.fixtures.parser import Parser
+from qdb.scripts.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.scripts import fetcher, formatter, sender
+from qdb.scripts.parser import Parser
 
 
 class Orchestrator():
