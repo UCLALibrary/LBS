@@ -36,9 +36,10 @@
                 <div class="app-auth module">
                     <form method="post">
                         {% csrf_token %}
-                        {{ form.as_p }} 
+                        {{ form.as_p }}
                         <button type="submit">Submit</button>
                     </form>
+                    {% include 'messages.html' %}
                 </div>
             </div>
             <br class="clear">

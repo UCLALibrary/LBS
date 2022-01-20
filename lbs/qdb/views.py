@@ -6,11 +6,13 @@ from django.contrib.auth.decorators import login_required
 import os
 from .models import Unit
 from .forms import ReportForm
+from django.contrib import messages
 
 
 @login_required(login_url='/login/')
 def report(request):
     if request.method == 'POST':
+        messages.info(request, 'QDB report successfully generated.')
         submitbutton = request.POST.get("submit")
         form = ReportForm(request.POST or None)
         if form.is_valid():
