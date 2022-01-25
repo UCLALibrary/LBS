@@ -7,7 +7,6 @@ import os
 from .models import Unit
 from .forms import ReportForm
 from django.contrib import messages
-from django.db import IntegrityError
 
 
 @login_required(login_url='/login/')
@@ -38,7 +37,8 @@ def report(request):
             messages.info(request, 'QDB report successfully generated.')
 
         else:
-            messages.error(request, 'Error: no report could be generated.')
+            messages.error(
+                request, 'Form error: please ensure valid selections.')
             return HttpResponse(simplejson.dumps(errors))
 
         return render(request, 'form.html', context)
