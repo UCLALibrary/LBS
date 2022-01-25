@@ -7,22 +7,39 @@ import os
 from .models import Unit
 from .forms import ReportForm
 from django.contrib import messages
+from django.db import IntegrityError
 
 
 @login_required(login_url='/login/')
 def report(request):
     if request.method == 'POST':
-        messages.info(request, 'QDB report successfully generated.')
         submitbutton = request.POST.get("submit")
         form = ReportForm(request.POST or None)
         if form.is_valid():
             unit = form.cleaned_data['unit'].id
+            unit_name = form.cleaned_data['unit'].name
             year = form.cleaned_data['year']
             month = form.cleaned_data['month']
-            report = run_qdb_reporter(unit, month, year)
 
-        context = {'form': form, 'unit': unit, 'month': month,
-                   'year': year, 'submitbutton': submitbutton}
+            context = {'form': form, 'unit': unit, 'unit_name': unit_name, 'month': month,
+                       'year': year, 'submitbutton': submitbutton}
+
+            try:
+                report = run_qdb_reporter(unit, month, year)
+            except Exception as e:
+                if 'timed out' in str(e):
+                    messages.error(
+                        request, 'Network problem: no report could be generated.')
+                else:
+                    messages.error(
+                        request, 'Error: no report could be generated.')
+                return render(request, 'form.html', context)
+
+            messages.info(request, 'QDB report successfully generated.')
+
+        else:
+            messages.error(request, 'Error: no report could be generated.')
+            return HttpResponse(simplejson.dumps(errors))
 
         return render(request, 'form.html', context)
     else:
