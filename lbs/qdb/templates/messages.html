@@ -1,0 +1,14 @@
+{% if messages %}
+    {% for msg in messages %}
+        <div id="error_message" class="container-fluid p-0">
+            <div class="text-center alert alert-info alert-dismissable fade show">
+                <b>{{unit_name}}:</b> {{msg.message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                {% if 'Network problem' in msg.message %}
+                    <br>Please use the <a href="https://www.it.ucla.edu/it-support-center/services/virtual-private-network-vpn-clients">UCLA VPN</a> when off campus.
+                    <br><a href="https://uclalibrary.github.io/research-tips/get-configured/">Help with VPN</a> (tutorials on how to connect).
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
