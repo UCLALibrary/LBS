@@ -1,6 +1,6 @@
 {% if messages %}
     {% for msg in messages %}
-        <div class="container-fluid p-0">
+        <div id="error_message" class="container-fluid p-0">
             <div class="text-center alert alert-info alert-dismissable fade show">
                 <b>{{unit_name}}:</b> {{msg.message}}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
