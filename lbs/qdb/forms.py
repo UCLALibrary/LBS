@@ -27,7 +27,7 @@ YEARS = tuple(YEARS)
 
 class ReportForm(forms.Form):
     unit = forms.ModelChoiceField(
-        queryset=Unit.objects.all().order_by('name'), initial=1)
+        queryset=Unit.objects.all().order_by('name'), initial=28)
     year = forms.ChoiceField(
         choices=YEARS, initial=year_default)
     month = forms.ChoiceField(
