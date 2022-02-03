@@ -61,7 +61,7 @@ class Orchestrator():
 
     def validate_units(self, unit_ids=None):
         # similar: match multiple rows in MYSQL with info from python list
-        if unit_ids is None:
+        if unit_ids is None or 28 in unit_ids:
             return self.get_all_units()
         qms = ','.join(['%s']*len(unit_ids))
         cmd = f'SELECT * FROM qdb_unit WHERE id IN ({qms})'
