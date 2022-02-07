@@ -26,7 +26,10 @@ def report(request):
             try:
                 report = run_qdb_reporter(unit, month, year)
             except Exception as e:
-                if 'timed out' in str(e):
+                if 'Login failed for user' in str(e):
+                    messages.error(
+                        request, 'Missing database credentials: no report could be generated.')
+                elif 'timed out' in str(e):
                     messages.error(
                         request, 'Network problem: no report could be generated.')
                 else:

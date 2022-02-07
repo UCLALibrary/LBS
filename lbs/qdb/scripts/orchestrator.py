@@ -111,7 +111,7 @@ class Orchestrator():
         if unit_name == 'LBS':
             cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')"
         else:
-            cmd += " AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul'))"
+            cmd += " AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'assoc'))"
         self.cursor.execute(cmd, [unit_id, UL_NAME])
         recipients.update([r[0] for r in self.cursor.fetchall()])
         return recipients

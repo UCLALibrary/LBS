@@ -23,7 +23,7 @@ class Unit(models.Model):
 class Recipient(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     recipient = models.ForeignKey(Staff, on_delete=models.CASCADE)
-    role_choices = [("aul", "AUL"),("head","Head")]
+    role_choices = [("aul", "AUL"), ("head", "Head"), ("assoc", "Assoc")]
     role = models.CharField(max_length=100, choices=role_choices)
 
     def __str__(self):
