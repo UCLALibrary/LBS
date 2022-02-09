@@ -67,6 +67,9 @@ class Orchestrator():
         cmd = f'SELECT * FROM qdb_unit WHERE id IN ({qms})'
         self.cursor.execute(cmd, unit_ids)
         rows = self.cursor.fetchall()
+        for row in rows:
+            if row[1] == 'All units':
+                return self.get_all_units()
         if len(rows) < len(unit_ids):
             bad_ids = set(unit_ids) - set([r['id'] for r in rows])
             raise ValueError(f"ERROR: Unit ID does not exist {bad_ids}")
