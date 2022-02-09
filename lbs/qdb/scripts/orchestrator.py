@@ -61,12 +61,15 @@ class Orchestrator():
 
     def validate_units(self, unit_ids=None):
         # similar: match multiple rows in MYSQL with info from python list
-        if unit_ids is None or 28 in unit_ids:
+        if unit_ids is None:
             return self.get_all_units()
         qms = ','.join(['%s']*len(unit_ids))
         cmd = f'SELECT * FROM qdb_unit WHERE id IN ({qms})'
         self.cursor.execute(cmd, unit_ids)
         rows = self.cursor.fetchall()
+        for row in rows:
+            if row[1] == 'All units':
+                return self.get_all_units()
         if len(rows) < len(unit_ids):
             bad_ids = set(unit_ids) - set([r['id'] for r in rows])
             raise ValueError(f"ERROR: Unit ID does not exist {bad_ids}")

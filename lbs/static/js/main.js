@@ -11,8 +11,8 @@ $(function () {
             success: function(response){
                 setTimeout(()=>{
                     spinnerBox.classList.remove("not-visible")
-                    var unit_selected = $("#id_unit").val();
-                    if (unit_selected == 28){
+                    var unit_selected = $("#id_unit option:selected").text();
+                    if (unit_selected == 'All units'){
                         longBox.classList.remove("not-visible");
                     }
 
@@ -29,6 +29,11 @@ $(function () {
 });
 // move the "All units" option to the top of the select
 $(document).ready( function () {
-    $(this).find('[value="28"]').remove();
-    $('#id_unit').prepend(`<option value="28" selected>All units</option>`);
+    const optionText = 'All units';
+    const $unitSelect = document.querySelector('#id_unit');
+    const $unitOptions = Array.from($unitSelect.options);
+    const optionToSelect = $unitOptions.find(item => item.text === optionText);
+    optionToSelect.remove();
+    optionToSelect.selected = true;
+    $('#id_unit').prepend(optionToSelect);
 });
