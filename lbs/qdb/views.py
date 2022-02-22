@@ -15,7 +15,6 @@ def report(request):
         submitbutton = request.POST.get("submit")
         form = ReportForm(request.POST or None)
         if form.is_valid():
-            response_data = {}
             unit = form.cleaned_data['unit'].id
             unit_name = form.cleaned_data['unit'].name
             year = form.cleaned_data['year']
