@@ -117,6 +117,31 @@ docker-compose down
 docker rmi $(docker images -q --filter "dangling=true")
 ```
 
+## Status messages displayed to the user
+
+1. "Spinner"
+    - Indicates report generation is in progress
+
+2. Estimated report generation time when user selects _All units_
+    - Please allow up to 5 minutes
+
+3. QDB report successfully generated
+
+4. Remote database not available
+    - User is advised to wait and try again
+
+5. Network problem
+    - VPN information is provided
+
+6. General failure
+    - Link to the _UCLA Library Service Portal_ is provided
+
+7. Form error
+    - Please check your selections
+
+8. General AJAX error
+    - Link to the _UCLA Library Service Portal_ is provided
+
 ## Developer Tips
 
 1. TEMPORARY - Create secret_qdb_password.txt in the project root directory (/path/to/projects/LBS) contining the QDB password on a single line
