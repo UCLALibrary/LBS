@@ -1,3 +1,9 @@
 .not-visible {
     display: none;
 }
+
+a:link, a:visited {
+    color: #007bff;
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+}
