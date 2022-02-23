@@ -29,14 +29,14 @@ def report(request):
                 if 'Login failed for user' in str(e):
                     messages.error(
                         request, format_html(
-                            'Remote database not available : no report could be generated.<br>-----<br>Please try again later as this may be due to routine maintenance.<br>Note: Middle-of-the-night maintenance can take up to 60 minutes'), extra_tags=unit_name)
+                            'Remote database not available: no report could be generated.<br>-----<br>Please try again later as this may be due to routine maintenance.<br>Note: Middle-of-the-night maintenance can take up to 60 minutes'), extra_tags=unit_name)
                 elif 'timed out' in str(e):
                     # apply escaping to (unsafe) html with format_html
                     messages.error(
-                        request, format_html('Network problem : no report could be generated.<br>-----<br>Please use the <a href="https://www.it.ucla.edu/it-support-center/services/virtual-private-network-vpn-clients">UCLA VPN</a> when off campus.<br><a href="https://uclalibrary.github.io/research-tips/get-configured/">Help with VPN</a> (tutorials on how to connect).'), extra_tags=unit_name)
+                        request, format_html('Network problem: no report could be generated.<br>-----<br>Please use the <a href="https://www.it.ucla.edu/it-support-center/services/virtual-private-network-vpn-clients">UCLA VPN</a> when off campus.<br><a href="https://uclalibrary.github.io/research-tips/get-configured/">Help with VPN</a> (tutorials on how to connect).'), extra_tags=unit_name)
                 else:
                     messages.error(
-                        request, format_html('Error : no report could be generated.<br>-----<br>Please report this to the DIIT Help Desk:<br><a href="https://jira.library.ucla.edu/servicedesk/customer/portals">UCLA Library Service Portal</a>'), extra_tags=unit_name)
+                        request, format_html('Error: no report could be generated.<br>-----<br>Please report this to the DIIT Help Desk:<br><a href="https://jira.library.ucla.edu/servicedesk/customer/portals">UCLA Library Service Portal</a>'), extra_tags=unit_name)
         else:
             messages.error(
                 request, format_html('please ensure valid selections.'), extra_tags='Form error')
