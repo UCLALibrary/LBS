@@ -47,9 +47,7 @@
                 // extracts unit name if present in the extra-tag and removes trailing space then adds separator
                 if (message.extra_tags.match(/^[a-zA-Z].* alert-[a-zA-Z]*$/)) {
                     unit_name = message.extra_tags.match(/^[a-zA-Z].* /)[0]
-                    if (unit_name.match(/ $/)) {
-                        unit_name = unit_name.trimEnd();
-                    }
+                    unit_name = unit_name.trimEnd();
                     unit_name = unit_name+": "
                 }
                 // add Unit, message to appropriately styled message box
