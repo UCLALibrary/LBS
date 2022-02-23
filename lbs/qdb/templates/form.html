@@ -48,7 +48,7 @@
                 if (message.extra_tags.match(/^[a-zA-Z].* alert-[a-zA-Z]*$/)) {
                     unit_name = message.extra_tags.match(/^[a-zA-Z].* /)[0]
                     if (unit_name.match(/ $/)) {
-                        unit_name = unit_name.substring(0, unit_name.length - 1);
+                        unit_name = unit_name.trimEnd();
                     }
                     unit_name = unit_name+": "
                 }
