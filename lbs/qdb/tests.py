@@ -1,13 +1,22 @@
 from django.test import TestCase
 from qdb.models import Staff, Unit, Account, Subcode, Recipient
 from .admin import RecipientAdmin
+from unittest import skip
 import csv
 
 from django.core.management import call_command
 
 
 class DataLoadTestCase(TestCase):
-
+    # The use of the dataload test was discussed when it broke after moving to Docker.
+    # The problem was narrowed down to the test db continuing indexing from the prod db:
+    #   - ie prod Staff table index is 1-34 and Test db Staff table is indexed 35-68
+    #   - other tables were similar
+    #   - a temporary offsets added to queries permitted the tests to run
+    # Because the dataload tests are run only once (during ingest), and are of no use after,
+    #   a decision was made to skip the dataload part of the testing
+    #
+    @skip("The dataload has been verified for the single time it ran after installation of the app.")
     def test_dataload(self):
 
         call_command('load_initial_data', 'qdb/fixtures/staff.csv',
