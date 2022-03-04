@@ -151,19 +151,37 @@ docker rmi $(docker images -q --filter "dangling=true")
   - Secret management should be improved for production deployment.
 
 2. Work with the underlying PostgreSQL database in its own docker container
+```
+docker-compose exec db bash
+psql qdb -U qdb_user
+
+# help
+\?
+
+# list databases, tables and data
+\l
+\dt
+select * from qdb_staff;
+```
 
 3. The imported data is from CSV files dumped from the existing reporting system
 
 4. Test display on Windows Dark Mode to ensure readability
 
-5. The fixture file for testing was created with the following:
+5. The fixture file:
+ - verified current 20220304
+ - file was created with the following:
 ```
-python3 manage.py dumpdata --indent 4 --output qdb/fixtures/sample_data.json
+python3 manage.py dumpdata --indent 4 --output lbs/qdb/fixtures/sample_data.json
 ```
 
 If "contenttype" errors appear while testing, the contenttype may be left out during file creation:
 ```
-python3 manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtures/sample_data.json
+python3 manage.py dumpdata --indent 4 --exclude contenttypes --output lbs/qdb/fixtures/sample_data.json
+```
+- drop the leading lbs/ when running outside of docker
+```
+python3 manage.py dumpdata --indent 4 --output qdb/fixtures/sample_data.json
 ```
 
 6. The reports are generate by a management script which can be run manually for development and testing.
