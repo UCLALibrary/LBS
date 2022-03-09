@@ -51,10 +51,14 @@ SLDS_CONTACT_EMAIL = "joshuagomez@library.ucla.edu"
 TEST_RECIPIENT = os.environ.get('QDB_TEST_RECIPIENT', FROM_ADDRESS)
 
 DEV_RECIPIENTS = [
-    'darrowco@library.ucla.edu',  # Darrow Cole
-    'joshuagomez@library.ucla.edu',  # Joshua Gomez
-    'akohler@library.ucla.edu'  # Andy Kohler
+    'darrowco@library.ucla.edu'
 ]
+
+# DEV_RECIPIENTS = [
+#    'darrowco@library.ucla.edu',  # Darrow Cole
+#    'joshuagomez@library.ucla.edu',  # Joshua Gomez
+#    'akohler@library.ucla.edu'  # Andy Kohler
+# ]
 
 LBS_RECIPIENTS = [
     'doris@library.ucla.edu',  # Doris Wang

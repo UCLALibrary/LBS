@@ -184,7 +184,8 @@ python3 manage.py dumpdata --indent 4 --exclude contenttypes --output lbs/qdb/fi
 python3 manage.py dumpdata --indent 4 --output qdb/fixtures/sample_data.json
 ```
 
-6. The reports are generate by a management script which can be run manually for development and testing.
+6. The reports are generated and/or emailed by a management script which can be run manually from the qdb app (for development and testing).
+**Run manually to generate reports at the command line**
   - set the environment variables
 
 ```nano .env/local.env```
@@ -197,12 +198,13 @@ export QDB_DB_USER="mgrlib"
 export QDB_DB_PASSWORD="<ASK>"
 
 ##### Optional, for sending email
+##### Bote: the gmail smtp may not work after May 2022 when using username/password only
 export QDB_SMTP_SERVER="smtp.gmail.com"
 export QDB_PORT=587
 export QDB_FROM_ADDRESS="qdb.test.ucla.@gmail.com"
 export QDB_PASSWORD="<ASK>"
 
-#####Optional (application sets 'dev' by default)
+##### Optional (application sets 'dev' by default)
 export DJANGO_RUN_ENV=dev
 ```
 
@@ -225,6 +227,45 @@ python3 manage.py run_qdb_reporter -y 2017 -m 5 -u 6 -r
 -u --units - Unit ID number; if omitted all units will receive reports
 -e --email - Email the report to the recipients
 -r --list_recipients - Display the list of people to email for each report
+```
+
+**Use the qdb app to generate reports**
+  - set the environment variables
+  - specify a smtp server that you have access to
+
+```nano .docker-compose_django.env```
+
+```
+DJANGO_RUN_ENV=dev
+
+# QDB database server
+QDB_DB_SERVER=obiwan.qdb.ucla.edu
+QDB_DB_DATABASE=qdb
+QDB_DB_USER=mgrlib
+# This one comes from secrets
+QDB_DB_PASSWORD_FILE=/run/secrets/qdb_password
+
+# Email server info
+QDB_SMTP_SERVER=smtp.gmail.com
+QDB_PORT=587
+QDB_FROM_ADDRESS=qdb.test.ucla.@gmail.com
+QDB_PASSWORD=unknown
+```
+
+```nano lbs/qdb/scripts/settings.py```
+# set the developer recipient list to your email
+```
+DEV_RECIPIENTS = [
+    'darrowco@library.ucla.edu'
+]
+
+```
+
+# set to False to avoid sending email while working on the app
+```nano lbs/qdb/scripts/orchestrator.py```
+```
+send_email = True
+
 ```
 
 ## Testing
