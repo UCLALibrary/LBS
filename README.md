@@ -254,6 +254,7 @@ QDB_PASSWORD=unknown
 
 ```nano lbs/qdb/scripts/settings.py```
 # set the developer recipient list to your email
+# add other comma-delimited developers and/or unit staffmembers as needed for testing
 ```
 DEV_RECIPIENTS = [
     'darrowco@library.ucla.edu'
