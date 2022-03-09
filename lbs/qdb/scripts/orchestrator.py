@@ -6,7 +6,7 @@ import os
 import psycopg2
 from sys import exit
 
-from qdb.scripts.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.scripts.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, LBS_RECIPIENTS, UL_NAME
 from qdb.scripts import fetcher, formatter, sender
 from qdb.scripts.parser import Parser
 
@@ -105,18 +105,21 @@ class Orchestrator():
                 print(f'Could not delete from reports directory: {f}')
 
     def get_recipients(self, unit_id, unit_name):
+        # hardcoded recipients are either developer(s) or LBS, set in settings.py
         recipients = set(self.recipients)
-        cmd = '''
-            SELECT email
-            FROM qdb_staff, qdb_unit, qdb_recipient
-            WHERE qdb_recipient.unit_id = %s
-            AND qdb_staff.name != %s'''
-        if unit_name == 'LBS':
-            cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')"
-        else:
-            cmd += " AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'assoc'))"
-        self.cursor.execute(cmd, [unit_id, UL_NAME])
-        recipients.update([r[0] for r in self.cursor.fetchall()])
+        # if LBS, add recipients listed in the Recipients table to recipients, else, just send to the developer(s)
+        if LBS_RECIPIENTS in DEFAULT_RECIPIENTS:
+            cmd = '''
+                SELECT email
+                FROM qdb_staff, qdb_unit, qdb_recipient
+                WHERE qdb_recipient.unit_id = %s
+                AND qdb_staff.name != %s'''
+            if unit_name == 'LBS':
+                cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')"
+            else:
+                cmd += " AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'assoc'))"
+            self.cursor.execute(cmd, [unit_id, UL_NAME])
+            recipients.update([r[0] for r in self.cursor.fetchall()])
         return recipients
 
     def generate_filename(self, unit_name, yyyymm):
@@ -131,10 +134,11 @@ class Orchestrator():
                 recipients = override_recipients
             else:
                 recipients = self.get_recipients(unit_id, unit_name)
-            if list_recipients is True:
-                print(f"{unit_name} recipients:")
-                for r in sorted(recipients):
-                    print(f'-- {r}')
+
+            # always print list of recipients to screen
+            print(f"{unit_name} recipients:")
+            for r in sorted(recipients):
+                print(f'-- {r}')
                 continue
             parser = Parser(yyyymm, unit_name)
             for account, cc_list in self.get_accounts_for_unit(unit_id):
@@ -152,6 +156,9 @@ class Orchestrator():
                 continue
             filename = self.generate_filename(unit_name, yyyymm)
             formatter.generate_report(parser.data, filename)
+
+            # set to False to avoid sending email while working on the app
+            send_email = True
             if send_email is True:
                 sender.send_report(parser.data, filename, recipients)
                 os.remove(filename)

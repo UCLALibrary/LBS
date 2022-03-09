@@ -23,12 +23,14 @@ def get_message_subject(month_name, year, unit):
 
 def send_report(data, filename, recipients):
     accts = [d['account'] for d in data['accounts']]
-    body = get_message_body(data['month_name'], data['year'], data['unit'], accts)
+    body = get_message_body(
+        data['month_name'], data['year'], data['unit'], accts)
 
     message = MIMEMultipart()
     message["From"] = FROM_ADDRESS
     message["To"] = ', '.join(recipients)
-    message["Subject"] = get_message_subject(data['month_name'], data['year'], data['unit'])
+    message["Subject"] = get_message_subject(
+        data['month_name'], data['year'], data['unit'])
     message.attach(MIMEText(body, "plain"))
 
     with open(filename, "rb") as attachment:
