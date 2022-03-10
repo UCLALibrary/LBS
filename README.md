@@ -201,7 +201,7 @@ if ENV == 'dev':  # pragma: no cover
 To help keep your account secure, starting May 30, 2022, ​​Google will no longer support the use of third-party apps or devices which ask you to sign in to your Google Account using only your username and password.
 ```
 
-**Use the qdb app to emails with generate reports attached**
+**Use the qdb app to send emails with generated reports attached**
   - set the environment variables
   - specify a smtp server that you have access to
 
@@ -234,10 +234,11 @@ DEV_RECIPIENTS = [
 
 ```
 
-# set to False to avoid sending email while working on the app
-```nano lbs/qdb/scripts/orchestrator.py```
+# send_email is True by default
+# set send_email to False in the run() method (around line 38) to avoid sending email while working on the app
+```nano lbs/qdb/management/commands/run_qdb_reporter.py```
 ```
-send_email = True
+orchestrator.run(yyyymm, units, send_email=False, ...
 
 ```
 
@@ -262,7 +263,7 @@ export QDB_DB_USER="mgrlib"
 export QDB_DB_PASSWORD="<ASK>"
 
 ##### Optional, for sending email
-##### Bote: the gmail smtp may not work after May 2022 when using username/password only
+##### Note: see above in this document - the gmail smtp may not work after May 2022 when using username/password only
 export QDB_SMTP_SERVER="smtp.gmail.com"
 export QDB_PORT=587
 export QDB_FROM_ADDRESS="qdb.test.ucla.@gmail.com"
@@ -277,7 +278,9 @@ export DJANGO_RUN_ENV=dev
 ```source .env/local.env```
 
   - run the VPN if you are outside of the UCLA ip space
-  - run the script with different flags to test:
+  - run the script with different flags to test
+  - use the --email flag to send an email with the attached report(s) to the recipients
+  - examples:
  
 ```
 python3 manage.py run_qdb_reporter -l

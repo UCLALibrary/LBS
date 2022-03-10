@@ -35,7 +35,7 @@ class Command(BaseCommand):
                 return
             yyyymm = orchestrator.validate_date(year, month, yyyymm=True)
             units = orchestrator.validate_units(units)
-            orchestrator.run(yyyymm, units, send_email=email,
+            orchestrator.run(yyyymm, units, send_email=True,
                              list_recipients=list_recipients)
             return
         except ValueError as e:

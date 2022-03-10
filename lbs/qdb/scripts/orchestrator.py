@@ -108,7 +108,7 @@ class Orchestrator():
         # hardcoded recipients are either developer(s) or LBS, set in settings.py
         recipients = set(self.recipients)
         # if LBS, add recipients listed in the Recipients table to recipients, else, just send to the developer(s)
-        if LBS_RECIPIENTS in DEFAULT_RECIPIENTS:
+        if LBS_RECIPIENTS == DEFAULT_RECIPIENTS:
             cmd = '''
                 SELECT email
                 FROM qdb_staff, qdb_unit, qdb_recipient
@@ -157,8 +157,7 @@ class Orchestrator():
             filename = self.generate_filename(unit_name, yyyymm)
             formatter.generate_report(parser.data, filename)
 
-            # set to False to avoid sending email while working on the app
-            send_email = True
+            # set to False around line 38 in _run_qdb_reporter.py_ to avoid sending email while working on the app
             if send_email is True:
                 sender.send_report(parser.data, filename, recipients)
                 os.remove(filename)
