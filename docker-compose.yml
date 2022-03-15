@@ -6,8 +6,6 @@ services:
       - .:/home/django/LBS
     ports: 
       - "8000:8000"
-    secrets:
-      - qdb_password
     env_file:
       - .docker-compose_django.env
       - .docker-compose_db.env
@@ -19,8 +17,5 @@ services:
       - .docker-compose_db.env
     volumes:
       - pg_data:/var/lib/postgresql/data/
-secrets:
-  qdb_password:
-    file: secret_qdb_password.txt
 volumes:
   pg_data:
