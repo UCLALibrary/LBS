@@ -12,4 +12,5 @@ jobs:
       - name: Build the stack
         run: docker-compose up -d
       - name: Run tests
-        run: docker-compose exec django python lbs/manage.py test qdb
+        # -T to disable TTY allocation
+        run: docker-compose exec -T django python lbs/manage.py test qdb
