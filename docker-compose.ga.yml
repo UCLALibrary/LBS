@@ -1,6 +1,7 @@
 version: "3.1"
 services:
   django:
+    container_name: django-frontend
     build: .
     # Don't mount code for editing, in CI context
     # volumes: 

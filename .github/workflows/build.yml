@@ -18,6 +18,8 @@ jobs:
         run: docker-compose logs
       - name: Do we have files?
         run: docker-compose exec -T django ls -al lbs/qdb
+      - name: Can we connect?
+        run: docker run --network container:django-frontend appropriate/curl -s -I http://localhost:8000/admin/
       - name: Run tests
         # -T to disable TTY allocation
         run: docker-compose exec -T django python lbs/manage.py test qdb
