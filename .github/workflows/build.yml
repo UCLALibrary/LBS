@@ -17,7 +17,7 @@ jobs:
       - name: Create models
         run: docker-compose exec -T django python lbs/manage.py migrate
       - name: Load data
-        run: docker-compose exec django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
+        run: docker-compose exec -T django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
       - name: Show logs
         run: docker-compose logs
       - name: Can we connect?
