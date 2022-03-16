@@ -10,13 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the stack
-        run: docker-compose up -d
-      - name: Show logs 1
-        run: docker-compose logs
+        run: docker-compose -f docker-compose.ga.yml up -d
       - name: Wait for database
         run: sleep 15s
         shell: bash
-      - name: Show logs 2
+      - name: Show logs
         run: docker-compose logs
       # - name: Run tests
       #   # -T to disable TTY allocation
