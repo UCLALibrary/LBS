@@ -16,6 +16,8 @@ jobs:
         shell: bash
       - name: Show logs
         run: docker-compose logs
+      - name: Do we have files?
+        run: docker-compose exec -T django ls -al lbs/qdb
       - name: Run tests
         # -T to disable TTY allocation
         run: docker-compose exec -T django python lbs/manage.py test qdb
