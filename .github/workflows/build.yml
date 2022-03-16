@@ -16,6 +16,6 @@ jobs:
         shell: bash
       - name: Show logs
         run: docker-compose logs
-      # - name: Run tests
-      #   # -T to disable TTY allocation
-      #   run: docker-compose exec -T django python lbs/manage.py test qdb
+      - name: Run tests
+        # -T to disable TTY allocation
+        run: docker-compose exec -T django python lbs/manage.py test qdb
