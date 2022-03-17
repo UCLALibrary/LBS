@@ -52,7 +52,7 @@ class Orchestrator():
     def list_units(self):
         units = self.get_all_units()
         name_length = max([len(u[1]) for u in units])
-        header = 'ID | Name'
+        header = '\nID | Name'
         bar = '---|' + '-' * name_length
         msg = [header, bar]
         for row in units:
@@ -105,6 +105,7 @@ class Orchestrator():
                 print(f'Could not delete from reports directory: {f}')
 
     def get_recipients(self, unit_id, unit_name):
+        # recipients is initialized to either developers (dev mode) or to LBS (prod mode), unit recipients are added.
         recipients = set(self.recipients)
         cmd = '''
             SELECT email
@@ -131,11 +132,14 @@ class Orchestrator():
                 recipients = override_recipients
             else:
                 recipients = self.get_recipients(unit_id, unit_name)
+
+            # set to True around line 68 in views.py to list recipients in the terminal
             if list_recipients is True:
-                print(f"{unit_name} recipients:")
+                print(f"\n{unit_name} recipients:")
                 for r in sorted(recipients):
                     print(f'-- {r}')
-                continue
+                    continue
+            print(f"")
             parser = Parser(yyyymm, unit_name)
             for account, cc_list in self.get_accounts_for_unit(unit_id):
                 print(
@@ -152,6 +156,8 @@ class Orchestrator():
                 continue
             filename = self.generate_filename(unit_name, yyyymm)
             formatter.generate_report(parser.data, filename)
+
+            # set to False around line 68 in _views.py_ to avoid sending email while working on the app
             if send_email is True:
                 sender.send_report(parser.data, filename, recipients)
                 os.remove(filename)

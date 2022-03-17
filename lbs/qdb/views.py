@@ -7,6 +7,7 @@ import json
 from .forms import ReportForm
 from django.contrib import messages
 from django.utils.html import format_html
+from qdb.scripts.settings import ENV
 
 
 @login_required(login_url='/login/')
@@ -59,9 +60,15 @@ def report(request):
 
 
 def run_qdb_reporter(unit_from_form, month_from_form, year_from_form):
-    call_command('run_qdb_reporter', year=int(year_from_form),
-                 month=int(month_from_form), units=[unit_from_form])
-    # append , list_units=True for testing
+    # suppress unneeded outputs on prod
+    if ENV == 'prod':  # pragma: no cover
+        call_command('run_qdb_reporter', list_units=False, year=int(year_from_form),
+                     month=int(month_from_form), units=[unit_from_form], email=True, list_recipients=False)
+    # in dev, set list_units, list_recipients True for more information printed to the terminal
+    else:
+        # for override_recipients, set to either None or your desired email(s) ['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]
+        call_command('run_qdb_reporter', list_units=True, year=int(year_from_form),
+                     month=int(month_from_form), units=[unit_from_form], email=False, list_recipients=True, override_recipients=None)
 
 
 def logoutandlogin(request):
