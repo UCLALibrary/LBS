@@ -68,7 +68,7 @@ def run_qdb_reporter(unit_from_form, month_from_form, year_from_form):
     else:
         # for override_recipients, set to either None or your desired email(s) ['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]
         call_command('run_qdb_reporter', list_units=True, year=int(year_from_form),
-                     month=int(month_from_form), units=[unit_from_form], email=True, list_recipients=True, override_recipients=['darrowco@library.ucla.edu'])
+                     month=int(month_from_form), units=[unit_from_form], email=False, list_recipients=True, override_recipients=None)
 
 
 def logoutandlogin(request):
