@@ -1,26 +1,32 @@
-name: Build LBS
+name: Build and Test LBS
 on: 
-  workflow_dispatch:
   push:
     branches:
       - 'SYS-705/**'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      
       - name: Build the stack
         run: docker-compose -f docker-compose.ga.yml up -d
+      
       - name: Wait for database
         run: sleep 15s
         shell: bash
+      
       - name: Create models
         run: docker-compose exec -T django python lbs/manage.py migrate
+      
       - name: Load data
         run: docker-compose exec -T django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
+      
       - name: Check connectivity
         #run: docker run --network container:django-frontend appropriate/curl -s -I http://localhost:8000/admin/
         run: curl -s -I http://localhost:8000/admin/
+      
       - name: Run tests
         # -T to disable TTY allocation
         run: docker-compose exec -T django python lbs/manage.py test qdb
