@@ -1,8 +1,9 @@
 name: Build and Test LBS
 on: 
+  pull_request:
   push:
     branches:
-      - 'SYS-705/**'
+      - main
   workflow_dispatch:
 jobs:
   build:
