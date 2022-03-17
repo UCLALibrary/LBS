@@ -48,10 +48,10 @@ SDLS_CONTACT_TITLE = "Head, Software Development & Library Systems"
 SLDS_CONTACT_EMAIL = "joshuagomez@library.ucla.edu"
 
 # Report Recipients
+# override by setting override_recipients in views.py
 TEST_RECIPIENT = os.environ.get('QDB_TEST_RECIPIENT', FROM_ADDRESS)
 
 DEV_RECIPIENTS = [
-    'darrowco@library.ucla.edu',  # Darrow Cole
     'joshuagomez@library.ucla.edu',  # Joshua Gomez
     'akohler@library.ucla.edu'  # Andy Kohler
 ]

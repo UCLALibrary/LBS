@@ -2,9 +2,11 @@ from django.test import TestCase
 from qdb.models import Staff, Unit, Account, Subcode, Recipient
 from .admin import RecipientAdmin
 from unittest import skip
-import csv
-
+from qdb.scripts.settings import DEFAULT_RECIPIENTS, REPORTS_DIR
+from qdb.scripts.orchestrator import Orchestrator
 from django.core.management import call_command
+
+import os
 
 
 class DataLoadTestCase(TestCase):
@@ -25,7 +27,7 @@ class DataLoadTestCase(TestCase):
         staff_count = Staff.objects.all().count()
         unit_count = Unit.objects.all().count()
         account_count = Account.objects.all().count()
-        #print(staff_count, "--->staff_count")
+        # print(staff_count, "--->staff_count")
 
         with open(r"qdb/fixtures/accounts.csv", 'r') as fp:
             csv_accounts_count = len(fp.readlines()) - 1
@@ -104,3 +106,31 @@ class ModelsTestCase(TestCase):
             unit=Unit.objects.get(pk=1), recipient=Staff.objects.get(pk=1))
         self.assertEqual(str(recipient), "Sharon Farb")
         self.assertEqual(str(recipient.unit), "Oral History")
+
+
+class OrchestratorTest(TestCase):
+    def setUp(self):
+        self.orch = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
+
+    def test_get_recipients(self):
+        actual = self.orch.get_recipients(21, 'DIIT Software Development')
+        expected = set(['joshuagomez@library.ucla.edu',
+                        'grappone@library.ucla.edu']).union(DEFAULT_RECIPIENTS)
+        self.assertEqual(actual, expected)
+
+    def test_exclude_UL(self):
+        actual = self.orch.get_recipients(3, 'Communication')
+        expected = set(['abicho@library.ucla.edu']
+                       ).union(DEFAULT_RECIPIENTS)
+        self.assertEqual(actual, expected)
+
+    def test_exclude_everyone_but_LBS(self):
+        actual = self.orch.get_recipients(2, 'LBS')
+        expected = set(['doris@library.ucla.edu']).union(DEFAULT_RECIPIENTS)
+        self.assertEqual(actual, expected)
+
+    def test_filename(self):
+        unit_name = 'DIIT Software Development'
+        fullpath = self.orch.generate_filename(unit_name, '202101')
+        actual = os.path.split(fullpath)[1]
+        self.assertEqual(actual, 'DIIT_Software_Development_2021_01.xlsx')

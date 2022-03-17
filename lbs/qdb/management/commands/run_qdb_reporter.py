@@ -19,6 +19,8 @@ class Command(BaseCommand):
                             help="Email the report to the recipients")
         parser.add_argument("-r", "--list_recipients", action="store_true",
                             help="Display the list of people to email for each report")
+        parser.add_argument("-o", "--override_recipients", action="store_true",
+                            help="List of dev(s) to email for each report")
 
     def handle(self, *args, **options):
         list_units = options["list_units"]
@@ -27,16 +29,17 @@ class Command(BaseCommand):
         units = options["units"]
         email = options["email"]
         list_recipients = options["list_recipients"]
+        override_recipients = options["override_recipients"]
+
         # using code from __main__ of orchestrator
         try:
             orchestrator = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
             if list_units is True:
                 print(orchestrator.list_units())
-                return
             yyyymm = orchestrator.validate_date(year, month, yyyymm=True)
             units = orchestrator.validate_units(units)
-            orchestrator.run(yyyymm, units, send_email=True,
-                             list_recipients=list_recipients)
+            orchestrator.run(yyyymm, units, send_email=email,
+                             list_recipients=list_recipients, override_recipients=override_recipients)
             return
         except ValueError as e:
             exit(e)
