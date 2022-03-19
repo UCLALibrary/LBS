@@ -11,12 +11,12 @@ jobs:
       - name: Build the stack
         run: docker-compose -f docker-compose.ga.yml up --build -d
       
+      - name: Logs
+        run: docker-compose -f docker-compose.ga.yml logs
+
       - name: Wait for database
         run: sleep 15s
         shell: bash
-
-      - name: What version
-        run: docker-compose --version
 
       - name: Containers
         run: docker-compose -f docker-compose.ga.yml ps
@@ -26,16 +26,15 @@ jobs:
 
       - name: Show environment - debugging
         run: docker-compose -f docker-compose.ga.yml exec -T django env
-        continue-on-error: true
 
       - name: Show migrations - debugging
-        run: docker-compose exec -T django python lbs/manage.py showmigrations
+        run: docker-compose -f docker-compose.ga.yml exec -T django python lbs/manage.py showmigrations
       
       - name: Create models
-        run: docker-compose exec -T django python lbs/manage.py migrate
+        run: docker-compose -f docker-compose.ga.yml exec -T django python lbs/manage.py migrate
       
       - name: Load data
-        run: docker-compose exec -T django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
+        run: docker-compose -f docker-compose.ga.yml exec -T django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
       
       - name: Check connectivity
         #run: docker run --network container:django-frontend appropriate/curl -s -I http://localhost:8000/admin/
@@ -43,4 +42,4 @@ jobs:
       
       - name: Run tests
         # -T to disable TTY allocation
-        run: docker-compose exec -T django python lbs/manage.py test qdb
+        run: docker-compose -f docker-compose.ga.yml exec -T django python lbs/manage.py test qdb
