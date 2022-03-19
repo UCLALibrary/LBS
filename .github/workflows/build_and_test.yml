@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Build the stack
-        run: docker-compose -f docker-compose.ga.yml up -d
+        run: docker-compose -f docker-compose.ga.yml --build up -d
       
       - name: Wait for database
         run: sleep 15s
