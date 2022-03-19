@@ -14,6 +14,9 @@ jobs:
       - name: Wait for database
         run: sleep 15s
         shell: bash
+
+      - name: Show migrations - debugging
+        run: docker-compose exec -T django python lbs/manage.py showmigrations
       
       - name: Create models
         run: docker-compose exec -T django python lbs/manage.py migrate
