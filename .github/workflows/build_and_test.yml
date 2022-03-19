@@ -15,6 +15,9 @@ jobs:
         run: sleep 15s
         shell: bash
 
+      - name: Show environment - debugging
+        run: docker-compose exec -T django env
+
       - name: Show migrations - debugging
         run: docker-compose exec -T django python lbs/manage.py showmigrations
       
