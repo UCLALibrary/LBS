@@ -226,7 +226,7 @@ QDB_DB_PASSWORD_FILE=/run/secrets/qdb_password
 
 # Email server info
 QDB_SMTP_SERVER=smtp.gmail.com
-QDB_PORT=587
+QDB_SMTP_PORT=587
 QDB_FROM_ADDRESS=qdb.test.ucla.@gmail.com
 QDB_PASSWORD=unknown
 ```
@@ -297,7 +297,7 @@ export QDB_DB_PASSWORD="<ASK>"
 ##### Optional, for sending email
 ##### Note: see above in this document - the gmail smtp may not work after May 2022 when using username/password only
 export QDB_SMTP_SERVER="smtp.gmail.com"
-export QDB_PORT=587
+export QDB_SMTP_PORT=587
 export QDB_FROM_ADDRESS="qdb.test.ucla.@gmail.com"
 export QDB_PASSWORD="<ASK>"
 

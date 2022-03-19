@@ -13,7 +13,7 @@ def get_secret(key, default):
 
 
 # Environment
-# Can be 'dev', 'test', 'prod'
+# Can be 'dev' or 'prod'
 ENV = os.environ.get('DJANGO_RUN_ENV', 'dev')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -21,9 +21,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Email server
 SMTP_SERVER = os.environ['QDB_SMTP_SERVER']
-PORT = os.environ['QDB_PORT']
-# APP_IP = os.environ['QDB_APP_IP'] # The IP of the machine running this app
-APP_IP = '192.168.1.1'
+PORT = os.environ['QDB_SMTP_PORT']
+APP_IP = os.environ['QDB_APP_IP'] # The IP of the machine running this app
 FROM_ADDRESS = os.environ['QDB_FROM_ADDRESS']
 PASSWORD = os.environ['QDB_PASSWORD']
 

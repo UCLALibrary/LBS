@@ -4,13 +4,14 @@ services:
     build: .
     volumes: 
       - .:/home/django/LBS
-    ports: 
-      - "8000:8000"
-    secrets:
-      - qdb_password
     env_file:
       - .docker-compose_django.env
       - .docker-compose_db.env
+    ports: 
+      # Variables here must be set in environment, or in .env - not in any env_file
+      - "8000:8000"
+    secrets:
+      - qdb_password
     depends_on:
       - db
   db:
