@@ -17,24 +17,42 @@ class UnitAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
     def unit_aul(self, obj):
+        # if the current uit has an aul
         if(Recipient.objects.filter(unit_id=getattr(obj, "id")) & Recipient.objects.filter(role="aul")):
-            unit_aul_num = (Recipient.objects.filter(unit_id=getattr(
+
+            # id from the staff table of the staff member who is the aul of the current unit
+            staff_id_aul = (Recipient.objects.filter(unit_id=getattr(
                 obj, "id")) & Recipient.objects.filter(role="aul")).values_list('recipient_id', flat=True)
 
-            unit_aul = Staff.objects.filter(
-                id=unit_aul_num[0]).values_list('name', flat=True)
+            # name from the staff table of the staff member who is the aul of the current unit
+            staff_name_aul = Staff.objects.filter(
+                id=staff_id_aul[0]).values_list('name', flat=True)
 
-            aul_id = (Recipient.objects.filter(unit_id=getattr(
+            # id from the unit table of the current unit which has the staff member as the aul
+            unit_id_aul = (Recipient.objects.filter(unit_id=getattr(
                 obj, "id")) & Recipient.objects.filter(role="aul")).values_list('id', flat=True)
 
+            unit_id_num = getattr(obj, "id")
+            print("1 staff_id_aul=" + str(staff_id_aul))
+            print("2 staff_name_aul=" + str(staff_name_aul))
+            print("3 unit_id_aul=" + str(unit_id_aul))
+            print("4 unit_id_num=" + str(unit_id_num))
+            print("")
+
+            # return a link to manage the unit and role of the staff member currently designated aul of the current unit
             result = "<a href=../../../admin/qdb/recipient/" + \
-                str(aul_id[0]) + "/change/?_changelist_filters=o%3D1.6>" + \
-                str(unit_aul[0]) + "</a>"
+                str(unit_id_aul[0]) + "/change/>" + \
+                str(staff_name_aul[0]) + "</a>"
         else:
-            result = "<a href=../../../admin/qdb/recipient/add/>-----</a>"
+            # id from the unit table of the current unit
+            unit_id_num = getattr(obj, "id")
+            # return a link to add a recipient (staff member) and role to the current unit
+            result = "<a href=../../../admin/qdb/recipient/add/?unit=" + \
+                str(unit_id_num) + ">-----</a>"
         return mark_safe(result)
 
     def unit_head(self, obj):
+        unit_id_num = getattr(obj, "id")
         if(Recipient.objects.filter(unit_id=getattr(obj, "id")) & Recipient.objects.filter(role="head")):
             unit_head_num = (Recipient.objects.filter(unit_id=getattr(
                 obj, "id")) & Recipient.objects.filter(role="head")).values_list('recipient_id', flat=True)
@@ -49,11 +67,12 @@ class UnitAdmin(admin.ModelAdmin):
                 str(head_id[0]) + "/change/?_changelist_filters=o%3D1.6>" + \
                 str(unit_head[0]) + "</a>"
         else:
-            result = "<a href=../../../admin/qdb/recipient/add/>-----</a>"
+            result = "<a href=../../../admin/qdb/recipient/add/?unit=" + \
+                str(unit_id_num) + ">-----</a>"
         return mark_safe(result)
 
     def unit_assoc(self, obj):
-        init_id_num = getattr(obj, "id")
+        unit_id_num = getattr(obj, "id")
         if(Recipient.objects.filter(unit_id=getattr(obj, "id")) & Recipient.objects.filter(role="assoc")):
             unit_assoc_num = (Recipient.objects.filter(unit_id=getattr(
                 obj, "id")) & Recipient.objects.filter(role="assoc")).values_list('recipient_id', flat=True)
@@ -69,7 +88,7 @@ class UnitAdmin(admin.ModelAdmin):
                 str(unit_assoc[0]) + "</a>"
         else:
             result = "<a href=../../../admin/qdb/recipient/add/?unit=" + \
-                str(init_id_num) + ">-----</a>"
+                str(unit_id_num) + ">-----</a>"
         return mark_safe(result)
 
 
