@@ -165,7 +165,7 @@ Configure the ```else``` section around line 68 in ```views.py```
 - set ```override_recipients``` to receive reports sent via email to your email address
   -  ```override_recipients=['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]```
   - you must configure your own SMTP in ```.docker-compose_django.env```
-  - use caution to avoid accidentally blasting reports to unsuspecting recipients
+  - **use caution to avoid accidentally blasting reports to unsuspecting recipients**
   - set ```email=False``` and read the recipient address in the terminal to check recipient list  before sending emails
   - example config:
 
