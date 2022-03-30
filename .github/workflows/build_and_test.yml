@@ -17,9 +17,11 @@ jobs:
         run: sleep 15s
         shell: bash
 
-      - name: Logs
         # Check logs separately, GA not showing all of both together
+      - name: Logs (db)
         run: docker-compose -f $COMPOSE_FILE logs db --tail="all"
+
+      - name: Logs (django)
         run: docker-compose -f $COMPOSE_FILE logs django --tail="all"
 
       - name: Containers
