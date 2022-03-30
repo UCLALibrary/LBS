@@ -27,5 +27,5 @@ RUN pip install --no-cache-dir -r lbs/requirements.txt --user --no-warn-script-l
 # Expose the typical Django port
 EXPOSE 8000
 
-# For now, use the built-in Django application server when the container starts
-CMD [ "python", "lbs/manage.py", "runserver", "0.0.0.0:8000" ]
+# When container starts, run script for environment-specific actions
+CMD [ "sh", "docker_scripts/entrypoint.sh" ]
