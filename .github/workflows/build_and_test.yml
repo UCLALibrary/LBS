@@ -13,12 +13,16 @@ jobs:
       - name: Build the stack
         run: docker-compose -f $COMPOSE_FILE up --build -d
       
-      - name: Logs
-        run: docker-compose -f $COMPOSE_FILE logs
-
       - name: Wait for database
         run: sleep 15s
         shell: bash
+
+        # Check logs separately, GA not showing all of both together
+      - name: Logs (db)
+        run: docker-compose -f $COMPOSE_FILE logs --tail="all" db
+
+      - name: Logs (django)
+        run: docker-compose -f $COMPOSE_FILE logs --tail="all" django
 
       - name: Containers
         run: docker-compose -f $COMPOSE_FILE ps
@@ -26,12 +30,6 @@ jobs:
       - name: Top processes
         run: docker-compose -f $COMPOSE_FILE top
 
-      - name: Show environment - debugging
-        run: docker-compose -f $COMPOSE_FILE exec -T django env
-
-      - name: Show migrations - debugging
-        run: docker-compose -f $COMPOSE_FILE exec -T django python lbs/manage.py showmigrations
-      
       - name: Create models
         run: docker-compose -f $COMPOSE_FILE exec -T django python lbs/manage.py migrate
       
