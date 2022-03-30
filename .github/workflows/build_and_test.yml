@@ -13,12 +13,12 @@ jobs:
       - name: Build the stack
         run: docker-compose -f $COMPOSE_FILE up --build -d
       
-      - name: Logs
-        run: docker-compose -f $COMPOSE_FILE logs --tail="all"
-
       - name: Wait for database
         run: sleep 15s
         shell: bash
+
+      - name: Logs
+        run: docker-compose -f $COMPOSE_FILE logs --tail="all"
 
       - name: Containers
         run: docker-compose -f $COMPOSE_FILE ps
