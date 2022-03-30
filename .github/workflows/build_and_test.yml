@@ -14,7 +14,7 @@ jobs:
         run: docker-compose -f $COMPOSE_FILE up --build -d
       
       - name: Logs
-        run: docker-compose -f $COMPOSE_FILE logs
+        run: docker-compose $COMPOSE_FILE logs --tail="all"
 
       - name: Wait for database
         run: sleep 15s
@@ -26,12 +26,6 @@ jobs:
       - name: Top processes
         run: docker-compose -f $COMPOSE_FILE top
 
-      - name: Show environment - debugging
-        run: docker-compose -f $COMPOSE_FILE exec -T django env
-
-      - name: Show migrations - debugging
-        run: docker-compose -f $COMPOSE_FILE exec -T django python lbs/manage.py showmigrations
-      
       - name: Create models
         run: docker-compose -f $COMPOSE_FILE exec -T django python lbs/manage.py migrate
       
