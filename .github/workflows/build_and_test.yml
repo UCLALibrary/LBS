@@ -19,10 +19,10 @@ jobs:
 
         # Check logs separately, GA not showing all of both together
       - name: Logs (db)
-        run: docker-compose -f $COMPOSE_FILE logs db --tail="all"
+        run: docker-compose -f $COMPOSE_FILE logs --tail="all" db
 
       - name: Logs (django)
-        run: docker-compose -f $COMPOSE_FILE logs django --tail="all"
+        run: docker-compose -f $COMPOSE_FILE logs --tail="all" django
 
       - name: Containers
         run: docker-compose -f $COMPOSE_FILE ps
