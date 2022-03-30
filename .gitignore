@@ -132,3 +132,6 @@ dmypy.json
 *secret*
 *password*
 
+# Local static files colleced when testing gunicorn and whitenoise
+staticfiles/
+
