@@ -126,9 +126,14 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
+# https://docs.djangoproject.com/en/4.0/howto/static-files/
 
+# Django will add this URL, and serve static files from here
 STATIC_URL = '/static/'
+# Where on the file system should Django find our custom static files?
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+# Where will all static files - our custom + Django's?
+# This matters only when not using runserver, and using collectstaticfiles.
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # There is a timing issue with Whitenoise that is described here:
@@ -138,6 +143,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 if not os.path.isdir(STATIC_ROOT):
     os.makedirs(STATIC_ROOT, mode=0o755)
 
+# Improved caching with whitenoise when running in production.
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Default primary key field type
