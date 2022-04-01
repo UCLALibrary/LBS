@@ -19,8 +19,8 @@ class Command(BaseCommand):
                             help="Email the report to the recipients")
         parser.add_argument("-r", "--list_recipients", action="store_true",
                             help="Display the list of people to email for each report")
-        parser.add_argument("-o", "--override_recipients", action="store_const", const=None,
-                            help="List of dev(s) to email for each report")
+        parser.add_argument("-o", "--override_recipients", nargs='*', default=None,
+                            help="Space-delimited email address(es) to email for each report")
 
     def handle(self, *args, **options):
         list_units = options["list_units"]
