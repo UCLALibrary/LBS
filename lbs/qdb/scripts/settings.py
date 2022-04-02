@@ -8,11 +8,12 @@ ENV = os.environ.get('DJANGO_RUN_ENV', 'dev')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Email server
-SMTP_SERVER = os.environ['QDB_SMTP_SERVER']
-PORT = os.environ['QDB_SMTP_PORT']
-APP_IP = os.environ['QDB_APP_IP'] # The IP of the machine running this app
-FROM_ADDRESS = os.environ['QDB_FROM_ADDRESS']
-PASSWORD = os.environ['QDB_PASSWORD']
+SMTP_SERVER = os.environ['DJANGO_EMAIL_SMTP_SERVER']
+PORT = os.environ['DJANGO_EMAIL_SMTP_PORT']
+FROM_ADDRESS = os.environ['DJANGO_EMAIL_FROM_ADDRESS']
+PASSWORD = os.environ['DJANGO_EMAIL_PASSWORD']
+# akohler: Not sure this is important, but is used by SMTP call in sender.py
+APP_IP = os.environ['DJANGO_APP_IP'] # The IP of the machine running this app
 
 # QDB server
 DB_SERVER = os.environ['QDB_DB_SERVER']

@@ -159,3 +159,8 @@ MESSAGE_TAGS = {
     messages.WARNING: 'alert-warning',
     messages.ERROR: 'alert-danger',
 }
+
+# Email config
+# Backend does not currently matter, as the app's legacy sender.py uses smtplib directly, bypassing Django
+# But this will be helpful if/when that code is updated to use Django.
+EMAIL_BACKEND=os.getenv('DJANGO_EMAIL_BACKEND')
