@@ -167,19 +167,6 @@ class Orchestrator():
 
 
 if __name__ == "__main__":  # pragma: no cover
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-l", "--list_units", action="store_true",
-                    help="List all the units")
-    ap.add_argument("-y", "--year", type=int,
-                    help="Year of the report")
-    ap.add_argument("-m", "--month", type=int,
-                    help="Month number of the report")
-    ap.add_argument("-u", "--units", nargs='+',
-                    help="Unit ID number; if omitted all units will receive reports")
-    ap.add_argument("-e", "--email", action="store_true",
-                    help="Email the report to the recipients")
-    ap.add_argument("-r", "--list_recipients", action="store_true",
-                    help="Display the list of people to email for each report")
     args = ap.parse_args()
     try:
         orchestrator = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
