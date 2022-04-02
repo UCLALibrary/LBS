@@ -125,6 +125,16 @@ docker-compose exec django python lbs/manage.py dumpdata --indent 4 --exclude co
 ## Reports and Email
 ---
 
+To test email functionality as a developer:
+- There are placeholders in `.docker-compose_django.env`.  This file is under version control; do not edit to set local values.
+- Instead, create/edit `.docker-compose_secrets.env` and assign values there.  This file is loaded after other env files, so variables set here override all others:
+```
+DJANGO_EMAIL_SMTP_SERVER=your_smtp_server
+DJANGO_EMAIL_SMTP_PORT=your_smtp_port
+DJANGO_EMAIL_FROM_ADDRESS=your_email
+DJANGO_EMAIL_PASSWORD=your_email_password
+```
+
 The reports are generated and/or emailed by a management script which can be either run automatically by the submitting the form in the qdb app or run manually on the command line. In the _prod_ environment (```DJANGO_RUN_ENV=prod```), the reports are emailed to the recipients listed in ```LBS_RECIPIENTS``` **and** they are emailed to staff matches in the _recipients_ table.
 
 Alternatively, in the _dev_ environment (DJANGO_RUN_ENV=dev), the reports are emailed to the recipients listed in ```DEV_RECIPIENTS``` **and** they are emailed to staff matches in the _recipients_ table.
@@ -132,31 +142,17 @@ Alternatively, in the _dev_ environment (DJANGO_RUN_ENV=dev), the reports are em
 ```
 override_recipients=['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]
 ```
-
-- Note: In _dev_ only, the email is typically sent via your personal smtp (e.g. gmail.com). However, the Google company is discontinuing name/password access to their smtp and an alternative smtp will need to be used in local _dev_ environments after May 2022. _Prod_ already uses UCLA smtp and is not effected by Google's removal of this service. See:  [Less secure apps & your Google Account](https://support.google.com/accounts/answer/6010255#zippy=%2Cif-less-secure-app-access-is-on-for-your-account%2Cif-less-secure-app-access-is-off-for-your-account)
-
+- When testing functionality from the command line, override recipients via the `-o` switch:
 ```
-"To help keep your account secure, starting May 30, 2022, Google will no longer support the use of third-party apps or devices which ask you to sign in to your Google Account using only your username and password."
+# Example, testing current report
+# -u 5: Unit 5 (LHR)
+# -r: List recipients for this report, after overrides are applied
+# -o your@email.address: The override address; multiple addresses: -o address1 address2 etc.
+# -e: Send the report by email.  Only use when testing with -o override.
+python lbs/manage.py run_qdb_reporter -u 5 -r -o your@email.address -e
 ```
 
----
-**Use the qdb app to send emails with generated reports attached**
-- set the environment variables
-- specify a smtp server that you have access to
-
-```nano .docker-compose_django.env```
-
-- set the developer recipient list to your email
-- add other comma-delimited developers and/or unit staffmembers as needed for testing
-
-```nano lbs/qdb/scripts/settings.py```
-
-```
-DEV_RECIPIENTS = [
-    'janebruin@library.ucla.edu',
-    'joebruin@library.ucla.edu'
-]
-
+__TODO: Refactor code so editing `views.py` is not needed__
 ```
 Configure the ```else``` section around line 68 in ```views.py```
 - set ```email=True``` to enable sending of emails
@@ -185,14 +181,9 @@ Configure the ```else``` section around line 68 in ```views.py```
 - run the script with different flags to test
 - use the --email flag to send an email with the attached report(s) to the recipients
 
- 
-```
 docker-compose exec django python lbs/manage.py run_qdb_reporter -l
 docker-compose exec django python lbs/manage.py run_qdb_reporter-y 2017 -m 5 -u 6 -r
 
-```
-
-```
 -l --list_units - List all the units
 -y --year - Year of the report
 -m --month - Month number of the report
@@ -205,7 +196,7 @@ docker-compose exec django python lbs/manage.py run_qdb_reporter-y 2017 -m 5 -u 
 ---
 ## Testing
 ---
- Start the container in a terminal  then run tests from a second terminal  
+ Start the container in a terminal then run tests from a second terminal  
 
 ```
 #### terminal #1
@@ -216,7 +207,7 @@ docker-compose exec django python lbs/manage.py test qdb.tests
 ```
  
 ---
-## Validate your code
+## Inspect the Django project for common problems
 ---
 ```
 docker-compose exec django python lbs/manage.py check
