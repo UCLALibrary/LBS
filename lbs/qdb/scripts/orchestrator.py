@@ -164,18 +164,3 @@ class Orchestrator():
                 print(f'sent report {filename} to {recipients}')
             else:
                 print(f'generated report at {filename}')
-
-
-if __name__ == "__main__":  # pragma: no cover
-    args = ap.parse_args()
-    try:
-        orchestrator = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
-        if args.list_units is True:
-            print(orchestrator.list_units())
-            exit(0)
-        yyyymm = orchestrator.validate_date(args.year, args.month, yyyymm=True)
-        units = orchestrator.validate_units(args.units)
-        orchestrator.run(yyyymm, units, send_email=args.email,
-                         list_recipients=args.list_recipients)
-    except ValueError as e:
-        exit(e)
