@@ -23,8 +23,13 @@ class Orchestrator():
         fetch_results = self.cursor.fetchall()
 
     def get_conn(self):
+        db_host = os.getenv("DJANGO_DB_HOST")
+        db_name = os.getenv("DJANGO_DB_NAME")
+        db_user = os.getenv("DJANGO_DB_USER")
+        db_password = os.getenv("DJANGO_DB_PASSWORD")
+
         conn = psycopg2.connect(
-            "host=db dbname=qdb user=qdb_user password=dev_qdb_pass")
+            host=db_host, dbname=db_name, user=db_user, password=db_password)
         return conn
 
     def validate_date(self, year=None, month=None, yyyymm=False):
