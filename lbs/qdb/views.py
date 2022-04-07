@@ -60,8 +60,8 @@ def report(request):
 
 
 def run_qdb_reporter(unit_from_form, month_from_form, year_from_form):
-    # suppress unneeded outputs on prod
-    if ENV == 'prod':  # pragma: no cover
+    # suppress unneeded outputs in non-dev environment(s)
+    if ENV != 'dev':  # pragma: no cover
         call_command('run_qdb_reporter', list_units=False, year=int(year_from_form),
                      month=int(month_from_form), units=[unit_from_form], email=True, list_recipients=False)
     # in dev, set list_units, list_recipients True for more information printed to the terminal
