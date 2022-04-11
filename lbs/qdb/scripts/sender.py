@@ -48,7 +48,9 @@ def send_report(data, filename, recipients):
     text = message.as_string()
 
     with SMTP(SMTP_SERVER, PORT, APP_IP) as server:
-        if ENV != 'prod':
+        # Local devs use gmail which requires smtp auth and tls.
+        # Central test/prod environment uses ucla smtp: no auth/tls, ip-restricted.
+        if ENV == 'dev':
             server.ehlo()
             server.starttls(context=create_default_context())
             server.ehlo()
