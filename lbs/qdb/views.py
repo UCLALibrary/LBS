@@ -20,9 +20,17 @@ def report(request):
             unit_name = form.cleaned_data['unit'].name
             year = form.cleaned_data['year']
             month = form.cleaned_data['month']
+            send_email = form.cleaned_data['send_email']
+            override_recipients = form.cleaned_data['override_recipients']
+            # Comes through as empty string if no value set
+            if override_recipients == '':
+                override_recipients = None
+            else:
+                # Convert to list by splitting on space between addresses, if present
+                override_recipients = override_recipients.split()
 
             try:
-                report = run_qdb_reporter(unit, month, year)
+                report = run_qdb_reporter(unit, month, year, send_email, override_recipients)
                 messages.success(
                     request, 'QDB report successfully generated.', extra_tags=unit_name)
             except Exception as e:
@@ -56,19 +64,21 @@ def report(request):
 
     else:
         form = ReportForm()
-        return render(request, 'form.html', {'form': form})
+        # Inclue ENV for possible dev/test/prod conditional display of form fields.
+        return render(request, 'form.html', {'form': form, 'ENV': ENV})
 
 
-def run_qdb_reporter(unit_from_form, month_from_form, year_from_form):
-    # suppress unneeded outputs in non-dev environment(s)
-    if ENV != 'dev':  # pragma: no cover
-        call_command('run_qdb_reporter', list_units=False, year=int(year_from_form),
-                     month=int(month_from_form), units=[unit_from_form], email=True, list_recipients=False)
-    # in dev, set list_units, list_recipients True for more information printed to the terminal
+def run_qdb_reporter(unit_from_form, month_from_form, year_from_form, send_email, override_recipients):
+    # Suppress unit debugging list in non-dev environment.
+    # list_recipients is useful, leave it on.
+    if ENV != 'dev':
+        list_units = False
     else:
-        # for override_recipients, set to either None or your desired email(s) ['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]
-        call_command('run_qdb_reporter', list_units=True, year=int(year_from_form),
-                     month=int(month_from_form), units=[unit_from_form], email=False, list_recipients=True, override_recipients=None)
+        list_units = True
+    # Run the report, send it by email if appropriate
+    call_command('run_qdb_reporter', list_units=list_units, year=int(year_from_form),
+                 month=int(month_from_form), units=[unit_from_form], email=send_email, 
+                 list_recipients=True, override_recipients=override_recipients)
 
 
 def logoutandlogin(request):

@@ -1,7 +1,7 @@
 import os
 
 # Environment
-# Can be 'dev' or 'prod'
+# Can be 'dev', 'test' or 'prod' - default to 'dev'
 ENV = os.environ.get('DJANGO_RUN_ENV', 'dev')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -12,7 +12,7 @@ SMTP_SERVER = os.environ['DJANGO_EMAIL_SMTP_SERVER']
 PORT = os.environ['DJANGO_EMAIL_SMTP_PORT']
 FROM_ADDRESS = os.environ['DJANGO_EMAIL_FROM_ADDRESS']
 PASSWORD = os.environ['DJANGO_EMAIL_PASSWORD']
-# akohler: Not sure this is important, but is used by SMTP call in sender.py
+# This is used by SMTP call in sender.py
 APP_IP = os.environ['DJANGO_APP_IP'] # The IP of the machine running this app
 
 # QDB server
@@ -36,7 +36,7 @@ SDLS_CONTACT_TITLE = "Head, Software Development & Library Systems"
 SLDS_CONTACT_EMAIL = "joshuagomez@library.ucla.edu"
 
 # Report Recipients
-# override by setting override_recipients in views.py
+# Used only when running tests
 TEST_RECIPIENT = os.environ.get('QDB_TEST_RECIPIENT', FROM_ADDRESS)
 
 DEV_RECIPIENTS = [
@@ -49,11 +49,11 @@ LBS_RECIPIENTS = [
     'jian@library.ucla.edu'  # Sandy Ma
 ]
 
-if ENV == 'prod':  # pragma: no cover
-    DEFAULT_RECIPIENTS = LBS_RECIPIENTS
-else:
+# akohler 20220414: test env will be treated like prod until rancher rebuild
+if ENV == 'dev':  # pragma: no cover
     DEFAULT_RECIPIENTS = DEV_RECIPIENTS
-
+else:
+    DEFAULT_RECIPIENTS = LBS_RECIPIENTS
 
 # Message strings
 MESSAGE_CLOSER = f'''

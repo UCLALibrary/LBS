@@ -26,7 +26,7 @@ if [ "$DJANGO_RUN_ENV" = "dev" ]; then
 fi
 
 if [ "$DJANGO_RUN_ENV" = "dev" ]; then
-  python "$APP_DIR"/manage.py runserver 0.0.0.0:8000
+  PYTHONUNBUFFERED=1 python "$APP_DIR"/manage.py runserver 0.0.0.0:8000
 else
   # Build static files directory, starting fresh each time - do we really need this?
   python "$APP_DIR"/manage.py collectstatic --no-input

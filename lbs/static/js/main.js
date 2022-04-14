@@ -7,6 +7,8 @@ const form = document.getElementById('p-form')
 const unit = document.getElementById('id_unit')
 const year = document.getElementById('id_year')
 const month = document.getElementById('id_month')
+const send_email = document.getElementById('id_send_email')
+const override_recipients = document.getElementById('id_override_recipients')
 const csrf = document.getElementsByName('csrfmiddlewaretoken')
 
 const url = ""
@@ -28,6 +30,8 @@ $(function () {
         formData.append('unit', unit.value)
         formData.append('year', year.value)
         formData.append('month', month.value)
+        formData.append('send_email', send_email.checked) // checkboxes are different!
+        formData.append('override_recipients', override_recipients.value)
 
         // display "long wait" warning if All units was specified
         var unit_selected = $("#id_unit option:selected").text();
