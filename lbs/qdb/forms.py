@@ -32,3 +32,5 @@ class ReportForm(forms.Form):
         choices=YEARS, initial=year_default)
     month = forms.ChoiceField(
         choices=MONTHS, initial=month_default)
+    send_email = forms.BooleanField(required=False, initial=True)
+    override_recipients = forms.CharField(required=False)

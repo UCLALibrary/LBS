@@ -138,10 +138,8 @@ DJANGO_EMAIL_PASSWORD=your_email_password
 The reports are generated and/or emailed by a management script which can be either run automatically by the submitting the form in the qdb app or run manually on the command line. In the _prod_ environment (```DJANGO_RUN_ENV=prod```), the reports are emailed to the recipients listed in ```LBS_RECIPIENTS``` **and** they are emailed to staff matches in the _recipients_ table.
 
 Alternatively, in the _dev_ environment (DJANGO_RUN_ENV=dev), the reports are emailed to the recipients listed in ```DEV_RECIPIENTS``` **and** they are emailed to staff matches in the _recipients_ table.
-- The recipient email list may be overridden by setting the ```override_recipients``` argument in ``` views.py``` to one or more email addresses:
-```
-override_recipients=['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]
-```
+- The recipient email list may be overridden by setting the ```override_recipients``` (command-line) or by entering one
+or more email addresses, separate by spaces, in the `Override recipients` text box in the UI.
 - When testing functionality from the command line, override recipients via the `-o` switch:
 ```
 # Example, testing current report
@@ -151,24 +149,6 @@ override_recipients=['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]
 # -e: Send the report by email.  Only use when testing with -o override.
 python lbs/manage.py run_qdb_reporter -u 5 -r -o your@email.address -e
 ```
-
-__TODO: Refactor code so editing `views.py` is not needed__
-```
-Configure the ```else``` section around line 68 in ```views.py```
-- set ```email=True``` to enable sending of emails
-  - if ```email=False``` no emails are sent
-  - if ```email=False``` reports are stored in the server file system in lbs/qdb/reports/
-- set ```override_recipients``` to receive reports sent via email to your email address
-  -  ```override_recipients=['email1@library.ucla.edu', 'email2@library.ucla.edu', ...]```
-  - you must configure your own SMTP in ```.docker-compose_django.env```
-  - **use caution to avoid accidentally blasting reports to unsuspecting recipients**
-  - set ```email=False``` and read the recipient address in the terminal to check recipient list  before sending emails
-  - example config:
-
-```nano lbs/qdb/views.py```
-```
-        call_command('run_qdb_reporter', list_units=True, year=int(year_from_form),
-                     month=int(month_from_form), units=[unit_from_form], email=False, list_recipients=True, override_recipients=['youremail1@library.ucla.edu')]
 
 ```
 ---
