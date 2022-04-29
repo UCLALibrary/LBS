@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Write python output in real time without buffering
+export PYTHONUNBUFFERED=1
+
 # LBS Django project may have multiple applications, though only 1 at present
 APP_DIR=lbs
 
@@ -26,7 +29,7 @@ if [ "$DJANGO_RUN_ENV" = "dev" ]; then
 fi
 
 if [ "$DJANGO_RUN_ENV" = "dev" ]; then
-  PYTHONUNBUFFERED=1 python "$APP_DIR"/manage.py runserver 0.0.0.0:8000
+  python "$APP_DIR"/manage.py runserver 0.0.0.0:8000
 else
   # Build static files directory, starting fresh each time - do we really need this?
   python "$APP_DIR"/manage.py collectstatic --no-input
@@ -35,8 +38,9 @@ else
   # Gunicorn cmd line flags:
   # -w number of gunicorn worker processes
   # -b IPADDR:PORT binding
+  # -t timeout in seconds.  This needs to allow *total* time for reports - 5-10 minutes for all reports at once.
   # --access-logfile where to send HTTP access logs (- is stdout)
-  export GUNICORN_CMD_ARGS="-w 3 -b 0.0.0.0:8000 --access-logfile -"
+  export GUNICORN_CMD_ARGS="-w 3 -b 0.0.0.0:8000 -t 600 --access-logfile -"
   cd "$APP_DIR"
   gunicorn lbs.wsgi:application
 fi
