@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lbs.fullname" . }}
+  namespace: lbs{{ .Values.django.env.run_env }}
+  labels:
+    {{- include "lbs.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.django.env.target_port | default "8000" }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "lbs.selectorLabels" . | nindent 4 }}
