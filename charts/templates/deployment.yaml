@@ -23,7 +23,7 @@ spec:
             - configMapRef:
                 name: {{ include "lbs.fullname" . }}-configmap
             - secretRef:
-                name: {{ template "lbs.fullname" . }}-externalsecret
+                name: {{ include "lbs.fullname" . }}-secrets
           ports:
             - name: http
               containerPort: 8000
