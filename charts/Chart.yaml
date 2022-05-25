@@ -1,0 +1,5 @@
+apiVersion: v2
+appVersion: "0.1"
+description: Chart for LBS Django applications, including QDB UI
+name: lbs
+version: 0.0.9

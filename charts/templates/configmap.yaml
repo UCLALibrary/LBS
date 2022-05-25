@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "lbs.fullname" . }}-configmap
+  namespace: lbs{{ .Values.django.env.run_env }}
+  labels:
+    {{- include "lbs.labels" . | nindent 4 }}
+data:
+  DJANGO_RUN_ENV: {{ .Values.django.env.run_env }}
+  DJANGO_DEBUG: {{ .Values.django.env.debug | quote }}
+  DJANGO_ALLOWED_HOSTS: {{ range .Values.django.env.allowed_hosts }}{{ . | quote }}{{ end }}
+  DJANGO_DB_BACKEND: {{ .Values.django.env.db_backend }}
+  DJANGO_DB_NAME: {{ .Values.django.env.db_name }}
+  DJANGO_DB_USER: {{ .Values.django.env.db_user }}
+  DJANGO_DB_HOST: {{ .Values.django.env.db_host }}
+  DJANGO_DB_PORT: {{ .Values.django.env.db_port | quote }}
+  DJANGO_TEST_DB_NAME: {{ .Values.django.env.test_db_name }}
+  DJANGO_EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+  DJANGO_EMAIL_SMTP_SERVER: {{ .Values.django.env.email_smtp_server }}
+  DJANGO_EMAIL_SMTP_PORT: {{ .Values.django.env.email_smtp_port | quote }}
+  DJANGO_EMAIL_FROM_ADDRESS: {{ .Values.django.env.email_from_address }}
+  DJANGO_EMAIL_PASSWORD: {{ .Values.django.env.email_password }}
+  # This doesn't seem mandatory, but the legacy QDB app uses it
+  DJANGO_APP_IP: {{ .Values.django.env.app_ip }}
+  # QDB database server
+  QDB_DB_SERVER: {{ .Values.django.env.qdb_db_server }}
+  QDB_DB_DATABASE: {{ .Values.django.env.qdb_db_database }}
+  QDB_DB_USER: {{ .Values.django.env.qdb_db_user }}
