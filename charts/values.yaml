@@ -59,7 +59,6 @@ django:
 
   externalSecrets:
     enabled: "false"
-    backend: "systemManager"
     env: {}
     # Include below if enabled: "true"
     #  db_password: ""
