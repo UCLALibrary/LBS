@@ -40,8 +40,8 @@ AND glb.cost_center_code IN (CC_PLACEHOLDERS)
 """
 
 QDB_QUERY_FYE_FILTER = """
--- For fiscal year end, also limit to "final" closeout
-AND glb.fye_proc_ind = 'F'
+-- For fiscal year end, also limit to "preliminary" closeout
+AND glb.fye_proc_ind = 'P'
 """
 
 QDB_QUERY_GROUP_ORDER_CLAUSE = """
