@@ -48,16 +48,17 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(Recipient)
 class RecipientAdmin(admin.ModelAdmin):
-    list_display = ('recipient_id', 'name', 'unit_id', 'unit', 'role')
-    ordering = ('recipient_id', 'role',)
+    list_display = ('get_name', 'get_unit', 'role')
+    ordering = ('unit__name', 'role',)
+    search_fields = ['recipient__name', 'unit__name', 'role']
 
-    def name(self, obj):
-        result = Staff.objects.filter(id=getattr(obj, "recipient_id"))[0]
-        return result
+    @admin.display(description='Name', ordering='recipient__name')
+    def get_name(self, recipient):
+        return recipient.recipient.name
 
-    def unit(self, obj):
-        result = Staff.objects.filter(unit_id=getattr(obj, "recipient_id"))[0]
-        return result
+    @admin.display(description='Unit', ordering='unit__name')
+    def get_unit(self, recipient):
+        return recipient.unit.name
 
 
 # given unit, add aul, head and assoc recipients as links to edit the recipient
