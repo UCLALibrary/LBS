@@ -6,7 +6,7 @@ from .models import Account, Recipient, Staff, Unit
 # create page to display units
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'email')
+    list_display = ('name', 'email')
     ordering = ('name',)
     search_fields = ('name', 'email')
 
