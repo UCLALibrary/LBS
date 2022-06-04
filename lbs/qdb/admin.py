@@ -37,11 +37,13 @@ class UnitAdmin(admin.ModelAdmin):
 # create page to display accounts
 @ admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ('account', 'title', 'cost_center')
+    list_display = ('account', 'title', 'cost_center', 'get_unit')
     ordering = ('title',)
-    search_fields = ('title',)
+    search_fields = ['account', 'title', 'unit__name']
 
-# create page to display recipients through table
+    @admin.display(description='Unit', ordering='unit__name')
+    def get_unit(self, account):
+        return account.unit.name
 
 
 @admin.register(Recipient)
