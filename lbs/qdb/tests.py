@@ -52,7 +52,7 @@ class AdminTestCase(TestCase):
 
         namestaff = Staff.objects.get(name='Todd Grappone')
         nameobj = Recipient.objects.get(id=namestaff.id)
-        recipient = RecipientAdmin.name(RecipientAdmin, nameobj)
+        recipient = RecipientAdmin.get_name(RecipientAdmin, nameobj)
         self.assertEqual(str(recipient), str(namestaff))
 
         unit = Recipient.objects.get(pk=1)
