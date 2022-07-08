@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'charts/**'
+      - '!charts/*-*-values.yaml'
     branches:
       - main
 

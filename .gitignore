@@ -131,6 +131,9 @@ dmypy.json
 # Local app-specific secrets
 *secret*
 *password*
+# But allow Helm secrets
+!secrets.yaml
+!externalsecret.yaml
 
 # Local static files colleced when testing gunicorn and whitenoise
 staticfiles/
