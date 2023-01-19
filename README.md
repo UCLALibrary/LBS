@@ -89,7 +89,7 @@ docker rmi $(docker images -q --filter "dangling=true")
   - `QDB_DB_PASSWORD` is defined in `.docker-compose_secrets.env` - ask a team member for this file.  This file is used only in development.
   - Do not commit this file (file names containing "secret" are excluded via the .gitignore file)
   - Browse to the Report Form on your local machine:
-[http://http://localhost:8000/qdb/report/](http://http://localhost:8000/qdb/report/)
+[http://localhost:8000/qdb/report/](http://http://localhost:8000/qdb/report/)
 ---
 **Work with the underlying PostgreSQL database in its own docker container**
 ```
@@ -162,7 +162,7 @@ python lbs/manage.py run_qdb_reporter -u 5 -r -o your@email.address -e
 - use the --email flag to send an email with the attached report(s) to the recipients
 
 docker-compose exec django python lbs/manage.py run_qdb_reporter -l
-docker-compose exec django python lbs/manage.py run_qdb_reporter-y 2017 -m 5 -u 6 -r
+docker-compose exec django python lbs/manage.py run_qdb_reporter -y 2017 -m 5 -u 6 -r
 
 -l --list_units - List all the units
 -y --year - Year of the report
