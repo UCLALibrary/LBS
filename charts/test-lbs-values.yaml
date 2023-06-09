@@ -63,6 +63,9 @@ django:
 
   externalSecrets:
     enabled: "true"
+    annotations:
+      helm.sh/hook: "pre-install,pre-upgrade"
+      helm.sh/hook-delete-policy: "before-hook-creation"
     env:
       # Application database used by django
       db_password: "/systems/testsoftwaredev/lbstest/db_password"
