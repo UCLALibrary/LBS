@@ -64,8 +64,7 @@ django:
   externalSecrets:
     enabled: "true"
     annotations:
-      helm.sh/hook: "pre-install,pre-upgrade"
-      helm.sh/hook-delete-policy: "before-hook-creation"
+      argocd.argoproj.io/sync-wave: "-1"
     env:
       # Application database used by django
       db_password: "/systems/testsoftwaredev/lbstest/db_password"
