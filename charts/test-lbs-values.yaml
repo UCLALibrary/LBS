@@ -67,10 +67,10 @@ django:
       argocd.argoproj.io/sync-wave: "-1"
     env:
       # Application database used by django
-      db_password: "/systems/testsoftwaredev/lbstest/db_password"
-      django_secret_key: "/systems/testsoftwaredev/lbstest/django_secret_key"
+      db_password: "/systems/testrke01/lbstest/db_password"
+      django_secret_key: "/systems/testrke01/lbstest/django_secret_key"
       # UCLA QDB database, from which data is pulled for reports
-      qdb_db_password: "/systems/testsoftwaredev/lbstest/qdb_db_password"
+      qdb_db_password: "/systems/testrke01/lbstest/qdb_db_password"
 
 resources:
   limits:
