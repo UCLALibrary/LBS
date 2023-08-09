@@ -23,5 +23,5 @@
 *.tmproj
 .vscode/
 # Environment-specific Values files
-/test-dlcsstaffui-values.yaml
-/prod-dlcsstaffui-values.yaml
+/test-lbs-values.yaml
+/prod-lbs-values.yaml
