@@ -17,7 +17,7 @@ def report(request):
     # For now I'm going with the equivalent, per
     # https://docs.djangoproject.com/en/3.1/ref/request-response/#django.http.HttpRequest.is_ajax
     # TODO: Is this ajax check really needed?
-    if request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest":
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         submitbutton = request.POST.get("submit")
         form = ReportForm(request.POST or None)
         if form.is_valid():
