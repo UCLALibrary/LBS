@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-import argparse
 import arrow
 import os
 import psycopg2
-from sys import exit
 
-from qdb.scripts.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.scripts.settings import UL_NAME
 from qdb.scripts import fetcher, formatter, sender
 from qdb.scripts.parser import Parser
 
@@ -104,11 +102,12 @@ class Orchestrator:
                 continue
             try:
                 os.remove(os.path.join(self.reports_dir, f))
-            except:  # pragma: no cover
+            except FileNotFoundError:
                 print(f"Could not delete from reports directory: {f}")
 
     def get_recipients(self, unit_id, unit_name):
-        # recipients is initialized to either developers (dev mode) or to LBS (prod mode), unit recipients are added.
+        # recipients is initialized to either developers (dev mode) or to LBS (prod mode);
+        # unit recipients are added.
         recipients = set(self.recipients)
         cmd = """
             SELECT email
@@ -116,9 +115,13 @@ class Orchestrator:
             WHERE qdb_recipient.unit_id = %s
             AND qdb_staff.name != %s"""
         if unit_name == "LBS":
-            cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')"
+            cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id"
+            cmd += " AND qdb_recipient.role = 'head')"
         else:
-            cmd += " AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'assoc'))"
+            cmd += """
+              AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')
+                OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul')
+                OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'assoc'))"""
         self.cursor.execute(cmd, [unit_id, UL_NAME])
         recipients.update([r[0] for r in self.cursor.fetchall()])
         return recipients
@@ -148,7 +151,7 @@ class Orchestrator:
                 for r in sorted(recipients):
                     print(f"-- {r}")
                     continue
-            print(f"")
+            print("")
             parser = Parser(yyyymm, unit_name)
             for account, cc_list in self.get_accounts_for_unit(unit_id):
                 print(
