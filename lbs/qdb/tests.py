@@ -4,6 +4,7 @@ from django.test import TestCase
 from qdb.models import Staff, Unit, Account, Subcode, Recipient
 from .admin import RecipientAdmin
 from qdb.scripts.settings import DEFAULT_RECIPIENTS, REPORTS_DIR
+from qdb.scripts.formatter import calculate_fiscal_year_remainder
 from qdb.scripts.orchestrator import Orchestrator
 from qdb.scripts.parser import Parser
 import os
@@ -75,6 +76,14 @@ class ModelsTestCase(TestCase):
         self.assertEqual(str(recipient.unit), "Oral History")
 
 
+class FormatterTest(TestCase):
+    def test_calculates_fiscal_year_remainder(self):
+        self.assertEqual(calculate_fiscal_year_remainder(7), "92%")
+        self.assertEqual(calculate_fiscal_year_remainder(12), "50%")
+        self.assertEqual(calculate_fiscal_year_remainder(1), "42%")
+        self.assertEqual(calculate_fiscal_year_remainder(6), "0%")
+
+
 class OrchestratorTest(TestCase):
     def setUp(self):
         self.orch = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
@@ -141,9 +150,57 @@ class OrchestratorTest(TestCase):
         with self.assertRaises(ValueError):
             self.orch.validate_date(2020, 13, True)
 
-    def test_invalid_units(self):
-        with self.assertRaises(ValueError):
-            self.orch.validate_units([1, "bogus", 2, 3])
+    def test_get_all_units(self):
+        units = self.orch.get_all_units()
+        self.assertEqual(type(units), list)
+        self.assertTrue(len(units) > 0)
+
+    def test_validate_gets_all_units(self):
+        units = self.orch.validate_units()
+        self.assertEqual(type(units), list)
+        self.assertTrue(len(units) > 0)
+
+    def test_get_accounts_for_unit(self):
+        results = self.orch.get_accounts_for_unit(27)
+        self.assertEqual(len(results), 7)
+        accts = [432974, 432975, 432976, 622975, 622976, 782975, 782976]
+        for i in range(len(accts)):
+            with self.subTest(i=i):
+                self.assertTrue(str(accts[i]) in [t[0] for t in results])
+
+    def test_get_cost_centers_for_accounts_for_unit(self):
+        results = self.orch.get_accounts_for_unit(27)
+        self.assertEqual(len(results), 7)
+        ccs = [
+            "2A",
+            "2B",
+            "3A",
+            "3M",
+            "5A",
+            "5B",
+            "5C",
+            "5D",
+            "5T",
+            "5X",
+            "6A",
+            "6C",
+            "S1",
+            "S2",
+        ]
+        for i in range(len(ccs)):
+            with self.subTest(i=i):
+                self.assertTrue(str(ccs[i]) in results[1][1])
+
+    def test_get_accounts_for_units_structure(self):
+        results = self.orch.get_accounts_for_unit(27)
+        self.assertEqual(type(results), list)
+        for acct, ccs in results:
+            with self.subTest(i=acct):
+                self.assertEqual(len(acct), 6)
+                self.assertEqual(type(ccs), list)
+                for cc in ccs:
+                    with self.subTest(i=cc):
+                        self.assertTrue(len(cc) == 2)
 
 
 class ParserTest(TestCase):
