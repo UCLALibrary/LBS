@@ -15,8 +15,8 @@ class Orchestrator:
         self.recipients = recipients
         self.conn = self.get_conn()
         self.cursor = self.conn.cursor()
-        self.cursor.execute("SELECT * FROM qdb_unit ORDER BY name")
-        fetch_results = self.cursor.fetchall()
+        # self.cursor.execute("SELECT * FROM qdb_unit ORDER BY name")
+        # fetch_results = self.cursor.fetchall()
 
     def get_conn(self):
         db_host = os.getenv("DJANGO_DB_HOST")
