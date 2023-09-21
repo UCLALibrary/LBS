@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
 
-import argparse
 import arrow
 import os
 import psycopg2
-from sys import exit
 
-from qdb.scripts.settings import REPORTS_DIR, DEFAULT_RECIPIENTS, UL_NAME
+from qdb.scripts.settings import UL_NAME
 from qdb.scripts import fetcher, formatter, sender
 from qdb.scripts.parser import Parser
 
 
-class Orchestrator():
-
+class Orchestrator:
     def __init__(self, reports_dir, recipients):
         self.reports_dir = reports_dir
         self.recipients = recipients
         self.conn = self.get_conn()
         self.cursor = self.conn.cursor()
-        self.cursor.execute(
-            'SELECT * FROM qdb_unit ORDER BY name')
-        fetch_results = self.cursor.fetchall()
+        # self.cursor.execute("SELECT * FROM qdb_unit ORDER BY name")
+        # fetch_results = self.cursor.fetchall()
 
     def get_conn(self):
         db_host = os.getenv("DJANGO_DB_HOST")
@@ -29,7 +25,8 @@ class Orchestrator():
         db_password = os.getenv("DJANGO_DB_PASSWORD")
 
         conn = psycopg2.connect(
-            host=db_host, dbname=db_name, user=db_user, password=db_password)
+            host=db_host, dbname=db_name, user=db_user, password=db_password
+        )
         return conn
 
     def validate_date(self, year=None, month=None, yyyymm=False):
@@ -39,50 +36,49 @@ class Orchestrator():
             month = report_date.month
             year = report_date.year
         elif not (year and month):
-            raise ValueError(
-                "ERROR: You must supply both year and month or neither")
+            raise ValueError("ERROR: You must supply both year and month or neither")
         elif month < 1 or month > 12:
             raise ValueError("ERROR: month must be a number from 1 to 12")
         elif arrow.get(year=year, month=month, day=1) > today:
             raise ValueError("ERROR: cannot request a future report")
         if yyyymm is True:
-            return f'{year}{month:02}'
+            return f"{year}{month:02}"
         return year, month
 
     def get_all_units(self):
-        self.cursor.execute('SELECT * FROM qdb_unit ORDER BY name')
+        self.cursor.execute("SELECT * FROM qdb_unit ORDER BY name")
         results = self.cursor.fetchall()
         return results
 
     def list_units(self):
         units = self.get_all_units()
         name_length = max([len(u[1]) for u in units])
-        header = '\nID | Name'
-        bar = '---|' + '-' * name_length
+        header = "\nID | Name"
+        bar = "---|" + "-" * name_length
         msg = [header, bar]
         for row in units:
-            msg.append(f'{row[0]:>2} | {row[1]}')
-        return '\n'.join(msg)
+            msg.append(f"{row[0]:>2} | {row[1]}")
+        return "\n".join(msg)
 
     def validate_units(self, unit_ids=None):
         # similar: match multiple rows in MYSQL with info from python list
         if unit_ids is None:
             return self.get_all_units()
-        qms = ','.join(['%s']*len(unit_ids))
-        cmd = f'SELECT * FROM qdb_unit WHERE id IN ({qms})'
+        qms = ",".join(["%s"] * len(unit_ids))
+        cmd = f"SELECT * FROM qdb_unit WHERE id IN ({qms})"
         self.cursor.execute(cmd, unit_ids)
         rows = self.cursor.fetchall()
         for row in rows:
-            if row[1] == 'All units':
+            if row[1] == "All units":
                 return self.get_all_units()
         if len(rows) < len(unit_ids):
-            bad_ids = set(unit_ids) - set([r['id'] for r in rows])
+            bad_ids = set(unit_ids) - set([r["id"] for r in rows])
             raise ValueError(f"ERROR: Unit ID does not exist {bad_ids}")
         return rows
 
     def get_accounts_for_unit(self, unit_id):
         # separate Library Materials (LM) from other cost centers, as requested
-        cmd = '''
+        cmd = """
             SELECT qdb_account.account, string_agg(qdb_account.cost_center, ',') AS cc_list
             FROM qdb_account, qdb_unit
             WHERE qdb_account.cost_center != 'LM'
@@ -95,32 +91,37 @@ class Orchestrator():
             FROM qdb_account, qdb_unit
             WHERE qdb_account.cost_center = 'LM'
             AND qdb_account.unit_id = qdb_unit.id
-            AND qdb_unit.id = %s'''
+            AND qdb_unit.id = %s"""
         self.cursor.execute(cmd, [unit_id, unit_id])
         results = self.cursor.fetchall()
-        return [(row[0], row[1].split(',')) for row in sorted(results)]
+        return [(row[0], row[1].split(",")) for row in sorted(results)]
 
     def cleanup_reports_dir(self):
         for f in os.listdir(self.reports_dir):
-            if f == '.gitignore':
+            if f == ".gitignore":
                 continue
             try:
                 os.remove(os.path.join(self.reports_dir, f))
-            except:  # pragma: no cover
-                print(f'Could not delete from reports directory: {f}')
+            except FileNotFoundError:
+                print(f"Could not delete from reports directory: {f}")
 
     def get_recipients(self, unit_id, unit_name):
-        # recipients is initialized to either developers (dev mode) or to LBS (prod mode), unit recipients are added.
+        # recipients is initialized to either developers (dev mode) or to LBS (prod mode);
+        # unit recipients are added.
         recipients = set(self.recipients)
-        cmd = '''
+        cmd = """
             SELECT email
             FROM qdb_staff, qdb_unit, qdb_recipient
             WHERE qdb_recipient.unit_id = %s
-            AND qdb_staff.name != %s'''
-        if unit_name == 'LBS':
-            cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')"
+            AND qdb_staff.name != %s"""
+        if unit_name == "LBS":
+            cmd += " AND (qdb_staff.id = qdb_recipient.recipient_id"
+            cmd += " AND qdb_recipient.role = 'head')"
         else:
-            cmd += " AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul') OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'assoc'))"
+            cmd += """
+              AND ((qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'head')
+                OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'aul')
+                OR (qdb_staff.id = qdb_recipient.recipient_id AND qdb_recipient.role = 'assoc'))"""
         self.cursor.execute(cmd, [unit_id, UL_NAME])
         recipients.update([r[0] for r in self.cursor.fetchall()])
         return recipients
@@ -129,7 +130,14 @@ class Orchestrator():
         name = f"{unit_name.replace(' ','_')}_{yyyymm[:4]}_{yyyymm[4:]}.xlsx"
         return os.path.join(self.reports_dir, name)
 
-    def run(self, yyyymm, units, send_email=False, override_recipients=None, list_recipients=False):
+    def run(
+        self,
+        yyyymm,
+        units,
+        send_email=False,
+        override_recipients=None,
+        list_recipients=False,
+    ):
         for unit in units:
             unit_id = unit[0]
             unit_name = unit[1]
@@ -141,22 +149,23 @@ class Orchestrator():
             if list_recipients is True:
                 print(f"\n{unit_name} recipients:")
                 for r in sorted(recipients):
-                    print(f'-- {r}')
+                    print(f"-- {r}")
                     continue
-            print(f"")
+            print("")
             parser = Parser(yyyymm, unit_name)
             for account, cc_list in self.get_accounts_for_unit(unit_id):
                 print(
-                    f'running {yyyymm} report of {account}{cc_list} for unit {unit_name}')
+                    f"running {yyyymm} report of {account}{cc_list} for unit {unit_name}"
+                )
                 rows = fetcher.get_qdb_data(yyyymm, account, cc_list)
                 if len(rows) == 0:  # pragma: no cover
-                    print(f'No data from QDB for {account}{cc_list}')
+                    print(f"No data from QDB for {account}{cc_list}")
                     continue
                 result = parser.add_account(account, cc_list, rows)
                 if result is False:  # pragma: no cover
-                    print(f'Account {account} is empty. Exclude from report')
-            if len(parser.data['accounts']) == 0:  # pragma: no cover
-                print(f'All accounts empty. No report generated for {unit}')
+                    print(f"Account {account} is empty. Exclude from report")
+            if len(parser.data["accounts"]) == 0:  # pragma: no cover
+                print(f"All accounts empty. No report generated for {unit}")
                 continue
             filename = self.generate_filename(unit_name, yyyymm)
             formatter.generate_report(parser.data, filename)
@@ -164,6 +173,6 @@ class Orchestrator():
             if send_email is True:
                 sender.send_report(parser.data, filename, recipients)
                 os.remove(filename)
-                print(f'sent report {filename} to {recipients}')
+                print(f"sent report {filename} to {recipients}")
             else:
-                print(f'generated report at {filename}')
+                print(f"generated report at {filename}")
