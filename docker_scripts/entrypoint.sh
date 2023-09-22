@@ -3,13 +3,10 @@
 # Write python output in real time without buffering
 export PYTHONUNBUFFERED=1
 
-# LBS Django project may have multiple applications, though only 1 at present
-APP_DIR=lbs
-
 # Pick up any local changes to requirements.txt, which do *not* automatically get re-installed when starting the container.
 # Do this only in dev environment!
 if [ "$DJANGO_RUN_ENV" = "dev" ]; then
-  pip install --no-cache-dir -r "$APP_DIR"/requirements.txt --user --no-warn-script-location
+  pip install --no-cache-dir -r requirements.txt --user --no-warn-script-location
 fi
 
 # Check when database is ready for connections
@@ -20,19 +17,19 @@ until python -c 'import os, psycopg2 ; conn = psycopg2.connect(host=os.environ.g
 done
 
 # Run database migrations
-python "$APP_DIR"/manage.py migrate
+python manage.py migrate
 
 if [ "$DJANGO_RUN_ENV" = "dev" ]; then
   # Create default superuser for dev environment, using django env vars.
   # Logs will show error if this exists, which is OK.
-  python "$APP_DIR"/manage.py createsuperuser --no-input
+  python manage.py createsuperuser --no-input
 fi
 
 if [ "$DJANGO_RUN_ENV" = "dev" ]; then
-  python "$APP_DIR"/manage.py runserver 0.0.0.0:8000
+  python manage.py runserver 0.0.0.0:8000
 else
   # Build static files directory, starting fresh each time - do we really need this?
-  python "$APP_DIR"/manage.py collectstatic --no-input
+  python manage.py collectstatic --no-input
 
   # Start the Gunicorn web server
   # Gunicorn cmd line flags:
@@ -41,6 +38,5 @@ else
   # -t timeout in seconds.  This needs to allow *total* time for reports - 5-10 minutes for all reports at once.
   # --access-logfile where to send HTTP access logs (- is stdout)
   export GUNICORN_CMD_ARGS="-w 3 -b 0.0.0.0:8000 -t 600 --access-logfile -"
-  cd "$APP_DIR"
   gunicorn lbs.wsgi:application
 fi
