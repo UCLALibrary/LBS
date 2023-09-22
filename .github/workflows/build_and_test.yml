@@ -31,10 +31,10 @@ jobs:
         run: docker-compose -f $COMPOSE_FILE top
 
       - name: Create models
-        run: docker-compose -f $COMPOSE_FILE exec -T django python lbs/manage.py migrate
+        run: docker-compose -f $COMPOSE_FILE exec -T django python manage.py migrate
       
       - name: Load data
-        run: docker-compose -f $COMPOSE_FILE exec -T django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
+        run: docker-compose -f $COMPOSE_FILE exec -T django python manage.py load_initial_data qdb/fixtures/staff.csv qdb/fixtures/unit.csv qdb/fixtures/accounts.csv
       
       - name: Check connectivity
         #run: docker run --network container:django-frontend appropriate/curl -s -I http://localhost:8000/admin/
@@ -42,4 +42,4 @@ jobs:
       
       - name: Run tests
         # -T to disable TTY allocation
-        run: docker-compose -f $COMPOSE_FILE exec -T django python lbs/manage.py test qdb
+        run: docker-compose -f $COMPOSE_FILE exec -T django python manage.py test qdb

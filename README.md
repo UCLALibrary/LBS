@@ -40,11 +40,11 @@ docker-compose up -d
 # General-purpose shell
 docker-compose exec django bash
 # Django management commands
-docker-compose exec django python lbs/manage.py
+docker-compose exec django python manage.py
 # The first time, moving to postgres, run these 3:
-docker-compose exec django python lbs/manage.py migrate
-docker-compose exec django python lbs/manage.py createsuperuser
-docker-compose exec django python lbs/manage.py load_initial_data lbs/qdb/fixtures/staff.csv lbs/qdb/fixtures/unit.csv lbs/qdb/fixtures/accounts.csv
+docker-compose exec django python manage.py migrate
+docker-compose exec django python manage.py createsuperuser
+docker-compose exec django python manage.py load_initial_data qdb/fixtures/staff.csv qdb/fixtures/unit.csv qdb/fixtures/accounts.csv
 ```
 
 #### Stop the application; shuts down and removes containers, but not volumes with data
@@ -111,12 +111,12 @@ The fixture file:
   - verified current 20220304
   - file was created with the following:
 ```
-docker-compose exec django python lbs/manage.py dumpdata --indent 4 --output lbs/qdb/fixtures/sample_data.json
+docker-compose exec django python manage.py dumpdata --indent 4 --output qdb/fixtures/sample_data.json
 ```
 
 If "contenttype" errors appear while testing, the contenttype may be left out during file creation:
 ```
-docker-compose exec django python lbs/manage.py dumpdata --indent 4 --exclude contenttypes --output lbs/qdb/fixtures/sample_data.json
+docker-compose exec django python manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtures/sample_data.json
 ```
 ---
 **Test display on Windows Dark Mode to ensure readability**
@@ -147,7 +147,7 @@ or more email addresses, separate by spaces, in the `Override recipients` text b
 # -r: List recipients for this report, after overrides are applied
 # -o your@email.address: The override address; multiple addresses: -o address1 address2 etc.
 # -e: Send the report by email.  Only use when testing with -o override.
-python lbs/manage.py run_qdb_reporter -u 5 -r -o your@email.address -e
+python manage.py run_qdb_reporter -u 5 -r -o your@email.address -e
 ```
 
 ```
@@ -161,8 +161,8 @@ python lbs/manage.py run_qdb_reporter -u 5 -r -o your@email.address -e
 - run the script with different flags to test
 - use the --email flag to send an email with the attached report(s) to the recipients
 
-docker-compose exec django python lbs/manage.py run_qdb_reporter -l
-docker-compose exec django python lbs/manage.py run_qdb_reporter -y 2017 -m 5 -u 6 -r
+docker-compose exec django python manage.py run_qdb_reporter -l
+docker-compose exec django python manage.py run_qdb_reporter -y 2017 -m 5 -u 6 -r
 
 -l --list_units - List all the units
 -y --year - Year of the report
@@ -183,12 +183,12 @@ docker-compose exec django python lbs/manage.py run_qdb_reporter -y 2017 -m 5 -u
 docker-compose up
 
 #### terminal #2
-docker-compose exec django python lbs/manage.py test qdb.tests
+docker-compose exec django python manage.py test qdb.tests
 ```
  
 ---
 ## Inspect the Django project for common problems
 ---
 ```
-docker-compose exec django python lbs/manage.py check
+docker-compose exec django python manage.py check
 ```

@@ -25,7 +25,7 @@ ENV PATH /home/django/.local/bin:${PATH}
 RUN pip install --upgrade pip --disable-pip-version-check
 
 # Install requirements for this application
-RUN pip install --no-cache-dir -r lbs/requirements.txt --user --no-warn-script-location
+RUN pip install --no-cache-dir -r requirements.txt --user --no-warn-script-location
 
 # Expose the typical Django port
 EXPOSE 8000
