@@ -124,7 +124,6 @@ TIME_ZONE = "America/Los_Angeles"
 
 USE_I18N = True
 
-USE_L10N = True
 
 USE_TZ = True
 
@@ -148,7 +147,14 @@ if not os.path.isdir(STATIC_ROOT):
     os.makedirs(STATIC_ROOT, mode=0o755)
 
 # Improved caching with whitenoise when running in production.
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
