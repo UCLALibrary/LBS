@@ -36,6 +36,8 @@ if DEBUG in ["false", "False"]:
 # which is a string - but ALLOWED_HOSTS requires a list
 ALLOWED_HOSTS = list(os.getenv("DJANGO_ALLOWED_HOSTS").split(","))
 
+# Django 4 may require this, at least in our deployment environment.
+CSRF_TRUSTED_ORIGINS = list(os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS").split(","))
 
 # Application definition
 
