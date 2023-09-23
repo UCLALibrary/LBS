@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>QDB Report | QDB</title>
+
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+
+    <!-- Include jquery and bootstrap - use versions compatible with each other -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css">
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/dashboard.css">
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/responsive.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}"/>
+
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}" defer></script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}"/>
+
+    <!-- script to enable django messages to work with ajax -->
+    <script type="text/javascript">
+        function update_messages(messages){
+            $("#alert-box").html("");
+            $.each(messages, function (index, message) {
+                // extract Unit and alert type
+                // returnedMessage contains level, message and extra-tags (including unit name when present):
+                //     {level: 25, message: 'QDB report successfully generated.', extra_tags: 'All units alert-success'}
+                alert_name = "";
+                unit_name = "";
+
+                // extracts alert-level when the extra-tag holds of alert-level only
+                if (message.extra_tags.match(/^alert-[a-zA-Z]*$/)) {
+                    alert_name = message.extra_tags;
+                } else {
+                    // extracts alert-level when the extra-tag holds both unit name and alert-level
+                    alert_name = message.extra_tags.match(/alert-[a-zA-Z]*$/)[0];
+                }
+                // extracts unit name if present in the extra-tag and removes trailing space then adds separator
+                if (message.extra_tags.match(/^[a-zA-Z].* alert-[a-zA-Z]*$/)) {
+                    unit_name = message.extra_tags.match(/^[a-zA-Z].* /)[0]
+                    unit_name = unit_name.trimEnd();
+                    unit_name = unit_name+": "
+                }
+                // add Unit, message to appropriately styled message box
+                $("#alert-box").append("<div class='alert "+alert_name+" alert-dismissible fade show' role='alert'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button><center>"+unit_name+" "+message.message+"</center></div>");
+            });
+        }
+    </script>
+
+</head>
+
+<body class=" dashboard" data-admin-utc-offset="0">
+    <div>
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+
+</html>

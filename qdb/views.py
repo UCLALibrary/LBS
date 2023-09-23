@@ -1,3 +1,4 @@
+from django.http import HttpRequest
 from django.shortcuts import render
 from django.http.response import HttpResponse
 from django.core.management import call_command
@@ -119,3 +120,7 @@ def run_qdb_reporter(
 
 def logoutandlogin(request):
     return logout_then_login(request, login_url="/qdb/report/")
+
+
+def release_notes(request: HttpRequest) -> HttpResponse:
+    return render(request, "release_notes.html")
