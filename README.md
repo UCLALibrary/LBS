@@ -1,14 +1,17 @@
-# Automated QDB reporting
+# Automated LBS reporting
 
-LBS needs several monthly financial reports. Currently, a report is manually created and delivered via email to each FAU manager using legacy software and Jasper.
+This project provides tools to automate as much work as possible in report creation and delivery by UCLA's Library Business Services (LBS).
 
-This project is to automate as much work as possible in report creation and delivery by:
+It contains two Django applications: QDB (Query Database, for general financial reports) and GE (Gifts and Expenditures).
 
- - Harvesting raw data from campus financial system each month
- - Processing the raw data to generate a report for each FAU (mimicking the current Excel template)
- - Distribute each report to the appropriate FAU managers via email
+QDB:
+ - Harvests raw data from campus financial system each month
+ - Processes the raw data to generate a report for each fund
+ - Distribute each report to the appropriate fund managers via email
 
-The new system uses the Django framework.
+ GE:
+ - Imports data from multiple Excel files
+ - Processes data to generate a report for each library unit / manager
 
 ---
 ## Developer Setup on Docker
@@ -17,7 +20,7 @@ The new system uses the Django framework.
 This is the preferred way to run the project for development.
 
 * Code is automatically mounted in the django container, so local changes are reflected in the running system.
-* Data is stored in postgres and persisted to a local volume.
+* Data is stored in a local postgres container and persisted to a local volume.
 
 #### (Re)build using docker-compose
 ```
@@ -41,10 +44,9 @@ docker-compose up -d
 docker-compose exec django bash
 # Django management commands
 docker-compose exec django python manage.py
-# The first time, moving to postgres, run these 3:
-docker-compose exec django python manage.py migrate
-docker-compose exec django python manage.py createsuperuser
+# The first time, to initialize the local database with data from fixtures, run:
 docker-compose exec django python manage.py load_initial_data qdb/fixtures/staff.csv qdb/fixtures/unit.csv qdb/fixtures/accounts.csv
+# Note: This local data is out of date, but should be OK for development & testing.
 ```
 
 #### Stop the application; shuts down and removes containers, but not volumes with data
@@ -93,8 +95,7 @@ docker rmi $(docker images -q --filter "dangling=true")
 ---
 **Work with the underlying PostgreSQL database in its own docker container**
 ```
-docker-compose exec db bash
-psql qdb -U qdb_user
+docker-compose exec db psql qdb -U qdb_user
 
 # help
 \?
@@ -176,14 +177,12 @@ docker-compose exec django python manage.py run_qdb_reporter -y 2017 -m 5 -u 6 -
 ---
 ## Testing
 ---
- Start the container in a terminal then run tests from a second terminal  
 
 ```
-#### terminal #1
-docker-compose up
-
-#### terminal #2
-docker-compose exec django python manage.py test qdb.tests
+# Run all tests
+docker-compose exec django python manage.py test
+# Or just those for the qdb (or ge) application
+docker-compose exec django python manage.py test qdb
 ```
  
 ---
