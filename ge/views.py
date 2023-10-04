@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.http import HttpRequest
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -12,12 +13,16 @@ def report(request: HttpRequest):
         form = ExcelUploadForm(request.POST, request.FILES)
         if form.is_valid():
             bfs_file = request.FILES["bfs_filename"]
-            import_excel_data(bfs_file, BFSImport)
             cdw_file = request.FILES["cdw_filename"]
-            import_excel_data(cdw_file, CDWImport)
             mtf_file = request.FILES["mtf_filename"]
-            import_excel_data(mtf_file, MTFImport)
-
+            try:
+                import_excel_data(bfs_file, BFSImport)
+                import_excel_data(cdw_file, CDWImport)
+                import_excel_data(mtf_file, MTFImport)
+                messages.success(request, "All data was imported successfully.")
+            except KeyError as ex:
+                # Exception re-raised from import_excel_data has useful info already.
+                messages.error(request, ex)
     else:
         form = ExcelUploadForm()
     context = {"form": form}

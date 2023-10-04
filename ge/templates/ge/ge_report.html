@@ -1,7 +1,15 @@
 {% extends 'ge/base.html' %}
 
 {% block content %}
-<p>This is the ge_report page</p>
+
+{% if messages %}
+<div class="box">
+{% for message in messages %}
+  <div>{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+
 <form id="upload_files" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}

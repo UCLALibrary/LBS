@@ -12,19 +12,23 @@ def import_excel_data(excel_file: str, model: Model) -> None:
     data = get_data_from_excel(excel_file)
     # Get the Excel -> model field mapping for this model.
     # model._meta is internal, but apparently well and permanently supported.
-    mapping = get_mapping(model._meta.object_name)
+    model_name = model._meta.object_name
+    mapping = get_mapping(model_name)
     # Clear out old data before importing.
     model.objects.all().delete()
-    # Iterate through rows of data, creating and saving an object for each.
-    for row in data:
-        # Create initial empty object.
-        obj = model()
-        for excel_name, field_name in mapping.items():
-            # Set the value for each field.
-            setattr(obj, field_name, row[excel_name])
-        obj.save()
-    # TODO: Logging
-    # print(f"Created: {model.objects.count()} objects")
+    try:
+        # Iterate through rows of data, creating and saving an object for each.
+        for row in data:
+            # Create initial empty object.
+            obj = model()
+            for excel_name, field_name in mapping.items():
+                # Set the value for each field.
+                setattr(obj, field_name, row[excel_name])
+            obj.save()
+    except KeyError as ex:
+        # Add useful info and re-raise up to caller
+        error_message = f"Unexpected column {str(ex)} in {excel_file} for {model_name}"
+        raise KeyError(error_message) from None
 
 
 def get_data_from_excel(excel_file: str) -> list[dict]:
