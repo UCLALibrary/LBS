@@ -1,0 +1,10 @@
+{% extends 'ge/base.html' %}
+
+{% block content %}
+<p>This is the ge_report page</p>
+<form id="upload_files" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" id="upload_submit" >Upload files</button>
+</form>
+{% endblock %}
