@@ -138,3 +138,6 @@ dmypy.json
 # Local static files colleced when testing gunicorn and whitenoise
 staticfiles/
 
+# Excel files, but only in the top-level directory
+/*.xls
+/*.xlsx
