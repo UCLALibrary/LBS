@@ -13,9 +13,7 @@ QDB:
  - Imports data from multiple Excel files
  - Processes data to generate a report for each library unit / manager
 
----
 ## Developer Setup on Docker
----
 
 This is the preferred way to run the project for development.
 
@@ -59,9 +57,8 @@ docker-compose down
 docker rmi $(docker images -q --filter "dangling=true")
 ```
 
----
 ## Status messages displayed to the user
----
+
 1. "Spinner"
     - Indicates report generation is in progress
 
@@ -85,14 +82,13 @@ docker rmi $(docker images -q --filter "dangling=true")
 8. General AJAX error
     - Link to the _UCLA Library Service Portal_ is provided
 
----
 ## Developer Tips
----
+
   - `QDB_DB_PASSWORD` is defined in `.docker-compose_secrets.env` - ask a team member for this file.  This file is used only in development.
   - Do not commit this file (file names containing "secret" are excluded via the .gitignore file)
   - Browse to the Report Form on your local machine:
 [http://localhost:8000/qdb/report/](http://http://localhost:8000/qdb/report/)
----
+
 **Work with the underlying PostgreSQL database in its own docker container**
 ```
 docker-compose exec db psql qdb -U qdb_user
@@ -105,7 +101,7 @@ docker-compose exec db psql qdb -U qdb_user
 \dt
 select * from qdb_staff;
 ```
----
+
 **The imported data is from CSV files dumped from the existing QDB reporting system**
 
 The fixture file:
@@ -119,12 +115,10 @@ If "contenttype" errors appear while testing, the contenttype may be left out du
 ```
 docker-compose exec django python manage.py dumpdata --indent 4 --exclude contenttypes --output qdb/fixtures/sample_data.json
 ```
----
+
 **Test display on Windows Dark Mode to ensure readability**
 
----
 ## Reports and Email
----
 
 To test email functionality as a developer:
 - There are placeholders in `.docker-compose_django.env`.  This file is under version control; do not edit to set local values.
@@ -152,7 +146,7 @@ python manage.py run_qdb_reporter -u 5 -r -o your@email.address -e
 ```
 
 ```
----
+
 **Run manually to generate reports at the command line using Docker**
 
 - Configure QDB to run in a Docker environment as described above
@@ -174,20 +168,42 @@ docker-compose exec django python manage.py run_qdb_reporter -y 2017 -m 5 -u 6 -
 -o --override_recipients - Override the list of email recipients
 ```
 
----
 ## Testing
----
 
 ```
 # Run all tests
 docker-compose exec django python manage.py test
 # Or just those for the qdb (or ge) application
 docker-compose exec django python manage.py test qdb
+docker-compose exec django python manage.py test ge
 ```
- 
----
-## Inspect the Django project for common problems
----
+
+## Using pgAdmin
+
+To use [pgAdmin](https://www.pgadmin.org/) during development, start the local application like this:
+
 ```
-docker-compose exec django python manage.py check
+# Start in background using a non-default configuration file
+docker-compose -f docker-compose_PGADMIN.yml up -d
+# Shut it down in the same way, to ensure all resources are closed
+docker-compose -f docker-compose_PGADMIN.yml down
 ```
+
+You can then access `pgAdmin` via browser at http://localhost:5050/ .
+
+Log in using the arbitrary local credentials from `docker-compose_PGADMIN.yml`:
+* User: `systems@library.ucla.edu`
+* Password: `admin`
+
+After first login, register the local database server.
+* `Object -> Register -> Server`
+* Name: whatever you want
+* On the Connection tab, use local-only info from `.docker-compose_db.env`
+  * Host name/address: `db`
+  * Port: `5432`
+  * Username: `qdb_user`
+  * Password: `dev_qdb_pass`
+  * Save password? Yes
+  * Click `Save`, without changing any other settings
+
+See [pgAdmin documentation](https://www.pgadmin.org/docs/) for more information.

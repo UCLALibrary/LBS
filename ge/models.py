@@ -102,3 +102,41 @@ class MTFImport(models.Model):
     signature_ind = models.CharField(max_length=50, null=True)
     # No values in sample file, not sure what this is
     preparer_phone_number = models.CharField(max_length=50, null=True)
+
+
+# Local LBS data to be combined with campus data
+# Straight import now, to explore data
+class LibraryData(models.Model):
+    original_id = models.SmallIntegerField(null=True)
+    # TODO: Remove unit_grande, confirmed not needed
+    unit_grande = models.CharField(max_length=50, null=True)
+    unit = models.CharField(max_length=50, null=True)
+    home_unit_dept = models.CharField(max_length=50, null=True)
+    fund_title = models.CharField(max_length=100, null=True)
+    fund_type = models.CharField(max_length=50, null=True)
+    reg_fdn = models.CharField(max_length=1, null=True)
+    fund_manager = models.CharField(max_length=50, null=True)
+    ucop_fdn_no = models.CharField(max_length=50, null=True)
+    # Normally 5 chars but some data has 6...
+    fau_fund_no = models.CharField(max_length=6, null=True)
+    fau_account = models.CharField(max_length=8, null=True)
+    fau_cost_center = models.CharField(max_length=2, null=True)
+    # Normally 5 chars but some data has 6...
+    # How are "Fund No" and "Fund" different?
+    fau_fund = models.CharField(max_length=6, null=True)
+    ytd_appropriation = models.FloatField(null=True)
+    ytd_expenditure = models.FloatField(null=True)
+    commitments = models.FloatField(null=True)
+    operating_balance = models.FloatField(null=True)
+    max_mtf_trf_amt = models.FloatField(null=True)
+    total_balance = models.FloatField(null=True)
+    mtf_authority = models.CharField(max_length=50, null=True)
+    total_fund_value = models.FloatField(null=True)
+    projected_annual_income = models.FloatField(null=True)
+    fund_summary = models.CharField(max_length=1000, null=True)
+    fund_purpose = models.CharField(max_length=2000, null=True)
+    notes = models.CharField(max_length=1000, null=True)
+    home_dept = models.CharField(max_length=50, null=True)
+    fund_restriction = models.CharField(max_length=1000, null=True)
+    new_fund = models.CharField(max_length=1, null=True)
+    lbs_notes = models.CharField(max_length=1000, null=True)

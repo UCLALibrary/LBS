@@ -23,6 +23,9 @@ if [ "$DJANGO_RUN_ENV" = "dev" ]; then
   # Create default superuser for dev environment, using django env vars.
   # Logs will show error if this exists, which is OK.
   python manage.py createsuperuser --no-input
+
+  # Load GE fixtures, only in dev environment.
+  python manage.py loaddata --app ge library_data
 fi
 
 if [ "$DJANGO_RUN_ENV" = "dev" ]; then
