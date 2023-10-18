@@ -4,10 +4,11 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from ge.forms import ExcelUploadForm
 from ge.models import BFSImport, CDWImport, MTFImport
-from ge.views_utils import import_excel_data
+from ge.views_utils import add_funds, import_excel_data, update_data
 
 
-@login_required
+# TODO: Clean up auth system across qdb/ge apps
+@login_required(login_url="/login/")
 def report(request: HttpRequest):
     if request.method == "POST":
         form = ExcelUploadForm(request.POST, request.FILES)
@@ -20,6 +21,10 @@ def report(request: HttpRequest):
                 import_excel_data(cdw_file, CDWImport)
                 import_excel_data(mtf_file, MTFImport)
                 messages.success(request, "All data was imported successfully.")
+                # TODO: Separate form to generate reports?  For now, doing that automatically.
+                messages.success(request, "Reports are being generated.")
+                add_funds()
+                update_data()
             except KeyError as ex:
                 # Exception re-raised from import_excel_data has useful info already.
                 messages.error(request, ex)

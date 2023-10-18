@@ -1,5 +1,6 @@
 from django.db.models import Model
 from pandas import read_excel
+from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 
 
 def import_excel_data(excel_file: str, model: Model) -> None:
@@ -134,5 +135,301 @@ def get_mapping(model_name: str) -> dict:
             "signature_ind": "signature_ind",
             "preparer_phone_num": "preparer_phone_number",
         },
+        "LibraryData": {
+            "ID": "original_id",
+            "UnitGrande": "unit_grande",
+            "Unit": "unit",
+            "Home Unit/Dept": "home_unit_dept",
+            "Fund Title": "fund_title",
+            "Fund Type": "fund_type",
+            "Reg/Fdn": "reg_fdn",
+            "Fund Manager": "fund_manager",
+            "UCOP/ FDN No": "ucop_fdn_no",
+            "Fund No": "fau_fund_no",
+            "Account": "fau_account",
+            "CC": "fau_cost_center",
+            "Fund": "fau_fund",
+            "YTD Appropriation": "ytd_appropriation",
+            "YTD Expenditure": "ytd_expenditure",
+            "Commitments": "commitments",
+            "Operating Balance": "operating_balance",
+            "Max MTF Trf Amt": "max_mtf_trf_amt",
+            "Total Balance": "total_balance",
+            "MTF_Authority": "mtf_authority",
+            "Total Fund Value": "total_fund_value",
+            "Projected Annual Income": "projected_annual_income",
+            "Fund Summary": "fund_summary",
+            "Fund Purpose": "fund_purpose",
+            "Notes": "notes",
+            "Home Dept": "home_dept",
+            "FundRestriction": "fund_restriction",
+            "NewFund": "new_fund",
+            "LBS Notes": "lbs_notes",
+        },
     }
     return maps[model_name]
+
+
+def add_funds() -> None:
+    """Add funds from campus data not already in LibraryData
+    for use in reports.
+    """
+
+    # Original Access query qryAddNew_2:
+    # Add rows to LibraryData from CDWImport where
+    # (fau_account, fau_cost_center, fau_fund) doesn't already exist.
+    incoming_funds = CDWImport.objects.all().values(
+        "fau_account", "fau_cost_center", "fau_fund"
+    )
+    current_funds = LibraryData.objects.all().values(
+        "fau_account", "fau_cost_center", "fau_fund"
+    )
+    for f in incoming_funds:
+        if f not in current_funds:
+            new_fund = LibraryData(
+                fau_account=f["fau_account"],
+                fau_cost_center=f["fau_cost_center"],
+                fau_fund=f["fau_fund"],
+                new_fund="Y",
+            )
+
+            # Original Access query qryAddNew_3:
+            # Match on BFSImport data to set other values in the new fund.
+            # Match is only on fau_fund, which often can find multiple rows,
+            # but the relevant fields appear to be the same for any given fund.
+            # Take the "first" match - if any, since match is not guaranteed.
+            bfs_funds = BFSImport.objects.filter(fau_fund=new_fund.fau_fund)
+            if bfs_funds.exists():
+                bfs_fund = bfs_funds[0]
+                new_fund.fund_title = bfs_fund.description
+                new_fund.fund_type = bfs_fund.fund_type
+                new_fund.fund_summary = bfs_fund.fund_summary
+                new_fund.fund_purpose = bfs_fund.purpose
+
+                # Original Access query qryAddNew_4 - queryAddNew_7:
+                # Normalize reg_fdn and fund_type values.
+                # These are converted from Access and assume all data... matches assumptions.
+                # These are dependent on a matching BFSImport row being found above.
+                if "FOUNDATION" in new_fund.fund_type.upper():
+                    new_fund.reg_fdn = "F"
+                if "REGENTAL" in new_fund.fund_type.upper():
+                    new_fund.reg_fdn = "R"
+                if "ENDOWMENT" in new_fund.fund_type.upper():
+                    new_fund.fund_type = "Endowment"
+                if "EXPENDITURE" in new_fund.fund_type.upper():
+                    new_fund.fund_type = "Current Expenditure"
+
+            else:
+                # No matching BFSImport row found, so log a message.
+                # TODO: Logging!
+                print(
+                    f"Warning: No matching BFS (consolidated) data found for {new_fund.fau_fund=}"
+                )
+
+            # Original Access query qryAddNew_8:
+            # Clear the "new_fund" flag.
+            # TODO: Disabled while reviewing data.
+            # new_fund.new_fund = "N"
+
+            # Finally, save the new LibraryData record.
+            new_fund.save()
+
+
+def update_data() -> None:
+    """Update LibraryData rows to final state before report generation."""
+
+    # TODO: Replace print statements with proper logging.
+
+    # Original Access query qryAAA_0Clear:
+    # Set several financial values to 0 for all rows.
+    cnt = LibraryData.objects.all().update(
+        ytd_appropriation=0,
+        ytd_expenditure=0,
+        commitments=0,
+        operating_balance=0,
+        max_mtf_trf_amt=0,
+        projected_annual_income=0,
+        total_fund_value=0,
+    )
+    print(f"qryAAA_0Clear: {cnt} updated")
+
+    # Original Access query qryAAA_1UpdateMTF (and duplicate qryAAA_1UpdateMTF1):
+    # Update relevant LibraryData rows from MTF data (first matching row only, if any).
+    cnt = 0
+    for ld in LibraryData.objects.all():
+        if ld.ucop_fdn_no:
+            mtf_rows = MTFImport.objects.filter(fund_nbr=ld.ucop_fdn_no)
+            if mtf_rows.exists():
+                mtf = mtf_rows[0]
+                ld.fund_restriction = mtf.fund_restriction
+                ld.max_mtf_trf_amt = mtf.max_transfer_balance
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_1UpdateMTF: {cnt} updated")
+
+    # Original Access query qryAAA_2ProjIncomFound:
+    # Update projected annual income from BFS data (Foundation funds).
+    cnt = 0
+    for ld in LibraryData.objects.all():
+        if ld.ucop_fdn_no:
+            bfs_rows = BFSImport.objects.filter(fau_fund=ld.ucop_fdn_no, source="F")
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.projected_annual_income = bfs.projected_income
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_2ProjIncomFound: {cnt} updated")
+
+    # Original Access query qryAAA_2ProjIncomReg:
+    # Update projected annual income from BFS data (Regental funds).
+    cnt = 0
+    for ld in LibraryData.objects.all():
+        if ld.fau_fund:
+            bfs_rows = BFSImport.objects.filter(fau_fund=ld.fau_fund, source="R")
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.projected_annual_income = bfs.projected_income
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_2ProjIncomReg: {cnt} updated")
+
+    # Original Access query qryAAA_3FoundTotVal:
+    cnt = 0
+    for ld in LibraryData.objects.filter(reg_fdn="F"):
+        if ld.ucop_fdn_no:
+            bfs_rows = BFSImport.objects.filter(
+                fau_fund=ld.ucop_fdn_no,
+                fund_type__in=("ENDOWMENT REGENTAL INCOME", "ENDOWMENT FOUNDATION"),
+            )
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.total_fund_value = bfs.market_value
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_3FoundTotVal: {cnt} updated")
+
+    # Original Access query qryAAA_3FoundTotVal_2:
+    cnt = 0
+    for ld in LibraryData.objects.filter(reg_fdn="F"):
+        if ld.fau_fund:
+            bfs_rows = BFSImport.objects.filter(
+                fau_fund=ld.fau_fund,
+                fund_type__in=("ENDOWMENT REGENTAL INCOME", "ENDOWMENT FOUNDATION"),
+            )
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.total_fund_value = ld.total_fund_value + bfs.available
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_3FoundTotVal_2: {cnt} updated")
+
+    # Original Access query qryAAA_3FoundTotVal_3:
+    # This currently matches no rows; asking LBS if this is correct.
+    cnt = 0
+    for ld in LibraryData.objects.filter(reg_fdn="F"):
+        if ld.fau_fund:
+            bfs_rows = BFSImport.objects.filter(
+                fau_fund=ld.fau_fund,
+                source="R",
+                fund_type="ENDOWMENT FOUNDATION",
+            )
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.total_fund_value = ld.total_fund_value - bfs.unavailable
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_3FoundTotVal_3: {cnt} updated")
+
+    # Original Access query qryAAA_3RegTotVal:
+    # Regental fund math is different from Foundation math above...
+    cnt = 0
+    for ld in LibraryData.objects.filter(reg_fdn="R"):
+        if ld.fau_fund:
+            bfs_rows = BFSImport.objects.filter(
+                fau_fund=ld.fau_fund,
+                source="U",
+            )
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.total_fund_value = bfs.available
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_3RegTotVal: {cnt} updated")
+
+    # Original Access query qryAAA_3RegTotVal_2:
+    # Regental fund math is different from Foundation math above...
+    cnt = 0
+    for ld in LibraryData.objects.filter(reg_fdn="R"):
+        if ld.fau_fund:
+            bfs_rows = BFSImport.objects.filter(
+                fau_fund=ld.fau_fund,
+                source="R",
+            )
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.total_fund_value = ld.total_fund_value - bfs.unavailable
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_3RegTotVal_2: {cnt} updated")
+
+    # Original Access query qryAAA_3RegTotVal_3:
+    # Regental fund math is different from Foundation math above...
+    cnt = 0
+    for ld in LibraryData.objects.filter(reg_fdn="R"):
+        if ld.ucop_fdn_no:
+            bfs_rows = BFSImport.objects.filter(
+                fau_fund=ld.ucop_fdn_no,
+                source="R",
+            )
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.total_fund_value = ld.total_fund_value + bfs.market_value
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_3RegTotVal_3: {cnt} updated")
+
+    # Original Access query qryAAA_3RegTotVal_4:
+    # Regental fund math is different from Foundation math above...
+    cnt = 0
+    for ld in LibraryData.objects.filter(reg_fdn="R"):
+        if ld.fau_fund_no:
+            bfs_rows = BFSImport.objects.filter(
+                fau_fund=ld.fau_fund_no,
+                fau_fund__gt="40000",
+                source="U",
+            )
+            if bfs_rows.exists():
+                bfs = bfs_rows[0]
+                ld.total_fund_value = bfs.available
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_3RegTotVal_4: {cnt} updated")
+
+    # Original Access query qryAAA_5_5400:
+    # Update LibraryData amounts from CDW data.
+    cnt = 0
+    for ld in LibraryData.objects.all():
+        if ld.fau_fund and ld.fau_cost_center and ld.fau_account:
+            cdw_rows = CDWImport.objects.filter(
+                fau_fund=ld.fau_fund,
+                fau_cost_center=ld.fau_cost_center,
+                fau_account=ld.fau_account,
+            )
+            if cdw_rows.exists():
+                cdw = cdw_rows[0]
+                ld.ytd_appropriation = cdw.inception_to_date_appropriation
+                ld.ytd_expenditure = cdw.inception_to_date_financial
+                ld.commitments = cdw.encum_ml
+                ld.operating_balance = cdw.operating_balance
+                ld.save()
+                cnt += 1
+    print(f"qryAAA_5_5400: {cnt} updated")
+
+    # Original Access query qryAAA_6TotalBalance:
+    # Finally, update LibraryData total balance for all rows.
+    cnt = 0
+    for ld in LibraryData.objects.all():
+        ld.total_balance = ld.operating_balance + ld.max_mtf_trf_amt
+        ld.save()
+        cnt += 1
+    print(f"qryAAA_6TotalBalance: {cnt} updated")

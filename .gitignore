@@ -141,3 +141,6 @@ staticfiles/
 # Excel files, but only in the top-level directory
 /*.xls
 /*.xlsx
+
+# Sub-directory of data files for convenience
+current_data/
