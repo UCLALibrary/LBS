@@ -207,3 +207,10 @@ After first login, register the local database server.
   * Click `Save`, without changing any other settings
 
 See [pgAdmin documentation](https://www.pgadmin.org/docs/) for more information.
+
+## Viewing the log
+Local development environment: `view logs/application.log`.
+
+In deployed container:
+* `/logs/`: see latest 200 lines of the log
+* `/logs/nnn`: see latest `nnn` lines of the log
