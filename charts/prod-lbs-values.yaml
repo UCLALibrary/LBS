@@ -39,6 +39,7 @@ django:
   env:
     run_env: "prod"
     debug: "false"
+    log_level: "INFO"
     allowed_hosts:
       - lbs.library.ucla.edu
     csrf_trusted_origins:

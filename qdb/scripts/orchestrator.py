@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import arrow
+import logging
 import os
 import psycopg2
 
 from qdb.scripts.settings import UL_NAME
 from qdb.scripts import fetcher, formatter, sender
 from qdb.scripts.parser import Parser
+
+logger = logging.getLogger(__name__)
 
 
 class Orchestrator:
@@ -103,7 +106,7 @@ class Orchestrator:
             try:
                 os.remove(os.path.join(self.reports_dir, f))
             except FileNotFoundError:
-                print(f"Could not delete from reports directory: {f}")
+                logger.error(f"Could not delete from reports directory: {f}")
 
     def get_recipients(self, unit_id, unit_name):
         # recipients is initialized to either developers (dev mode) or to LBS (prod mode);
@@ -147,25 +150,26 @@ class Orchestrator:
                 recipients = self.get_recipients(unit_id, unit_name)
 
             if list_recipients is True:
+                # print statements in this block are for command-line, not logged.
                 print(f"\n{unit_name} recipients:")
                 for r in sorted(recipients):
                     print(f"-- {r}")
                     continue
-            print("")
+            print("See logs for other output.")
             parser = Parser(yyyymm, unit_name)
             for account, cc_list in self.get_accounts_for_unit(unit_id):
-                print(
-                    f"running {yyyymm} report of {account}{cc_list} for unit {unit_name}"
+                logger.info(
+                    f"Running {yyyymm} report of {account}{cc_list} for unit {unit_name}"
                 )
                 rows = fetcher.get_qdb_data(yyyymm, account, cc_list)
                 if len(rows) == 0:  # pragma: no cover
-                    print(f"No data from QDB for {account}{cc_list}")
+                    logger.warning(f"No data from QDB for {account}{cc_list}")
                     continue
                 result = parser.add_account(account, cc_list, rows)
                 if result is False:  # pragma: no cover
-                    print(f"Account {account} is empty. Exclude from report")
+                    logger.warning(f"Account {account} is empty. Exclude from report")
             if len(parser.data["accounts"]) == 0:  # pragma: no cover
-                print(f"All accounts empty. No report generated for {unit}")
+                logger.warning(f"All accounts empty. No report generated for {unit}")
                 continue
             filename = self.generate_filename(unit_name, yyyymm)
             formatter.generate_report(parser.data, filename)
@@ -173,6 +177,6 @@ class Orchestrator:
             if send_email is True:
                 sender.send_report(parser.data, filename, recipients)
                 os.remove(filename)
-                print(f"sent report {filename} to {recipients}")
+                logger.info(f"Sent report {filename} to {recipients}")
             else:
-                print(f"generated report at {filename}")
+                logger.info(f"Generated report at {filename}")

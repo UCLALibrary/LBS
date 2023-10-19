@@ -178,3 +178,33 @@ MESSAGE_TAGS = {
 # uses smtplib directly, bypassing Django
 # But this will be helpful if/when that code is updated to use Django.
 EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND")
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {name} {module} {message}",
+            # Shortcut for str.format()
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": "./logs/application.log",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        # Unnamed logger should capture from all loggers
+        "": {
+            "handlers": ["file"],
+            "level": os.getenv("DJANGO_LOG_LEVEL"),
+        },
+    },
+}
