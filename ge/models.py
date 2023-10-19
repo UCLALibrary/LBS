@@ -140,3 +140,6 @@ class LibraryData(models.Model):
     fund_restriction = models.CharField(max_length=1000, null=True)
     new_fund = models.CharField(max_length=1, null=True)
     lbs_notes = models.CharField(max_length=1000, null=True)
+
+    def __str__(self):
+        return f"{self.fund_title}: {self.fau_account}-{self.fau_cost_center}-{self.fau_fund}"

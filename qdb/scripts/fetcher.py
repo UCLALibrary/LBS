@@ -87,5 +87,4 @@ def get_qdb_data(yyyymm, account_number, cc_codes):
         # Run query with the other, real, parameters
         cursor.execute(qdb_final_query % (yyyymm, account_number))
         rows = cursor.fetchall()
-        # print(f'DEBUG: {account_number} in {yyyymm} found {len(rows)} rows')
         return rows

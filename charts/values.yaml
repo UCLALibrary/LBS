@@ -33,6 +33,7 @@ django:
   env:
     run_env: "prod"
     debug: "false"
+    log_level: ""
     allowed_hosts: []
     #  - localhost
     #  - 127.0.0.1

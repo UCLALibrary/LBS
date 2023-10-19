@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from ge.forms import ExcelUploadForm
@@ -32,3 +32,19 @@ def report(request: HttpRequest):
         form = ExcelUploadForm()
     context = {"form": form}
     return render(request, "ge/ge_report.html", context)
+
+
+@login_required(login_url="/login/")
+def show_log(request, line_count: int = 200) -> HttpResponse:
+    log_file = "logs/application.log"
+    try:
+        with open(log_file, "r") as f:
+            # Get just the last line_count lines in the log.
+            lines = f.readlines()[-line_count:]
+            # Template prints these as a single block, so join lines into one chunk.
+            log_data = "".join(lines)
+    except FileNotFoundError:
+        log_data = f"Log file {log_file} not found"
+
+    # TODO: Move / unify templates across ge and qdb apps
+    return render(request, "ge/log.html", {"log_data": log_data})

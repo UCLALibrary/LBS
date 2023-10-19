@@ -1,6 +1,9 @@
+import logging
 from django.db.models import Model
 from pandas import read_excel
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
+
+logger = logging.getLogger(__name__)
 
 
 def import_excel_data(excel_file: str, model: Model) -> None:
@@ -221,24 +224,21 @@ def add_funds() -> None:
 
             else:
                 # No matching BFSImport row found, so log a message.
-                # TODO: Logging!
-                print(
-                    f"Warning: No matching BFS (consolidated) data found for {new_fund.fau_fund=}"
+                logger.warning(
+                    f"No matching BFS (consolidated) data found for {new_fund.fau_fund=}"
                 )
 
             # Original Access query qryAddNew_8:
             # Clear the "new_fund" flag.
-            # TODO: Disabled while reviewing data.
-            # new_fund.new_fund = "N"
+            new_fund.new_fund = "N"
 
             # Finally, save the new LibraryData record.
+            logger.info(f"Added fund: {new_fund}")
             new_fund.save()
 
 
 def update_data() -> None:
     """Update LibraryData rows to final state before report generation."""
-
-    # TODO: Replace print statements with proper logging.
 
     # Original Access query qryAAA_0Clear:
     # Set several financial values to 0 for all rows.
@@ -251,7 +251,7 @@ def update_data() -> None:
         projected_annual_income=0,
         total_fund_value=0,
     )
-    print(f"qryAAA_0Clear: {cnt} updated")
+    logger.info(f"qryAAA_0Clear: {cnt} updated")
 
     # Original Access query qryAAA_1UpdateMTF (and duplicate qryAAA_1UpdateMTF1):
     # Update relevant LibraryData rows from MTF data (first matching row only, if any).
@@ -265,7 +265,7 @@ def update_data() -> None:
                 ld.max_mtf_trf_amt = mtf.max_transfer_balance
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_1UpdateMTF: {cnt} updated")
+    logger.info(f"qryAAA_1UpdateMTF: {cnt} updated")
 
     # Original Access query qryAAA_2ProjIncomFound:
     # Update projected annual income from BFS data (Foundation funds).
@@ -278,7 +278,7 @@ def update_data() -> None:
                 ld.projected_annual_income = bfs.projected_income
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_2ProjIncomFound: {cnt} updated")
+    logger.info(f"qryAAA_2ProjIncomFound: {cnt} updated")
 
     # Original Access query qryAAA_2ProjIncomReg:
     # Update projected annual income from BFS data (Regental funds).
@@ -291,7 +291,7 @@ def update_data() -> None:
                 ld.projected_annual_income = bfs.projected_income
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_2ProjIncomReg: {cnt} updated")
+    logger.info(f"qryAAA_2ProjIncomReg: {cnt} updated")
 
     # Original Access query qryAAA_3FoundTotVal:
     cnt = 0
@@ -306,7 +306,7 @@ def update_data() -> None:
                 ld.total_fund_value = bfs.market_value
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_3FoundTotVal: {cnt} updated")
+    logger.info(f"qryAAA_3FoundTotVal: {cnt} updated")
 
     # Original Access query qryAAA_3FoundTotVal_2:
     cnt = 0
@@ -321,7 +321,7 @@ def update_data() -> None:
                 ld.total_fund_value = ld.total_fund_value + bfs.available
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_3FoundTotVal_2: {cnt} updated")
+    logger.info(f"qryAAA_3FoundTotVal_2: {cnt} updated")
 
     # Original Access query qryAAA_3FoundTotVal_3:
     # This currently matches no rows; asking LBS if this is correct.
@@ -338,7 +338,7 @@ def update_data() -> None:
                 ld.total_fund_value = ld.total_fund_value - bfs.unavailable
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_3FoundTotVal_3: {cnt} updated")
+    logger.info(f"qryAAA_3FoundTotVal_3: {cnt} updated")
 
     # Original Access query qryAAA_3RegTotVal:
     # Regental fund math is different from Foundation math above...
@@ -354,7 +354,7 @@ def update_data() -> None:
                 ld.total_fund_value = bfs.available
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_3RegTotVal: {cnt} updated")
+    logger.info(f"qryAAA_3RegTotVal: {cnt} updated")
 
     # Original Access query qryAAA_3RegTotVal_2:
     # Regental fund math is different from Foundation math above...
@@ -370,7 +370,7 @@ def update_data() -> None:
                 ld.total_fund_value = ld.total_fund_value - bfs.unavailable
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_3RegTotVal_2: {cnt} updated")
+    logger.info(f"qryAAA_3RegTotVal_2: {cnt} updated")
 
     # Original Access query qryAAA_3RegTotVal_3:
     # Regental fund math is different from Foundation math above...
@@ -386,7 +386,7 @@ def update_data() -> None:
                 ld.total_fund_value = ld.total_fund_value + bfs.market_value
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_3RegTotVal_3: {cnt} updated")
+    logger.info(f"qryAAA_3RegTotVal_3: {cnt} updated")
 
     # Original Access query qryAAA_3RegTotVal_4:
     # Regental fund math is different from Foundation math above...
@@ -403,7 +403,7 @@ def update_data() -> None:
                 ld.total_fund_value = bfs.available
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_3RegTotVal_4: {cnt} updated")
+    logger.info(f"qryAAA_3RegTotVal_4: {cnt} updated")
 
     # Original Access query qryAAA_5_5400:
     # Update LibraryData amounts from CDW data.
@@ -423,7 +423,7 @@ def update_data() -> None:
                 ld.operating_balance = cdw.operating_balance
                 ld.save()
                 cnt += 1
-    print(f"qryAAA_5_5400: {cnt} updated")
+    logger.info(f"qryAAA_5_5400: {cnt} updated")
 
     # Original Access query qryAAA_6TotalBalance:
     # Finally, update LibraryData total balance for all rows.
@@ -432,4 +432,4 @@ def update_data() -> None:
         ld.total_balance = ld.operating_balance + ld.max_mtf_trf_amt
         ld.save()
         cnt += 1
-    print(f"qryAAA_6TotalBalance: {cnt} updated")
+    logger.info(f"qryAAA_6TotalBalance: {cnt} updated")
