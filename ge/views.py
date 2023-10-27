@@ -4,7 +4,12 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from ge.forms import ExcelUploadForm
 from ge.models import BFSImport, CDWImport, MTFImport
-from ge.views_utils import add_funds, import_excel_data, update_data
+from ge.views_utils import (
+    add_funds,
+    import_excel_data,
+    update_data,
+    create_excel_output,
+)
 
 
 # TODO: Clean up auth system across qdb/ge apps
@@ -25,6 +30,9 @@ def report(request: HttpRequest):
                 messages.success(request, "Reports are being generated.")
                 add_funds()
                 update_data()
+                file_response = create_excel_output()
+                messages.success(request, "Report has been generated.")
+                return file_response
             except KeyError as ex:
                 # Exception re-raised from import_excel_data has useful info already.
                 messages.error(request, ex)
