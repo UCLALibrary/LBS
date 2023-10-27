@@ -1,8 +1,17 @@
 from functools import reduce
 import logging
 from django.db.models import Model, Q
-from pandas import read_excel
+import pandas as pd
+from datetime import datetime
+from django.db.models import Model
+from django.http import HttpResponse
+from openpyxl import load_workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from os import path
+from tempfile import NamedTemporaryFile
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
+from lbs.settings import BASE_DIR
+
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +54,7 @@ def get_data_from_excel(excel_file: str) -> list[dict]:
     """
     # keep_default_na=False: Return empty strings instead of NaN or na.
     # dtype=object: Return the actual data from Excel, not an intepretation of it.
-    df = read_excel(excel_file, keep_default_na=False, dtype=object)
+    df = pd.read_excel(excel_file, keep_default_na=False, dtype=object)
     # Uses pandas.DataFrame.to_dict with 'records' parameter:
     # 'records' : list like [{column -> value}, … , {column -> value}]
     return df.to_dict("records")
@@ -252,6 +261,7 @@ def update_data() -> None:
         projected_annual_income=0,
         total_fund_value=0,
     )
+
     logger.info(f"qryAAA_0Clear: {cnt} updated")
 
     # Original Access query qryAAA_1UpdateMTF (and duplicate qryAAA_1UpdateMTF1):
@@ -482,3 +492,64 @@ def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryD
 
     # Return results as a list of objects, rather than a queryset.
     return [item for item in results]
+
+
+def sum_col(ws, col, col_top=5):
+    """Add a total row to an Excel spreadsheet column."""
+    col_len = len(ws[col])
+    # make sure we get the first non-empty row from the bottom
+    col_len -= next(i for i, x in enumerate(reversed(ws[col])) if x.value is not None)
+    ws[f"{col}{col_len + 1}"] = f"=SUM({col}{col_top}:{col}{col_len})"
+
+
+def create_excel_output() -> None:
+    template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
+
+    wb = load_workbook(template_file)
+    # picking one tab for now
+    ws = wb["Gifts"]
+
+    # convert to pandas dataframe for easier manipulation
+    df = pd.DataFrame.from_records(LibraryData.objects.all().values())
+    # remove columns not needed in output
+    df.drop(
+        columns=[
+            "id",
+            "original_id",
+            "unit_grande",
+            "total_fund_value",
+            "projected_annual_income",
+            "fund_summary",
+            "notes",
+            "home_dept",
+        ],
+        inplace=True,
+    )
+    # convert to rows for use in spreadsheet
+    rows = dataframe_to_rows(df, index=False, header=False)
+    # add rows to spreadsheet, starting at row 5
+    for r_col_id, row in enumerate(rows, 1):
+        for c_col_id, value in enumerate(row, 1):
+            ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+    # add sums to appropriate columns
+    for col in (
+        "L",
+        "M",
+        "N",
+        "O",
+    ):
+        sum_col(ws, col)
+
+    with NamedTemporaryFile() as tmp:
+        wb.save(tmp.name)
+        tmp.seek(0)
+        stream = tmp.read()
+
+    response = HttpResponse(
+        content=stream,
+        content_type="application/ms-excel",
+    )
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename=Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+    return response

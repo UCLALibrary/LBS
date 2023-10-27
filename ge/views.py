@@ -9,6 +9,7 @@ from ge.views_utils import (
     get_librarydata_results,
     import_excel_data,
     update_data,
+    create_excel_output,
 )
 
 
@@ -30,6 +31,9 @@ def report(request: HttpRequest):
                 messages.success(request, "Reports are being generated.")
                 add_funds()
                 update_data()
+                file_response = create_excel_output()
+                messages.success(request, "Report has been generated.")
+                return file_response
             except KeyError as ex:
                 # Exception re-raised from import_excel_data has useful info already.
                 messages.error(request, ex)
