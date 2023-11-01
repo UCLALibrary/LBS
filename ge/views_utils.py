@@ -318,13 +318,21 @@ def update_data() -> None:
             )
             if bfs_rows.exists():
                 bfs = bfs_rows[0]
+                # Seems like this will always be just bfs.available,
+                # since ld.total_fund_value is set to 0 by qryAAA_0Clear,
+                # and this set doesn't intersect qryAAA_3FoundTotVal...
+                # so ld.total_fund_value was not updated by bfs.market_value.
+                # Per LBS, total_fund_value is not really used...
+                # but we'll replicate legacy logic for consistency.
                 ld.total_fund_value = ld.total_fund_value + bfs.available
                 ld.save()
                 cnt += 1
     logger.info(f"qryAAA_3FoundTotVal_2: {cnt} updated")
 
     # Original Access query qryAAA_3FoundTotVal_3:
-    # This currently matches no rows; asking LBS if this is correct.
+    # This currently matches no rows.
+    # Per LBS, total_fund_value is not really used...
+    # but we'll replicate legacy logic for consistency.
     cnt = 0
     for ld in LibraryData.objects.filter(reg_fdn="F"):
         if ld.fau_fund:
