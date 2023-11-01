@@ -1,0 +1,102 @@
+[
+{
+    "model": "ge.cdwimport",
+    "pk": 1,
+    "fields": {
+        "ledger_year_month": "202309",
+        "fye_proc_indicator": " ",
+        "fau_org": "8300",
+        "fund_group": "Gift",
+        "fau_dept": "0461",
+        "fau_location": "4",
+        "fau_account": "432975",
+        "fau_cost_center": "AD",
+        "fau_fund": "45456",
+        "fau_fund_title": "THE UCLA FILM & TELEVISION ARCHIVE DISCR",
+        "inception_to_date_appropriation": 142700.6,
+        "inception_to_date_financial": 0.0,
+        "encum_ml": 0.0,
+        "operating_balance": 142700.6
+    }
+},
+{
+    "model": "ge.cdwimport",
+    "pk": 2,
+    "fields": {
+        "ledger_year_month": "202309",
+        "fye_proc_indicator": " ",
+        "fau_org": "8300",
+        "fund_group": "Gift",
+        "fau_dept": "5400",
+        "fau_location": "4",
+        "fau_account": "600001",
+        "fau_cost_center": "UL",
+        "fau_fund": "45439",
+        "fau_fund_title": "UCLA FDN/PAGE ACKERMAN UNIVERSITY LIBRAR",
+        "inception_to_date_appropriation": 93020.74,
+        "inception_to_date_financial": 63714.1,
+        "encum_ml": 0.0,
+        "operating_balance": 29306.64
+    }
+},
+{
+    "model": "ge.cdwimport",
+    "pk": 3,
+    "fields": {
+        "ledger_year_month": "202309",
+        "fye_proc_indicator": " ",
+        "fau_org": "8300",
+        "fund_group": "Gift",
+        "fau_dept": "0461",
+        "fau_location": "4",
+        "fau_account": "432975",
+        "fau_cost_center": "5T",
+        "fau_fund": "48083",
+        "fau_fund_title": "UCLA FDN/JOHN H. MITCHELL INFRASTRUCTURE",
+        "inception_to_date_appropriation": 0.0,
+        "inception_to_date_financial": 0.0,
+        "encum_ml": 0.0,
+        "operating_balance": 0.0
+    }
+},
+{
+    "model": "ge.cdwimport",
+    "pk": 4,
+    "fields": {
+        "ledger_year_month": "202309",
+        "fye_proc_indicator": " ",
+        "fau_org": "8300",
+        "fund_group": "Gift",
+        "fau_dept": "0461",
+        "fau_location": "4",
+        "fau_account": "432975",
+        "fau_cost_center": "DM",
+        "fau_fund": "48083",
+        "fau_fund_title": "UCLA FDN/JOHN H. MITCHELL INFRASTRUCTURE",
+        "inception_to_date_appropriation": 1751550.29,
+        "inception_to_date_financial": 58022.08,
+        "encum_ml": 40727.38,
+        "operating_balance": 1652800.83
+    }
+},
+{
+    "model": "ge.cdwimport",
+    "pk": 5,
+    "fields": {
+        "ledger_year_month": "202309",
+        "fye_proc_indicator": " ",
+        "fau_org": "8300",
+        "fund_group": "Gift",
+        "fau_dept": "5400",
+        "fau_location": "4",
+        "fau_account": "604000",
+        "fau_cost_center": "OA",
+        "fau_fund": "50743",
+        "fau_fund_title": "UCLA FDN/ARCADIA OPEN ACCESS ACCOUNT    ",
+        "inception_to_date_appropriation": 533627.5,
+        "inception_to_date_financial": 15000.0,
+        "encum_ml": 10000.0,
+        "operating_balance": 508627.5
+    }
+}
+]

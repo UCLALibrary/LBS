@@ -42,7 +42,9 @@ class Orchestrator:
             raise ValueError("ERROR: You must supply both year and month or neither")
         elif month < 1 or month > 12:
             raise ValueError("ERROR: month must be a number from 1 to 12")
-        elif arrow.get(year=year, month=month, day=1) > today:
+        # arrow.now() defaults to local timezone; arrow.get() defaults to UTC...
+        # Must tell arrow.get() to use same timezone as today.
+        elif arrow.get(year=year, month=month, day=1, tzinfo=today.tzinfo) > today:
             raise ValueError("ERROR: cannot request a future report")
         if yyyymm is True:
             return f"{year}{month:02}"
