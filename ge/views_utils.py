@@ -460,35 +460,74 @@ def sum_col(ws, col, col_top=5):
     ws[f"{col}{col_len + 1}"] = f"=SUM({col}{col_top}:{col}{col_len})"
 
 
-def create_excel_output() -> None:
+def create_excel_output(rpt_type: str) -> None:
     template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
 
     wb = load_workbook(template_file)
-    # picking one tab for now
-    ws = wb["Gifts"]
 
-    # convert to pandas dataframe for easier manipulation
-    df = pd.DataFrame.from_records(LibraryData.objects.all().values())
-    # remove columns not needed in output
-    df.drop(
-        columns=[
-            "id",
-            "original_id",
-            "unit_grande",
-            "total_fund_value",
-            "projected_annual_income",
-            "fund_summary",
-            "notes",
-            "home_dept",
-        ],
-        inplace=True,
-    )
-    # convert to rows for use in spreadsheet
-    rows = dataframe_to_rows(df, index=False, header=False)
-    # add rows to spreadsheet, starting at row 5
-    for r_col_id, row in enumerate(rows, 1):
-        for c_col_id, value in enumerate(row, 1):
-            ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+    if rpt_type == "master":
+        # only one sheet in master report
+        gifts = wb["Gifts"]
+        wb.remove_sheet(gifts)
+        ws = wb["Endowments"]
+        ws.title = "G&E"
+        # clear label in template
+        ws["A1"] = ""
+        # remove LBS Notes column (W, one column)
+        ws.delete_cols(23, 1)
+        # unmerge and unformat LBS Notes
+        ws.unmerge_cells("W2:W3")
+        ws["W4"] = ""
+
+        # get all data from LibraryData table as a dataframe
+        df = pd.DataFrame.from_records(LibraryData.objects.all().values())
+        # get correct cols in correct order
+        df_filtered = df[
+            [
+                "unit",
+                "home_unit_dept",
+                "fund_title",
+                "fund_type",
+                "reg_fdn",
+                "fund_manager",
+                "ucop_fdn_no",
+                "fau_fund_no",
+                "fau_account",
+                "fau_cost_center",
+                "fau_fund",
+                "ytd_appropriation",
+                "ytd_expenditure",
+                "commitments",
+                "operating_balance",
+                "max_mtf_trf_amt",
+                "total_balance",
+                "mtf_authority",
+                "projected_annual_income",
+                "fund_purpose",
+                "fund_restriction",
+                "notes",
+            ]
+        ]
+        # convert to rows for use in spreadsheet
+        rows = dataframe_to_rows(df_filtered, index=False, header=False)
+        # add rows to spreadsheet, starting at row 5
+        for r_col_id, row in enumerate(rows, 1):
+            for c_col_id, value in enumerate(row, 1):
+                ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+        # add correct cell formatting
+        for col in ("L", "M", "N", "O", "P", "Q", "S"):
+            for row in range(5, len(ws[col]) + 1):
+                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                ws[
+                    f"{col}{row}"
+                ].number_format = (
+                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                )
+
+    elif rpt_type == "AUL":
+        return
+    elif rpt_type == "dept":
+        return
     # add sums to appropriate columns
     for col in (
         "L",

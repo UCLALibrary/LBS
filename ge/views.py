@@ -15,6 +15,7 @@ from ge.views_utils import (
 # TODO: Clean up auth system across qdb/ge apps
 @login_required(login_url="/login/")
 def report(request: HttpRequest):
+    print(request.GET)
     if request.method == "POST":
         form = ExcelUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -26,16 +27,19 @@ def report(request: HttpRequest):
                 import_excel_data(cdw_file, CDWImport)
                 import_excel_data(mtf_file, MTFImport)
                 messages.success(request, "All data was imported successfully.")
-                # TODO: Separate form to generate reports?  For now, doing that automatically.
-                messages.success(request, "Reports are being generated.")
                 add_funds()
                 update_data()
-                file_response = create_excel_output()
-                messages.success(request, "Report has been generated.")
-                return file_response
+
             except KeyError as ex:
                 # Exception re-raised from import_excel_data has useful info already.
                 messages.error(request, ex)
+
+    elif request.GET.get("get_master_report"):
+        return create_excel_output("master")
+    elif request.GET.get("get_aul_reports"):
+        return create_excel_output("aul")
+    elif request.GET.get("get_dept_reports"):
+        return create_excel_output("dept")
     else:
         form = ExcelUploadForm()
     context = {"form": form}
