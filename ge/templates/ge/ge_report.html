@@ -15,4 +15,12 @@
     {{ form.as_p }}
     <button type="submit" id="upload_submit" >Upload files</button>
 </form>
+
+<form id="get_report" method="get">
+  {% csrf_token %}
+  <input type="submit" class="btn" value="Get master report" name="get_master_report">
+  <input type="submit" class="btn" value="Get AUL reports" name="get_aul_reports">
+  <input type="submit" class="btn" value="Get departmental reports" name="get_dept_report">
+ </form>
+ 
 {% endblock %}
