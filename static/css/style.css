@@ -7,3 +7,19 @@ a:link, a:visited {
     text-decoration: none;
     transition: color 0.15s, background 0.15s;
 }
+
+.search-results th, td {
+    padding: 4px;
+    border: 1px solid;
+    vertical-align: top;
+}
+
+.data-form th, td {
+    border-collapse: collapse;
+    border: none;
+    vertical-align: top;
+}
+
+.data-form th {
+    text-align: right;
+}
