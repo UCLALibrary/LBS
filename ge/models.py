@@ -105,41 +105,44 @@ class MTFImport(models.Model):
 
 
 # Local LBS data to be combined with campus data
-# Straight import now, to explore data
+# Straight import now, to explore data.
+# Allow all fields to be blank (empty) as none are really required
+# and must be blank=True so they're not required when editing via form.
+# Numeric fields can be null; text fields should be blank (empty strings).
 class LibraryData(models.Model):
-    original_id = models.SmallIntegerField(null=True)
+    original_id = models.SmallIntegerField(null=True, blank=True)
     # TODO: Remove unit_grande, confirmed not needed
-    unit_grande = models.CharField(max_length=50, null=True)
-    unit = models.CharField(max_length=50, null=True)
-    home_unit_dept = models.CharField(max_length=50, null=True)
-    fund_title = models.CharField(max_length=100, null=True)
-    fund_type = models.CharField(max_length=50, null=True)
-    reg_fdn = models.CharField(max_length=1, null=True)
-    fund_manager = models.CharField(max_length=50, null=True)
-    ucop_fdn_no = models.CharField(max_length=50, null=True)
+    unit_grande = models.CharField(max_length=50, blank=True)
+    unit = models.CharField(max_length=50, blank=True)
+    home_unit_dept = models.CharField(max_length=50, blank=True)
+    fund_title = models.CharField(max_length=100, blank=True)
+    fund_type = models.CharField(max_length=50, blank=True)
+    reg_fdn = models.CharField(max_length=1, blank=True)
+    fund_manager = models.CharField(max_length=50, blank=True)
+    ucop_fdn_no = models.CharField(max_length=50, blank=True)
     # Normally 5 chars but some data has 6...
-    fau_fund_no = models.CharField(max_length=6, null=True)
-    fau_account = models.CharField(max_length=8, null=True)
-    fau_cost_center = models.CharField(max_length=2, null=True)
+    fau_fund_no = models.CharField(max_length=6, blank=True)
+    fau_account = models.CharField(max_length=8, blank=True)
+    fau_cost_center = models.CharField(max_length=2, blank=True)
     # Normally 5 chars but some data has 6...
     # How are "Fund No" and "Fund" different?
-    fau_fund = models.CharField(max_length=6, null=True)
-    ytd_appropriation = models.FloatField(null=True)
-    ytd_expenditure = models.FloatField(null=True)
-    commitments = models.FloatField(null=True)
-    operating_balance = models.FloatField(null=True)
-    max_mtf_trf_amt = models.FloatField(null=True)
-    total_balance = models.FloatField(null=True)
-    mtf_authority = models.CharField(max_length=50, null=True)
-    total_fund_value = models.FloatField(null=True)
-    projected_annual_income = models.FloatField(null=True)
-    fund_summary = models.CharField(max_length=1000, null=True)
-    fund_purpose = models.CharField(max_length=2000, null=True)
-    notes = models.CharField(max_length=1000, null=True)
-    home_dept = models.CharField(max_length=50, null=True)
-    fund_restriction = models.CharField(max_length=1000, null=True)
-    new_fund = models.CharField(max_length=1, null=True)
-    lbs_notes = models.CharField(max_length=1000, null=True)
+    fau_fund = models.CharField(max_length=6, blank=True)
+    ytd_appropriation = models.FloatField(null=True, blank=True)
+    ytd_expenditure = models.FloatField(null=True, blank=True)
+    commitments = models.FloatField(null=True, blank=True)
+    operating_balance = models.FloatField(null=True, blank=True)
+    max_mtf_trf_amt = models.FloatField(null=True, blank=True)
+    total_balance = models.FloatField(null=True, blank=True)
+    mtf_authority = models.CharField(max_length=50, blank=True)
+    total_fund_value = models.FloatField(null=True, blank=True)
+    projected_annual_income = models.FloatField(null=True, blank=True)
+    fund_summary = models.CharField(max_length=1000, blank=True)
+    fund_purpose = models.CharField(max_length=2000, blank=True)
+    notes = models.CharField(max_length=1000, blank=True)
+    home_dept = models.CharField(max_length=50, blank=True)
+    fund_restriction = models.CharField(max_length=1000, blank=True)
+    new_fund = models.CharField(max_length=1, blank=True)
+    lbs_notes = models.CharField(max_length=1000, blank=True)
 
     def __str__(self):
         return f"{self.fund_title}: {self.fau_account}-{self.fau_cost_center}-{self.fau_fund}"
