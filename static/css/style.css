@@ -8,13 +8,13 @@ a:link, a:visited {
     transition: color 0.15s, background 0.15s;
 }
 
-.search-results th, td {
+.search-results th, .search-results td {
     padding: 4px;
     border: 1px solid;
     vertical-align: top;
 }
 
-.data-form th, td {
+.data-form {
     border-collapse: collapse;
     border: none;
     vertical-align: top;
@@ -22,4 +22,26 @@ a:link, a:visited {
 
 .data-form th {
     text-align: right;
+}
+
+ul.navbar {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #d0d0d7;
+    border: 1px solid black;
+    justify-content: unset;
+}
+
+.navbar li {
+    float: left;
+    border-right: 1px solid #bcbcc5;
+}
+
+.navbar li a {
+    display: block;
+    text-align: center;
+    padding: 10px 12px;
+    text-decoration: none;
 }
