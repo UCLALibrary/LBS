@@ -45,3 +45,34 @@ class LibraryDataEditForm(forms.ModelForm):
             # Wider single-line text fields
             "fund_title": forms.TextInput(attrs={"size": 80}),
         }
+
+
+class ReportForm(forms.Form):
+    report_type = forms.ChoiceField(
+        label="Report Type:",
+        choices=[
+            ("master", "Master"),
+            ("archives", "Archives"),
+            ("arts", "Arts"),
+            ("biomed", "Biomed"),
+            ("digilib", "Digital Library"),
+            ("eal", "East Asian Library"),
+            ("hsc", "History & SC Sciences"),
+            ("hssd", "HSSD"),
+            ("ias", "Intl & Area Studies"),
+            ("lhr", "LHR"),
+            ("lsc", "LSC"),
+            ("management", "Management"),
+            ("music", "Music"),
+            ("oh", "Oral History"),
+            ("pa", "Performing Arts"),
+            ("powell", "Powell"),
+            ("preservation", "Preservation"),
+            ("sel", "SEL"),
+            ("ul", "UL"),
+            ("aul_benedetti", "AUL Benedetti"),
+            ("aul_consales", "AUL Consales"),
+            ("aul_grappone", "AUL Grappone"),
+        ],
+        widget=forms.Select(),
+    )

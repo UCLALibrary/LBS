@@ -502,60 +502,67 @@ def sum_col(ws, col, col_top=5):
     ws[f"{col}{col_len + 1}"] = f"=SUM({col}{col_top}:{col}{col_len})"
 
 
-def create_excel_output(rpt_type: str) -> None:
-    template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
+def df_to_excel(df: pd.DataFrame, ws):
+    """Puts dataframe into Excel worksheet, with data starting at row 5."""
+    # convert to rows for use in spreadsheet
+    rows = dataframe_to_rows(df, index=False, header=False)
+    # add rows to spreadsheet, starting at row 5
+    for r_col_id, row in enumerate(rows, 1):
+        for c_col_id, value in enumerate(row, 1):
+            ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+    return ws
 
+
+def create_excel_output(rpt_type: str) -> None:
+    """Create Excel output for a report."""
+
+    # UL and Master reports have extra columns, so use a different template
+    if rpt_type in ("master", "ul"):
+        template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
+    else:
+        template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
     wb = load_workbook(template_file)
 
     if rpt_type == "master":
-        # only one sheet in master report
+        # only one sheet in master report, so remove the other and rename
         gifts = wb["Gifts"]
         wb.remove_sheet(gifts)
         ws = wb["Endowments"]
         ws.title = "G&E"
         # clear label in template
         ws["A1"] = ""
-        # remove LBS Notes column (W, one column)
-        ws.delete_cols(23, 1)
-        # unmerge and unformat LBS Notes
-        ws.unmerge_cells("W2:W3")
-        ws["W4"] = ""
 
         # get all data from LibraryData table as a dataframe
         df = pd.DataFrame.from_records(LibraryData.objects.all().values())
         # get correct cols in correct order
-        df_filtered = df[
-            [
-                "unit",
-                "home_unit_dept",
-                "fund_title",
-                "fund_type",
-                "reg_fdn",
-                "fund_manager",
-                "ucop_fdn_no",
-                "fau_fund_no",
-                "fau_account",
-                "fau_cost_center",
-                "fau_fund",
-                "ytd_appropriation",
-                "ytd_expenditure",
-                "commitments",
-                "operating_balance",
-                "max_mtf_trf_amt",
-                "total_balance",
-                "mtf_authority",
-                "projected_annual_income",
-                "fund_purpose",
-                "fund_restriction",
-                "notes",
-            ]
+        master_cols = [
+            "unit",
+            "home_unit_dept",
+            "fund_title",
+            "fund_type",
+            "reg_fdn",
+            "fund_manager",
+            "ucop_fdn_no",
+            "fau_fund_no",
+            "fau_account",
+            "fau_cost_center",
+            "fau_fund",
+            "ytd_appropriation",
+            "ytd_expenditure",
+            "commitments",
+            "operating_balance",
+            "max_mtf_trf_amt",
+            "total_balance",
+            "mtf_authority",
+            "projected_annual_income",
+            "fund_purpose",
+            "fund_restriction",
+            "notes",
         ]
-        # convert to rows for use in spreadsheet
-        rows = dataframe_to_rows(df_filtered, index=False, header=False)
-        # add rows to spreadsheet, starting at row 5
-        for r_col_id, row in enumerate(rows, 1):
-            for c_col_id, value in enumerate(row, 1):
-                ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+        df = df[master_cols]
+
+        ws = df_to_excel(df, ws)
+
         # add correct cell formatting
         for col in ("L", "M", "N", "O", "P", "Q", "S"):
             for row in range(5, len(ws[col]) + 1):
@@ -566,18 +573,158 @@ def create_excel_output(rpt_type: str) -> None:
                     """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
                 )
 
-    elif rpt_type == "AUL":
-        return
-    elif rpt_type == "dept":
-        return
-    # add sums to appropriate columns
-    for col in (
-        "L",
-        "M",
-        "N",
-        "O",
-    ):
-        sum_col(ws, col)
+    else:
+        # map each report type to list of strings needed for query
+        rpt_query_dict = {
+            "archives": ["Archives"],
+            "arts": ["Arts"],
+            "biomed": ["Biomed"],
+            "digilib": ["DigiLib", "Digital Library"],
+            "eal": ["EAL"],
+            "hsc": ["History & SC Sciences"],
+            "hssd": ["HSSD", "SSHD"],
+            "ias": ["Int'l Studies"],
+            "lhr": ["LHR"],
+            "lsc": ["LSC"],
+            "management": ["Management"],
+            "music": ["Music"],
+            "oh": ["Oral History"],
+            "pa": ["Performing Arts"],
+            "powell": ["Powell"],
+            "preservation": ["Preservation"],
+            "sel": ["SEL"],
+            "ul": ["UL"],
+        }
+
+        # some reports require multiple queries, so start with a blank queryset
+        # and OR them together
+        endowments_qset = LibraryData.objects.none()
+        for query_str in rpt_query_dict[rpt_type]:
+            endowments_qset |= (
+                LibraryData.objects.filter(unit=query_str)
+                .filter(fund_type="Endowment")
+                .order_by("fau_fund_no")
+            )
+        gifts_qset = LibraryData.objects.none()
+        for query_str in rpt_query_dict[rpt_type]:
+            gifts_qset |= (
+                LibraryData.objects.filter(unit=query_str)
+                .filter(fund_type="Current Expenditure")
+                .order_by("fau_fund_no")
+            )
+
+        endowments_df = pd.DataFrame.from_records(endowments_qset.values())
+        gifts_df = pd.DataFrame.from_records(gifts_qset.values())
+
+        # basic cols for endowments reports
+        endowments_cols = [
+            "unit",
+            "home_unit_dept",
+            "fund_title",
+            "fund_type",
+            "reg_fdn",
+            "fund_manager",
+            "ucop_fdn_no",
+            "fau_fund_no",
+            "fau_account",
+            "fau_cost_center",
+            "fau_fund",
+            "ytd_appropriation",
+            "ytd_expenditure",
+            "commitments",
+            "operating_balance",
+            "mtf_authority",
+            "projected_annual_income",
+            "fund_purpose",
+            "fund_restriction",
+            "notes",
+        ]
+        # extra cols for UL report
+        if rpt_type == "ul":
+            endowments_cols.insert(15, "max_mtf_trf_amt")
+            endowments_cols.insert(16, "total_balance")
+
+        endowments_df = endowments_df[endowments_cols]
+
+        # if there are no fund restrictions, remove that column
+        if all(endowments_df["fund_restriction"].isin([""])):
+            endowments_df.drop(columns=["fund_restriction"], inplace=True)
+            # remove column from Excel template - col U for UL, S for others
+            if rpt_type == "ul":
+                wb["Endowments"].delete_cols(21)
+            else:
+                wb["Endowments"].delete_cols(19)
+
+        # basic cols for gifts reports
+        gifts_cols = [
+            "unit",
+            "home_unit_dept",
+            "fund_title",
+            "fund_type",
+            "reg_fdn",
+            "fund_manager",
+            "ucop_fdn_no",
+            "fau_fund_no",
+            "fau_account",
+            "fau_cost_center",
+            "fau_fund",
+            "ytd_appropriation",
+            "ytd_expenditure",
+            "commitments",
+            "operating_balance",
+            "mtf_authority",
+            "fund_purpose",
+            "fund_restriction",
+            "notes",
+        ]
+        # extra cols for UL report
+        if rpt_type == "ul":
+            gifts_cols.insert(15, "max_mtf_trf_amt")
+            gifts_cols.insert(16, "total_balance")
+        print(gifts_cols)
+        gifts_df = gifts_df[gifts_cols]
+
+        # if there are no fund restrictions, remove that column
+        if all(gifts_df["fund_restriction"].isin([""])):
+            gifts_df.drop(columns=["fund_restriction"], inplace=True)
+            # remove column from Excel template - col U for UL, R for others
+            if rpt_type == "ul":
+                wb["Gifts"].delete_cols(21)
+            else:
+                wb["Gifts"].delete_cols(18)
+
+        # put data into Excel worksheets
+        gifts_ws = wb["Gifts"]
+        endowments_ws = wb["Endowments"]
+        gifts_ws = df_to_excel(gifts_df, gifts_ws)
+        endowments_ws = df_to_excel(endowments_df, endowments_ws)
+
+        # add totals and formatting for money columns
+        gifts_money_cols = ["L", "M", "N", "O"]
+        endowments_money_cols = ["L", "M", "N", "O", "Q"]
+        if rpt_type == "ul":
+            gifts_money_cols.extend(["P", "Q"])
+            endowments_money_cols.extend(["P", "S"])
+
+        for col in gifts_money_cols:
+            sum_col(gifts_ws, col)
+            for row in range(5, len(gifts_ws[col]) + 1):
+                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                gifts_ws[
+                    f"{col}{row}"
+                ].number_format = (
+                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                )
+
+        for col in endowments_money_cols:
+            sum_col(endowments_ws, col)
+            for row in range(5, len(endowments_ws[col]) + 1):
+                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                endowments_ws[
+                    f"{col}{row}"
+                ].number_format = (
+                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                )
 
     with NamedTemporaryFile() as tmp:
         wb.save(tmp.name)
@@ -590,5 +737,5 @@ def create_excel_output(rpt_type: str) -> None:
     )
     response[
         "Content-Disposition"
-    ] = f'attachment; filename=Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+    ] = f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
     return response

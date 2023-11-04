@@ -2,7 +2,12 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from ge.forms import ExcelUploadForm, LibraryDataEditForm, LibraryDataSearchForm
+from ge.forms import (
+    ExcelUploadForm,
+    LibraryDataEditForm,
+    LibraryDataSearchForm,
+    ReportForm,
+)
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 from ge.views_utils import (
     add_funds,
@@ -16,10 +21,9 @@ from ge.views_utils import (
 # TODO: Clean up auth system across qdb/ge apps
 @login_required(login_url="/login/")
 def report(request: HttpRequest):
-    print(request.GET)
     if request.method == "POST":
-        form = ExcelUploadForm(request.POST, request.FILES)
-        if form.is_valid():
+        upload_form = ExcelUploadForm(request.POST, request.FILES)
+        if upload_form.is_valid():
             bfs_file = request.FILES["bfs_filename"]
             cdw_file = request.FILES["cdw_filename"]
             mtf_file = request.FILES["mtf_filename"]
@@ -35,15 +39,14 @@ def report(request: HttpRequest):
                 # Exception re-raised from import_excel_data has useful info already.
                 messages.error(request, ex)
 
-    elif request.GET.get("get_master_report"):
-        return create_excel_output("master")
-    elif request.GET.get("get_aul_reports"):
-        return create_excel_output("aul")
-    elif request.GET.get("get_dept_reports"):
-        return create_excel_output("dept")
+    elif "report_submit" in request.GET:
+        report_form = ReportForm(request.GET)
+        if report_form.is_valid():
+            return create_excel_output(request.GET.get("report_type"))
     else:
-        form = ExcelUploadForm()
-    context = {"form": form}
+        upload_form = ExcelUploadForm()
+        report_form = ReportForm()
+    context = {"upload_form": upload_form, "report_form": report_form}
     return render(request, "ge/ge_report.html", context)
 
 

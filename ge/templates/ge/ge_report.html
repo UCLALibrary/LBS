@@ -12,15 +12,14 @@
 
 <form id="upload_files" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ upload_form.as_p }}
     <button type="submit" id="upload_submit" >Upload files</button>
 </form>
 
-<form id="get_report" method="get">
+<form id="get_report" method="get" name="get_report">
   {% csrf_token %}
-  <input type="submit" class="btn" value="Get master report" name="get_master_report">
-  <input type="submit" class="btn" value="Get AUL reports" name="get_aul_reports">
-  <input type="submit" class="btn" value="Get departmental reports" name="get_dept_report">
+  {{ report_form.as_p }}
+  <button type="submit" name="report_submit">Get report</button>
  </form>
  
 {% endblock %}
