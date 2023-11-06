@@ -23,6 +23,8 @@ from ge.views_utils import (
 def report(request: HttpRequest):
     if request.method == "POST":
         upload_form = ExcelUploadForm(request.POST, request.FILES)
+        # Make sure report_form is initialized, for later use.
+        report_form = ReportForm()
         if upload_form.is_valid():
             bfs_file = request.FILES["bfs_filename"]
             cdw_file = request.FILES["cdw_filename"]
