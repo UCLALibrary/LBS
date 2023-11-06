@@ -594,24 +594,53 @@ def create_excel_output(rpt_type: str) -> None:
             "preservation": ["Preservation"],
             "sel": ["SEL"],
             "ul": ["UL"],
+            "aul_benedetti": ["Benedetti"],
+            "aul_consales": ["Consales"],
+            "aul_grappone": ["Grappone"],
         }
 
         # some reports require multiple queries, so start with a blank queryset
         # and OR them together
         endowments_qset = LibraryData.objects.none()
-        for query_str in rpt_query_dict[rpt_type]:
-            endowments_qset |= (
-                LibraryData.objects.filter(unit=query_str)
-                .filter(fund_type="Endowment")
-                .order_by("fau_fund_no")
-            )
         gifts_qset = LibraryData.objects.none()
-        for query_str in rpt_query_dict[rpt_type]:
-            gifts_qset |= (
-                LibraryData.objects.filter(unit=query_str)
-                .filter(fund_type="Current Expenditure")
-                .order_by("fau_fund_no")
+
+        # AUL reports require fuzzy matching on unit and home_unit_dept
+        if rpt_type in ["aul_benedetti", "aul_consales", "aul_grappone"]:
+            endowments_qset = LibraryData.objects.filter(
+                unit__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(fund_type="Endowment").order_by(
+                "fau_fund_no"
+            ) | LibraryData.objects.filter(
+                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(
+                fund_type="Endowment"
+            ).order_by(
+                "fau_fund_no"
             )
+            gifts_qset = LibraryData.objects.filter(
+                unit__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(fund_type="Current Expenditure").order_by(
+                "fau_fund_no"
+            ) | LibraryData.objects.filter(
+                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(
+                fund_type="Current Expenditure"
+            ).order_by(
+                "fau_fund_no"
+            )
+
+        else:
+            for query_str in rpt_query_dict[rpt_type]:
+                endowments_qset |= (
+                    LibraryData.objects.filter(unit=query_str)
+                    .filter(fund_type="Endowment")
+                    .order_by("fau_fund_no")
+                )
+                gifts_qset |= (
+                    LibraryData.objects.filter(unit=query_str)
+                    .filter(fund_type="Current Expenditure")
+                    .order_by("fau_fund_no")
+                )
 
         endowments_df = pd.DataFrame.from_records(endowments_qset.values())
         gifts_df = pd.DataFrame.from_records(gifts_qset.values())
@@ -644,16 +673,17 @@ def create_excel_output(rpt_type: str) -> None:
             endowments_cols.insert(15, "max_mtf_trf_amt")
             endowments_cols.insert(16, "total_balance")
 
-        endowments_df = endowments_df[endowments_cols]
+        if not endowments_df.empty:
+            endowments_df = endowments_df[endowments_cols]
 
-        # if there are no fund restrictions, remove that column
-        if all(endowments_df["fund_restriction"].isin([""])):
-            endowments_df.drop(columns=["fund_restriction"], inplace=True)
-            # remove column from Excel template - col U for UL, S for others
-            if rpt_type == "ul":
-                wb["Endowments"].delete_cols(21)
-            else:
-                wb["Endowments"].delete_cols(19)
+            # if there are no fund restrictions, remove that column
+            if all(endowments_df["fund_restriction"].isin([""])):
+                endowments_df.drop(columns=["fund_restriction"], inplace=True)
+                # remove column from Excel template - col U for UL, S for others
+                if rpt_type == "ul":
+                    wb["Endowments"].delete_cols(21)
+                else:
+                    wb["Endowments"].delete_cols(19)
 
         # basic cols for gifts reports
         gifts_cols = [
@@ -681,17 +711,18 @@ def create_excel_output(rpt_type: str) -> None:
         if rpt_type == "ul":
             gifts_cols.insert(15, "max_mtf_trf_amt")
             gifts_cols.insert(16, "total_balance")
-        print(gifts_cols)
-        gifts_df = gifts_df[gifts_cols]
 
-        # if there are no fund restrictions, remove that column
-        if all(gifts_df["fund_restriction"].isin([""])):
-            gifts_df.drop(columns=["fund_restriction"], inplace=True)
-            # remove column from Excel template - col U for UL, R for others
-            if rpt_type == "ul":
-                wb["Gifts"].delete_cols(21)
-            else:
-                wb["Gifts"].delete_cols(18)
+        if not gifts_df.empty:
+            gifts_df = gifts_df[gifts_cols]
+
+            # if there are no fund restrictions, remove that column
+            if all(gifts_df["fund_restriction"].isin([""])):
+                gifts_df.drop(columns=["fund_restriction"], inplace=True)
+                # remove column from Excel template - col U for UL, R for others
+                if rpt_type == "ul":
+                    wb["Gifts"].delete_cols(21)
+                else:
+                    wb["Gifts"].delete_cols(18)
 
         # put data into Excel worksheets
         gifts_ws = wb["Gifts"]
