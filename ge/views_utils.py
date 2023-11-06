@@ -1,5 +1,6 @@
+from functools import reduce
 import logging
-from django.db.models import Model
+from django.db.models import Model, Q
 from pandas import read_excel
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 
@@ -441,3 +442,43 @@ def update_data() -> None:
         ld.save()
         cnt += 1
     logger.info(f"qryAAA_6TotalBalance: {cnt} updated")
+
+
+def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryData]:
+    """Search LibraryData fields for a search_term, based on search_type.
+
+    Parameters:
+    search_type -- The type of search (fund or keyword)
+    search_term -- The term to search for
+
+    Returns a list of LibraryData objects matching the search.
+    """
+    if search_type == "fund":
+        fields_to_search = ["fau_fund", "fau_fund_no", "ucop_fdn_no"]
+    elif search_type == "keyword":
+        fields_to_search = [
+            "fund_manager",
+            "fund_purpose",
+            "fund_restriction",
+            "fund_summary",
+            "fund_title",
+            "lbs_notes",
+            "notes",
+        ]
+    else:
+        raise ValueError(f"Unsupported search type: {search_type}")
+
+    # Get a list of individual Q() statements looking for search_term in each field.
+    # Example result: [<Q: (AND: ('field_a', 'term'))>, <Q: (AND: ('field_b', 'term'))>]
+    q_list = [Q(**{field + "__icontains": search_term}) for field in fields_to_search]
+
+    # OR them all together.  Result, using the previous example:
+    # <Q: (OR: ('field_a', 'term'), ('field_b', 'term'))>
+    q_filter = reduce(lambda a, b: a | b, q_list)
+
+    # Apply the filter to find results.
+    # TODO: Is there a better field(s) to sort by?
+    results = LibraryData.objects.filter(q_filter).order_by("id")
+
+    # Return results as a list of objects, rather than a queryset.
+    return [item for item in results]

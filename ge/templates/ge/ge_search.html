@@ -1,0 +1,51 @@
+{% extends 'ge/base.html' %}
+
+{% block content %}
+
+{% if messages %}
+<div class="box">
+{% for message in messages %}
+  <div>{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<form id="search" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" id="search_submit" >Search</button>
+</form>
+
+{% if results %}
+<hr>
+<table class="search-results">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Unit</th>
+            <th>Selector</th>
+            <th>Account</th>
+            <th>CC</th>
+            <th>Fund</th>
+            <th>UCOP #</th>
+            <th>Title</th>
+        </tr>
+    </thead>
+    {% for item in results %}
+    <tr>
+        <td><a href="{% url 'edit_librarydata' item.id %}">{{ item.id }}</a></td>
+        <td>{{ item.unit }}</td>
+        <td>{{ item.fund_manager }}</td>
+        <td>{{ item.fau_account }}</td>
+        <td>{{ item.fau_cost_center }}</td>
+        <td>{{ item.fau_fund }}</td>
+        <td>{{ item.ucop_fdn_no }}</td>
+        <td>{{ item.fund_title }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No results found.</p>
+{% endif %}
+
+{% endblock %}

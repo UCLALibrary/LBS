@@ -2,6 +2,7 @@ from django.test import TestCase
 from ge.models import BFSImport, CDWImport, MTFImport, LibraryData
 from ge.views_utils import (
     get_data_from_excel,
+    get_librarydata_results,
     import_excel_data,
     add_funds,
     update_data,
@@ -223,3 +224,38 @@ class UpdateDataTestCase(TestCase):
         self.assertEqual(after.ytd_expenditure, 15000.00)
         self.assertEqual(after.commitments, 10000.00)
         self.assertEqual(after.operating_balance, 508627.50)
+
+
+class SearchLibraryDataTestCase(TestCase):
+    fixtures = [
+        "sample_bfs_data.json",
+        "sample_cdw_data.json",
+        "sample_mtf_data.json",
+        "sample_library_data.json",
+    ]
+
+    def test_fund_search_results(self):
+        results = get_librarydata_results(search_type="fund", search_term="63557O")
+        self.assertEqual(len(results), 1)
+
+    def test_keyword_search_results(self):
+        results = get_librarydata_results(search_type="keyword", search_term="FY23")
+        self.assertEqual(len(results), 3)
+
+    def test_search_is_case_insensitive(self):
+        # Data in record is "Ludwig"; should find "ludwig"
+        results = get_librarydata_results(search_type="keyword", search_term="ludwig")
+        self.assertEqual(len(results), 1)
+
+    def test_new_data_is_searched(self):
+        # No results before record is added
+        results = get_librarydata_results(
+            search_type="keyword", search_term="akohler test"
+        )
+        self.assertEqual(len(results), 0)
+        # Add brief record and confirm it's found
+        LibraryData.objects.create(fund_title="AKOHLER test record")
+        results = get_librarydata_results(
+            search_type="keyword", search_term="akohler test"
+        )
+        self.assertEqual(len(results), 1)
