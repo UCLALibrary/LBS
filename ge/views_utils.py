@@ -1,8 +1,17 @@
 from functools import reduce
 import logging
 from django.db.models import Model, Q
-from pandas import read_excel
+import pandas as pd
+from datetime import datetime
+from django.db.models import Model
+from django.http import HttpResponse
+from openpyxl import load_workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from os import path
+from tempfile import NamedTemporaryFile
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
+from lbs.settings import BASE_DIR
+
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +54,7 @@ def get_data_from_excel(excel_file: str) -> list[dict]:
     """
     # keep_default_na=False: Return empty strings instead of NaN or na.
     # dtype=object: Return the actual data from Excel, not an intepretation of it.
-    df = read_excel(excel_file, keep_default_na=False, dtype=object)
+    df = pd.read_excel(excel_file, keep_default_na=False, dtype=object)
     # Uses pandas.DataFrame.to_dict with 'records' parameter:
     # 'records' : list like [{column -> value}, … , {column -> value}]
     return df.to_dict("records")
@@ -252,6 +261,7 @@ def update_data() -> None:
         projected_annual_income=0,
         total_fund_value=0,
     )
+
     logger.info(f"qryAAA_0Clear: {cnt} updated")
 
     # Original Access query qryAAA_1UpdateMTF (and duplicate qryAAA_1UpdateMTF1):
@@ -482,3 +492,281 @@ def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryD
 
     # Return results as a list of objects, rather than a queryset.
     return [item for item in results]
+
+
+def sum_col(ws, col, col_top=5):
+    """Add a total row to an Excel spreadsheet column."""
+    col_len = len(ws[col])
+    # make sure we get the first non-empty row from the bottom
+    col_len -= next(i for i, x in enumerate(reversed(ws[col])) if x.value is not None)
+    ws[f"{col}{col_len + 1}"] = f"=SUM({col}{col_top}:{col}{col_len})"
+
+
+def df_to_excel(df: pd.DataFrame, ws):
+    """Puts dataframe into Excel worksheet, with data starting at row 5."""
+    # convert to rows for use in spreadsheet
+    rows = dataframe_to_rows(df, index=False, header=False)
+    # add rows to spreadsheet, starting at row 5
+    for r_col_id, row in enumerate(rows, 1):
+        for c_col_id, value in enumerate(row, 1):
+            ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+    return ws
+
+
+def create_excel_output(rpt_type: str) -> None:
+    """Create Excel output for a report."""
+
+    # UL and Master reports have extra columns, so use a different template
+    if rpt_type in ("master", "ul"):
+        template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
+    else:
+        template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
+    wb = load_workbook(template_file)
+
+    if rpt_type == "master":
+        # only one sheet in master report, so remove the other and rename
+        gifts = wb["Gifts"]
+        wb.remove_sheet(gifts)
+        ws = wb["Endowments"]
+        ws.title = "G&E"
+        # clear label in template
+        ws["A1"] = ""
+
+        # get all data from LibraryData table as a dataframe
+        df = pd.DataFrame.from_records(LibraryData.objects.all().values())
+        # get correct cols in correct order
+        master_cols = [
+            "unit",
+            "home_unit_dept",
+            "fund_title",
+            "fund_type",
+            "reg_fdn",
+            "fund_manager",
+            "ucop_fdn_no",
+            "fau_fund_no",
+            "fau_account",
+            "fau_cost_center",
+            "fau_fund",
+            "ytd_appropriation",
+            "ytd_expenditure",
+            "commitments",
+            "operating_balance",
+            "max_mtf_trf_amt",
+            "total_balance",
+            "mtf_authority",
+            "projected_annual_income",
+            "fund_purpose",
+            "fund_restriction",
+            "notes",
+        ]
+        df = df[master_cols]
+
+        ws = df_to_excel(df, ws)
+
+        # add correct cell formatting
+        for col in ("L", "M", "N", "O", "P", "Q", "S"):
+            for row in range(5, len(ws[col]) + 1):
+                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                ws[
+                    f"{col}{row}"
+                ].number_format = (
+                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                )
+
+    else:
+        # map each report type to list of strings needed for query
+        rpt_query_dict = {
+            "archives": ["Archives"],
+            "arts": ["Arts"],
+            "biomed": ["Biomed"],
+            "digilib": ["DigiLib", "Digital Library"],
+            "eal": ["EAL"],
+            "hsc": ["History & SC Sciences"],
+            "hssd": ["HSSD", "SSHD"],
+            "ias": ["Int'l Studies"],
+            "lhr": ["LHR"],
+            "lsc": ["LSC"],
+            "management": ["Management"],
+            "music": ["Music"],
+            "oh": ["Oral History"],
+            "pa": ["Performing Arts"],
+            "powell": ["Powell"],
+            "preservation": ["Preservation"],
+            "sel": ["SEL"],
+            "ul": ["UL"],
+            "aul_benedetti": ["Benedetti"],
+            "aul_consales": ["Consales"],
+            "aul_grappone": ["Grappone"],
+        }
+
+        # some reports require multiple queries, so start with a blank queryset
+        # and OR them together
+        endowments_qset = LibraryData.objects.none()
+        gifts_qset = LibraryData.objects.none()
+
+        # AUL reports require fuzzy matching on unit and home_unit_dept
+        if rpt_type in ["aul_benedetti", "aul_consales", "aul_grappone"]:
+            endowments_qset = LibraryData.objects.filter(
+                unit__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(fund_type="Endowment").order_by(
+                "fau_fund_no"
+            ) | LibraryData.objects.filter(
+                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(
+                fund_type="Endowment"
+            ).order_by(
+                "fau_fund_no"
+            )
+            gifts_qset = LibraryData.objects.filter(
+                unit__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(fund_type="Current Expenditure").order_by(
+                "fau_fund_no"
+            ) | LibraryData.objects.filter(
+                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
+            ).filter(
+                fund_type="Current Expenditure"
+            ).order_by(
+                "fau_fund_no"
+            )
+
+        else:
+            for query_str in rpt_query_dict[rpt_type]:
+                endowments_qset |= (
+                    LibraryData.objects.filter(unit=query_str)
+                    .filter(fund_type="Endowment")
+                    .order_by("fau_fund_no")
+                )
+                gifts_qset |= (
+                    LibraryData.objects.filter(unit=query_str)
+                    .filter(fund_type="Current Expenditure")
+                    .order_by("fau_fund_no")
+                )
+
+        endowments_df = pd.DataFrame.from_records(endowments_qset.values())
+        gifts_df = pd.DataFrame.from_records(gifts_qset.values())
+
+        # basic cols for endowments reports
+        endowments_cols = [
+            "unit",
+            "home_unit_dept",
+            "fund_title",
+            "fund_type",
+            "reg_fdn",
+            "fund_manager",
+            "ucop_fdn_no",
+            "fau_fund_no",
+            "fau_account",
+            "fau_cost_center",
+            "fau_fund",
+            "ytd_appropriation",
+            "ytd_expenditure",
+            "commitments",
+            "operating_balance",
+            "mtf_authority",
+            "projected_annual_income",
+            "fund_purpose",
+            "fund_restriction",
+            "notes",
+        ]
+        # extra cols for UL report
+        if rpt_type == "ul":
+            endowments_cols.insert(15, "max_mtf_trf_amt")
+            endowments_cols.insert(16, "total_balance")
+
+        if not endowments_df.empty:
+            endowments_df = endowments_df[endowments_cols]
+
+            # if there are no fund restrictions, remove that column
+            if all(endowments_df["fund_restriction"].isin([""])):
+                endowments_df.drop(columns=["fund_restriction"], inplace=True)
+                # remove column from Excel template - col U for UL, S for others
+                if rpt_type == "ul":
+                    wb["Endowments"].delete_cols(21)
+                else:
+                    wb["Endowments"].delete_cols(19)
+
+        # basic cols for gifts reports
+        gifts_cols = [
+            "unit",
+            "home_unit_dept",
+            "fund_title",
+            "fund_type",
+            "reg_fdn",
+            "fund_manager",
+            "ucop_fdn_no",
+            "fau_fund_no",
+            "fau_account",
+            "fau_cost_center",
+            "fau_fund",
+            "ytd_appropriation",
+            "ytd_expenditure",
+            "commitments",
+            "operating_balance",
+            "mtf_authority",
+            "fund_purpose",
+            "fund_restriction",
+            "notes",
+        ]
+        # extra cols for UL report
+        if rpt_type == "ul":
+            gifts_cols.insert(15, "max_mtf_trf_amt")
+            gifts_cols.insert(16, "total_balance")
+
+        if not gifts_df.empty:
+            gifts_df = gifts_df[gifts_cols]
+
+            # if there are no fund restrictions, remove that column
+            if all(gifts_df["fund_restriction"].isin([""])):
+                gifts_df.drop(columns=["fund_restriction"], inplace=True)
+                # remove column from Excel template - col U for UL, R for others
+                if rpt_type == "ul":
+                    wb["Gifts"].delete_cols(21)
+                else:
+                    wb["Gifts"].delete_cols(18)
+
+        # put data into Excel worksheets
+        gifts_ws = wb["Gifts"]
+        endowments_ws = wb["Endowments"]
+        gifts_ws = df_to_excel(gifts_df, gifts_ws)
+        endowments_ws = df_to_excel(endowments_df, endowments_ws)
+
+        # add totals and formatting for money columns
+        gifts_money_cols = ["L", "M", "N", "O"]
+        endowments_money_cols = ["L", "M", "N", "O", "Q"]
+        if rpt_type == "ul":
+            gifts_money_cols.extend(["P", "Q"])
+            endowments_money_cols.extend(["P", "S"])
+
+        for col in gifts_money_cols:
+            sum_col(gifts_ws, col)
+            for row in range(5, len(gifts_ws[col]) + 1):
+                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                gifts_ws[
+                    f"{col}{row}"
+                ].number_format = (
+                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                )
+
+        for col in endowments_money_cols:
+            sum_col(endowments_ws, col)
+            for row in range(5, len(endowments_ws[col]) + 1):
+                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                endowments_ws[
+                    f"{col}{row}"
+                ].number_format = (
+                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                )
+
+    with NamedTemporaryFile() as tmp:
+        wb.save(tmp.name)
+        tmp.seek(0)
+        stream = tmp.read()
+
+    response = HttpResponse(
+        content=stream,
+        content_type="application/ms-excel",
+    )
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+    return response
