@@ -6,6 +6,7 @@ from datetime import datetime
 from django.db.models import Model
 from django.http import HttpResponse
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from os import path
 from tempfile import NamedTemporaryFile
@@ -496,10 +497,47 @@ def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryD
 
 def sum_col(ws, col, col_top=5):
     """Add a total row to an Excel spreadsheet column."""
-    col_len = len(ws[col])
+    last_row = get_last_row(ws, col)
+    ws[f"{col}{last_row + 1}"] = f"=SUM({col}{col_top}:{col}{last_row})"
+
+
+def get_last_row(ws, col):
+    """Get the index of the last non-empty row in an Excel spreadsheet column."""
+    last_row = len(ws[col])
     # make sure we get the first non-empty row from the bottom
-    col_len -= next(i for i, x in enumerate(reversed(ws[col])) if x.value is not None)
-    ws[f"{col}{col_len + 1}"] = f"=SUM({col}{col_top}:{col}{col_len})"
+    last_row -= next(i for i, x in enumerate(reversed(ws[col])) if x.value is not None)
+    return last_row
+
+
+def get_last_col(ws, row):
+    """Get the index of the last non-empty column in an Excel spreadsheet row."""
+    last_col = len(ws[row])
+    # make sure we get the first non-empty column from the right
+    last_col -= next(i for i, x in enumerate(reversed(ws[row])) if x.value is not None)
+    return last_col
+
+
+def get_as_of_date() -> str:
+    """Get the as-of label for use in column headers."""
+    current_month = datetime.now().month
+    # Jan - Mar
+    if current_month <= 3:
+        end_date = "12/31"
+        year = datetime.now().year - 1
+    # Apr - Jun
+    elif current_month <= 6:
+        end_date = "3/31"
+        year = datetime.now().year
+    # Jul - Sep
+    elif current_month <= 9:
+        end_date = "6/30"
+        year = datetime.now().year
+    # Oct - Dec
+    else:
+        end_date = "9/30"
+        year = datetime.now().year
+    # return as-of date in MM/DD/YY format
+    return f"as of {end_date}/{year%100}"
 
 
 def df_to_excel(df: pd.DataFrame, ws):
@@ -515,7 +553,7 @@ def df_to_excel(df: pd.DataFrame, ws):
 
 def create_excel_output(rpt_type: str) -> None:
     """Create Excel output for a report."""
-
+    get_as_of_date()
     # UL and Master reports have extra columns, so use a different template
     if rpt_type in ("master", "ul"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
@@ -532,8 +570,10 @@ def create_excel_output(rpt_type: str) -> None:
         # clear label in template
         ws["A1"] = ""
 
-        # get all data from LibraryData table as a dataframe
-        df = pd.DataFrame.from_records(LibraryData.objects.all().values())
+        # get all data from LibraryData table as a dataframe, excluding SPARE ROWs
+        df = pd.DataFrame.from_records(
+            LibraryData.objects.filter(~Q(unit="SPARE ROW")).values()
+        )
         # get correct cols in correct order
         master_cols = [
             "unit",
@@ -558,6 +598,7 @@ def create_excel_output(rpt_type: str) -> None:
             "fund_purpose",
             "fund_restriction",
             "notes",
+            "lbs_notes",
         ]
         df = df[master_cols]
 
@@ -572,6 +613,17 @@ def create_excel_output(rpt_type: str) -> None:
                 ].number_format = (
                     """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
                 )
+        # add filters on all cols
+        filters = ws.auto_filter
+        last_col = get_column_letter(get_last_col(ws, 5))
+        last_row = get_last_row(ws, "A")
+        filters.ref = f"A4:{last_col}{last_row}"
+
+        # add as-of dates
+        as_of = get_as_of_date()
+        ws["L3"] = as_of
+        ws["P3"] = as_of
+        ws["S3"] = as_of
 
     else:
         # map each report type to list of strings needed for query
@@ -667,6 +719,7 @@ def create_excel_output(rpt_type: str) -> None:
             "fund_purpose",
             "fund_restriction",
             "notes",
+            "lbs_notes",
         ]
         # extra cols for UL report
         if rpt_type == "ul":
@@ -718,9 +771,9 @@ def create_excel_output(rpt_type: str) -> None:
             # if there are no fund restrictions, remove that column
             if all(gifts_df["fund_restriction"].isin([""])):
                 gifts_df.drop(columns=["fund_restriction"], inplace=True)
-                # remove column from Excel template - col U for UL, R for others
+                # remove column from Excel template - col T for UL, R for others
                 if rpt_type == "ul":
-                    wb["Gifts"].delete_cols(21)
+                    wb["Gifts"].delete_cols(20)
                 else:
                     wb["Gifts"].delete_cols(18)
 
@@ -756,6 +809,27 @@ def create_excel_output(rpt_type: str) -> None:
                 ].number_format = (
                     """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
                 )
+
+        # set filters on all columns with data
+        endowments_filters = endowments_ws.auto_filter
+        last_endowment_col = get_column_letter(get_last_col(endowments_ws, 5))
+        last_endowment_row = get_last_row(endowments_ws, "A")
+        endowments_filters.ref = f"A4:{last_endowment_col}{last_endowment_row}"
+
+        gifts_filters = gifts_ws.auto_filter
+        last_gifts_col = get_column_letter(get_last_col(gifts_ws, 5))
+        last_gifts_row = get_last_row(gifts_ws, "A")
+        gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
+
+        # add as-of dates
+        as_of = get_as_of_date()
+        endowments_ws["L3"] = as_of
+        gifts_ws["L3"] = as_of
+        if rpt_type == "ul":
+            gifts_ws["P3"] = as_of
+            endowments_ws["S3"] = as_of
+        else:
+            endowments_ws["Q3"] = as_of
 
     with NamedTemporaryFile() as tmp:
         wb.save(tmp.name)
