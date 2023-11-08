@@ -518,7 +518,7 @@ def get_last_col(ws, row):
 
 
 def get_as_of_date() -> str:
-    """Get the as-of label for use in column headers."""
+    """Get the as-of label for use in column headers, defined as the last day of the previous period."""
     current_month = datetime.now().month
     # Jan - Mar
     if current_month <= 3:
