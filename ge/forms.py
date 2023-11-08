@@ -25,9 +25,11 @@ class LibraryDataSearchForm(forms.Form):
     search_types = [
         ("fund", "Fund"),
         ("keyword", "Title / Notes"),
+        ("unit", "Unit"),
+        ("new_funds", "New Funds"),
     ]
     search_type = forms.ChoiceField(choices=search_types, initial="fund")
-    search_term = forms.CharField(label="Search for")
+    search_term = forms.CharField(label="Search for", required=False)
 
 
 class LibraryDataEditForm(forms.ModelForm):
@@ -44,6 +46,8 @@ class LibraryDataEditForm(forms.ModelForm):
             "notes": forms.Textarea(attrs={"cols": 80, "rows": 2}),
             # Wider single-line text fields
             "fund_title": forms.TextInput(attrs={"size": 80}),
+            # Number field which doesn't need a number widget
+            "original_id": forms.TextInput(),
         }
 
 

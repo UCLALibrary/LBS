@@ -477,19 +477,29 @@ def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryD
             "lbs_notes",
             "notes",
         ]
+    elif search_type == "unit":
+        fields_to_search = ["unit"]
+    elif search_type == "new_funds":
+        fields_to_search = ["fund_manager", "unit"]
     else:
         raise ValueError(f"Unsupported search type: {search_type}")
 
-    # Get a list of individual Q() statements looking for search_term in each field.
-    # Example result: [<Q: (AND: ('field_a', 'term'))>, <Q: (AND: ('field_b', 'term'))>]
-    q_list = [Q(**{field + "__icontains": search_term}) for field in fields_to_search]
-
-    # OR them all together.  Result, using the previous example:
-    # <Q: (OR: ('field_a', 'term'), ('field_b', 'term'))>
-    q_filter = reduce(lambda a, b: a | b, q_list)
+    # Search logic is different for new funds
+    if search_type == "new_funds":
+        # Look for empty fields.
+        q_list = [Q(**{field + "__exact": search_term}) for field in fields_to_search]
+        # AND them all together.
+        q_filter = reduce(lambda a, b: a & b, q_list)
+    else:
+        # Get a list of individual Q() statements looking for search_term in each field.
+        # Example result: [<Q: (AND: ('field_a', 'term'))>, <Q: (AND: ('field_b', 'term'))>]
+        q_list = [
+            Q(**{field + "__icontains": search_term}) for field in fields_to_search
+        ]
+        # OR them all together.
+        q_filter = reduce(lambda a, b: a | b, q_list)
 
     # Apply the filter to find results.
-    # TODO: Is there a better field(s) to sort by?
     results = LibraryData.objects.filter(q_filter).order_by("id")
 
     # Return results as a list of objects, rather than a queryset.
@@ -849,4 +859,5 @@ def create_excel_output(rpt_type: str) -> HttpResponse:
     response[
         "Content-Disposition"
     ] = f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+
     return response
