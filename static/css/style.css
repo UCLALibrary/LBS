@@ -14,7 +14,7 @@ a:link, a:visited {
     vertical-align: top;
 }
 
-.data-form {
+.data-form td {
     border-collapse: collapse;
     border: none;
     vertical-align: top;
@@ -22,6 +22,7 @@ a:link, a:visited {
 
 .data-form th {
     text-align: right;
+    vertical-align: top;
 }
 
 ul.navbar {
@@ -44,4 +45,24 @@ ul.navbar {
     text-align: center;
     padding: 10px 12px;
     text-decoration: none;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: black;
+    color: white;
+    text-align: center;
+    padding: 5px;
+    border-radius: 6px;
+    position: fixed;
+    z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
 }
