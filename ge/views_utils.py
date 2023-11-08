@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.worksheet.worksheet import Worksheet
 from os import path
 from tempfile import NamedTemporaryFile
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
@@ -495,13 +496,13 @@ def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryD
     return [item for item in results]
 
 
-def sum_col(ws, col, col_top=5):
+def sum_col(ws: Worksheet, col: str, col_top: int = 5) -> None:
     """Add a total row to an Excel spreadsheet column."""
     last_row = get_last_row(ws, col)
     ws[f"{col}{last_row + 1}"] = f"=SUM({col}{col_top}:{col}{last_row})"
 
 
-def get_last_row(ws, col):
+def get_last_row(ws: Worksheet, col: str) -> int:
     """Get the index of the last non-empty row in an Excel spreadsheet column."""
     last_row = len(ws[col])
     # make sure we get the first non-empty row from the bottom
@@ -509,7 +510,7 @@ def get_last_row(ws, col):
     return last_row
 
 
-def get_last_col(ws, row):
+def get_last_col(ws: Worksheet, row: int) -> int:
     """Get the index of the last non-empty column in an Excel spreadsheet row."""
     last_col = len(ws[row])
     # make sure we get the first non-empty column from the right
@@ -517,30 +518,30 @@ def get_last_col(ws, row):
     return last_col
 
 
-def get_as_of_date() -> str:
+def get_as_of_date(date: datetime = datetime.now()) -> str:
     """Get the as-of label for use in column headers, defined as the last day of the previous period."""
-    current_month = datetime.now().month
+    current_month = date.month
     # Jan - Mar
     if current_month <= 3:
         end_date = "12/31"
-        year = datetime.now().year - 1
+        year = date.year - 1
     # Apr - Jun
     elif current_month <= 6:
         end_date = "3/31"
-        year = datetime.now().year
+        year = date.year
     # Jul - Sep
     elif current_month <= 9:
         end_date = "6/30"
-        year = datetime.now().year
+        year = date.year
     # Oct - Dec
     else:
         end_date = "9/30"
-        year = datetime.now().year
+        year = date.year
     # return as-of date in MM/DD/YY format
     return f"as of {end_date}/{year%100}"
 
 
-def df_to_excel(df: pd.DataFrame, ws):
+def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     """Puts dataframe into Excel worksheet, with data starting at row 5."""
     # convert to rows for use in spreadsheet
     rows = dataframe_to_rows(df, index=False, header=False)
@@ -551,7 +552,7 @@ def df_to_excel(df: pd.DataFrame, ws):
     return ws
 
 
-def create_excel_output(rpt_type: str) -> None:
+def create_excel_output(rpt_type: str) -> HttpResponse:
     """Create Excel output for a report."""
 
     # UL and Master reports have extra columns, so use a different template
