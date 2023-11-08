@@ -553,7 +553,7 @@ def df_to_excel(df: pd.DataFrame, ws):
 
 def create_excel_output(rpt_type: str) -> None:
     """Create Excel output for a report."""
-    get_as_of_date()
+
     # UL and Master reports have extra columns, so use a different template
     if rpt_type in ("master", "ul"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
@@ -619,7 +619,7 @@ def create_excel_output(rpt_type: str) -> None:
         last_row = get_last_row(ws, "A")
         filters.ref = f"A4:{last_col}{last_row}"
 
-        # add as-of dates
+        # add as-of dates to L-O balance cols, max MTF col, and projected annual income
         as_of = get_as_of_date()
         ws["L3"] = as_of
         ws["P3"] = as_of
@@ -823,12 +823,17 @@ def create_excel_output(rpt_type: str) -> None:
 
         # add as-of dates
         as_of = get_as_of_date()
+        # L3 is always the start of the 4 common financial cols
         endowments_ws["L3"] = as_of
         gifts_ws["L3"] = as_of
         if rpt_type == "ul":
+            # UL has extra MTF col on both sheets (P), and one other extra col
+            # that pushes the Projected Annual Income col to S
             gifts_ws["P3"] = as_of
+            endowments_ws["P3"] = as_of
             endowments_ws["S3"] = as_of
         else:
+            # Projected Annual Income col is Q on non-UL endowments reports
             endowments_ws["Q3"] = as_of
 
     with NamedTemporaryFile() as tmp:
