@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from os import path
 from tempfile import NamedTemporaryFile
@@ -564,8 +565,11 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     return ws
 
 
-def create_excel_output(rpt_type: str) -> HttpResponse:
-    """Create Excel output for a report."""
+def create_excel_output(rpt_type: str) -> Workbook:
+    """Create Excel output for a report.
+
+    Returns a Workbook, for direct download or archiving as needed.
+    """
 
     # UL and Master reports have extra columns, so use a different template
     if rpt_type in ("master", "ul"):
@@ -849,8 +853,15 @@ def create_excel_output(rpt_type: str) -> HttpResponse:
             # Projected Annual Income col is Q on non-UL endowments reports
             endowments_ws["Q3"] = as_of
 
+    return wb
+
+
+def download_excel_file(rpt_type: str) -> HttpResponse:
+    """Get Excel file via HTTP response."""
+    workbook = create_excel_output(rpt_type)
+
     with NamedTemporaryFile() as tmp:
-        wb.save(tmp.name)
+        workbook.save(tmp.name)
         tmp.seek(0)
         stream = tmp.read()
 
@@ -863,3 +874,10 @@ def create_excel_output(rpt_type: str) -> HttpResponse:
     ] = f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
 
     return response
+
+
+def download_zip_file() -> HttpResponse:
+    """Get zip file containing all Excel reports, via HTTP response."""
+    # iterate over all reports, get excel output for each, add to zip, download zip
+
+    return HttpResponse("ZIP FILE GOES HERE")
