@@ -3,7 +3,6 @@ import logging
 from django.db.models import Model, Q
 import pandas as pd
 from datetime import datetime
-from django.db.models import Model
 from django.http import HttpResponse
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
@@ -486,7 +485,8 @@ def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryD
 
     # Search logic is different for new funds
     if search_type == "new_funds":
-        # Look for empty fields.
+        # Look for empty fields, overriding search_term if supplied.
+        search_term = ""
         q_list = [Q(**{field + "__exact": search_term}) for field in fields_to_search]
         # AND them all together.
         q_filter = reduce(lambda a, b: a & b, q_list)
@@ -529,7 +529,9 @@ def get_last_col(ws: Worksheet, row: int) -> int:
 
 
 def get_as_of_date(date: datetime = datetime.now()) -> str:
-    """Get the as-of label for use in column headers, defined as the last day of the previous period."""
+    """Get the as-of label for use in column headers,
+    defined as the last day of the previous quarter.
+    """
     current_month = date.month
     # Jan - Mar
     if current_month <= 3:
