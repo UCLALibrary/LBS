@@ -1,11 +1,17 @@
+from datetime import datetime
+from openpyxl import load_workbook
 from django.test import TestCase
 from ge.models import BFSImport, CDWImport, MTFImport, LibraryData
 from ge.views_utils import (
+    add_funds,
     create_excel_output,
+    get_as_of_date,
     get_data_from_excel,
+    get_last_col,
+    get_last_row,
     get_librarydata_results,
     import_excel_data,
-    add_funds,
+    sum_col,
     update_data,
 )
 
@@ -271,6 +277,34 @@ class SearchLibraryDataTestCase(TestCase):
         add_funds()
         results = get_librarydata_results(search_type="new_funds", search_term="")
         self.assertEqual(len(results), 1)
+
+
+class ReportManipulationTestCase(TestCase):
+    # sample file, structured like a Unit report but without sums
+    sample_report = "sample_files/sample_report.xlsx"
+    wb = load_workbook(sample_report)
+    gifts_ws = wb["Gifts"]
+
+    def test_last_row(self):
+        # Last row in sample report is 6 on non-summed columns, like Unit (A)
+        self.assertEqual(get_last_row(self.gifts_ws, "A"), 6)
+
+    def test_last_col(self):
+        # Last column in sample report is S (19), and data is in row 5
+        self.assertEqual(get_last_col(self.gifts_ws, 5), 19)
+
+    def test_sum_col(self):
+        # add a sum in column L (YTD Appropriation)
+        sum_col(self.gifts_ws, "L")
+        self.assertEqual(self.gifts_ws["L7"].value, "=SUM(L5:L6)")
+
+    def test_as_of_date_current_year(self):
+        # In November, as-of date should be 9/30 of current year
+        self.assertEqual(get_as_of_date(datetime(2023, 11, 1)), "as of 9/30/23")
+
+    def test_as_of_date_previous_year(self):
+        # In February, as-of date should be 12/31 of previous year
+        self.assertEqual(get_as_of_date(datetime(2024, 2, 1)), "as of 12/31/23")
 
 
 class ExcelOutputTestCase(TestCase):
