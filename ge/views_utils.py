@@ -1,16 +1,18 @@
 from functools import reduce
 import logging
+import zipfile
 from django.db.models import Model, Q
 import pandas as pd
 from datetime import datetime
-from django.db.models import Model
 from django.http import HttpResponse
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from os import path
 from tempfile import NamedTemporaryFile
+from ge.forms import ReportForm
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 from lbs.settings import BASE_DIR
 
@@ -477,19 +479,30 @@ def get_librarydata_results(search_type: str, search_term: str) -> list[LibraryD
             "lbs_notes",
             "notes",
         ]
+    elif search_type == "unit":
+        fields_to_search = ["unit"]
+    elif search_type == "new_funds":
+        fields_to_search = ["fund_manager", "unit"]
     else:
         raise ValueError(f"Unsupported search type: {search_type}")
 
-    # Get a list of individual Q() statements looking for search_term in each field.
-    # Example result: [<Q: (AND: ('field_a', 'term'))>, <Q: (AND: ('field_b', 'term'))>]
-    q_list = [Q(**{field + "__icontains": search_term}) for field in fields_to_search]
-
-    # OR them all together.  Result, using the previous example:
-    # <Q: (OR: ('field_a', 'term'), ('field_b', 'term'))>
-    q_filter = reduce(lambda a, b: a | b, q_list)
+    # Search logic is different for new funds
+    if search_type == "new_funds":
+        # Look for empty fields, overriding search_term if supplied.
+        search_term = ""
+        q_list = [Q(**{field + "__exact": search_term}) for field in fields_to_search]
+        # AND them all together.
+        q_filter = reduce(lambda a, b: a & b, q_list)
+    else:
+        # Get a list of individual Q() statements looking for search_term in each field.
+        # Example result: [<Q: (AND: ('field_a', 'term'))>, <Q: (AND: ('field_b', 'term'))>]
+        q_list = [
+            Q(**{field + "__icontains": search_term}) for field in fields_to_search
+        ]
+        # OR them all together.
+        q_filter = reduce(lambda a, b: a | b, q_list)
 
     # Apply the filter to find results.
-    # TODO: Is there a better field(s) to sort by?
     results = LibraryData.objects.filter(q_filter).order_by("id")
 
     # Return results as a list of objects, rather than a queryset.
@@ -519,7 +532,9 @@ def get_last_col(ws: Worksheet, row: int) -> int:
 
 
 def get_as_of_date(date: datetime = datetime.now()) -> str:
-    """Get the as-of label for use in column headers, defined as the last day of the previous period."""
+    """Get the as-of label for use in column headers,
+    defined as the last day of the previous quarter.
+    """
     current_month = date.month
     # Jan - Mar
     if current_month <= 3:
@@ -552,8 +567,11 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     return ws
 
 
-def create_excel_output(rpt_type: str) -> HttpResponse:
-    """Create Excel output for a report."""
+def create_excel_output(rpt_type: str) -> Workbook:
+    """Create Excel output for a report.
+
+    Returns a Workbook, for direct download or archiving as needed.
+    """
 
     # UL and Master reports have extra columns, so use a different template
     if rpt_type in ("master", "ul"):
@@ -837,10 +855,23 @@ def create_excel_output(rpt_type: str) -> HttpResponse:
             # Projected Annual Income col is Q on non-UL endowments reports
             endowments_ws["Q3"] = as_of
 
+    return wb
+
+
+def get_bytes_from_workbook(workbook: Workbook) -> bytes:
+    """Convert openpyxl workbook into bytes for serving via HTTP."""
     with NamedTemporaryFile() as tmp:
-        wb.save(tmp.name)
+        workbook.save(tmp.name)
         tmp.seek(0)
         stream = tmp.read()
+    return stream
+
+
+def download_excel_file(rpt_type: str) -> HttpResponse:
+    """Get Excel file via HTTP response."""
+    workbook = create_excel_output(rpt_type)
+
+    stream = get_bytes_from_workbook(workbook)
 
     response = HttpResponse(
         content=stream,
@@ -849,4 +880,28 @@ def create_excel_output(rpt_type: str) -> HttpResponse:
     response[
         "Content-Disposition"
     ] = f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+
+    return response
+
+
+def download_zip_file() -> HttpResponse:
+    """Get zip file containing all Excel reports, via HTTP response."""
+
+    # Use the same timestamp for all reports and for zip file.
+    timestamp = datetime.now().strftime("%Y%m%d%H%M")
+    response = HttpResponse(content_type="application/zip")
+    zip_filename = f"ge_reports-{timestamp}.zip"
+    zip_file = zipfile.ZipFile(response, "w")
+
+    # Get list of reports from ReportForm.
+    report_types = [choice[0] for choice in ReportForm().fields["report_type"].choices]
+    # Get Excel workbook for each, convert to bytes, and add to zip file.
+    for report_type in report_types:
+        workbook = create_excel_output(report_type)
+        excel_filename = f"{report_type}-Report-{timestamp}.xlsx"
+        stream = get_bytes_from_workbook(workbook)
+        zip_file.writestr(excel_filename, stream)
+
+    # Attach it to the response and return it.
+    response["Content-Disposition"] = f"attachment; filename={zip_filename}"
     return response

@@ -10,6 +10,7 @@
 </div>
 {% endif %}
 
+<p>Select a search type and enter a word or phrase to search for.  For new funds, leave "Search for" empty.</p>
 <form id="search" method="post">
     {% csrf_token %}
     {{ form.as_p }}
@@ -17,6 +18,7 @@
 </form>
 
 {% if results %}
+<p>Your search found {{ results|length }} records.</p>
 <hr>
 <table class="search-results">
     <thead>

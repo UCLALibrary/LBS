@@ -9,17 +9,34 @@
 {% endfor %}
 </div>
 {% endif %}
-
+<br>
 <form id="upload_files" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ upload_form.as_p }}
+    <table class="upload-form">
+      {% for field in upload_form %}
+      <tr>
+        <td>
+          <div class="tooltip">{{ field.label_tag }}
+            <span class="tooltiptext">{{ field.help_text|safe }}</span>
+          </div>
+        </td>
+        <td>{{ field }}</td>
+      </tr>
+      {% endfor %}
+    </table>
     <button type="submit" id="upload_submit" >Upload files</button>
 </form>
-
+<br>
+<hr>
+<br>
+<p>Select a report to generate and download it to your computer.
+  <br>
+Or download all reports in one zip file (takes about 30-40 seconds).</p>
 <form id="get_report" method="get" name="get_report">
   {% csrf_token %}
   {{ report_form.as_p }}
   <button type="submit" name="report_submit">Get report</button>
+  <button type="submit" name="download_zip_submit">Download all reports</button>
  </form>
  
 {% endblock %}

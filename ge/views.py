@@ -11,10 +11,11 @@ from ge.forms import (
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 from ge.views_utils import (
     add_funds,
+    download_excel_file,
+    download_zip_file,
     get_librarydata_results,
     import_excel_data,
     update_data,
-    create_excel_output,
 )
 
 
@@ -44,7 +45,9 @@ def report(request: HttpRequest):
     elif "report_submit" in request.GET:
         report_form = ReportForm(request.GET)
         if report_form.is_valid():
-            return create_excel_output(request.GET.get("report_type"))
+            return download_excel_file(request.GET.get("report_type"))
+    elif "download_zip_submit" in request.GET:
+        return download_zip_file()
     else:
         upload_form = ExcelUploadForm()
         report_form = ReportForm()

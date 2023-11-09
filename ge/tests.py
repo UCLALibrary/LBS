@@ -242,6 +242,10 @@ class SearchLibraryDataTestCase(TestCase):
         results = get_librarydata_results(search_type="keyword", search_term="FY23")
         self.assertEqual(len(results), 3)
 
+    def test_unit_search_results(self):
+        results = get_librarydata_results(search_type="unit", search_term="studies")
+        self.assertEqual(len(results), 2)
+
     def test_search_is_case_insensitive(self):
         # Data in record is "Ludwig"; should find "ludwig"
         results = get_librarydata_results(search_type="keyword", search_term="ludwig")
@@ -258,4 +262,11 @@ class SearchLibraryDataTestCase(TestCase):
         results = get_librarydata_results(
             search_type="keyword", search_term="akohler test"
         )
+        self.assertEqual(len(results), 1)
+
+    def test_new_funds_are_found(self):
+        # Per notes in AddFundsTestCase.test_correct_new_fund_is_added(),
+        # only one new fund is added from our test data.
+        add_funds()
+        results = get_librarydata_results(search_type="new_funds", search_term="")
         self.assertEqual(len(results), 1)
