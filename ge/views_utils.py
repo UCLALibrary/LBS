@@ -1,5 +1,6 @@
 from functools import reduce
 import logging
+import zipfile
 from django.db.models import Model, Q
 import pandas as pd
 from datetime import datetime
@@ -11,6 +12,7 @@ from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from os import path
 from tempfile import NamedTemporaryFile
+from ge.forms import ReportForm
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 from lbs.settings import BASE_DIR
 
@@ -856,14 +858,20 @@ def create_excel_output(rpt_type: str) -> Workbook:
     return wb
 
 
-def download_excel_file(rpt_type: str) -> HttpResponse:
-    """Get Excel file via HTTP response."""
-    workbook = create_excel_output(rpt_type)
-
+def get_bytes_from_workbook(workbook: Workbook) -> bytes:
+    """Convert openpyxl workbook into bytes for serving via HTTP."""
     with NamedTemporaryFile() as tmp:
         workbook.save(tmp.name)
         tmp.seek(0)
         stream = tmp.read()
+    return stream
+
+
+def download_excel_file(rpt_type: str) -> HttpResponse:
+    """Get Excel file via HTTP response."""
+    workbook = create_excel_output(rpt_type)
+
+    stream = get_bytes_from_workbook(workbook)
 
     response = HttpResponse(
         content=stream,
@@ -878,6 +886,22 @@ def download_excel_file(rpt_type: str) -> HttpResponse:
 
 def download_zip_file() -> HttpResponse:
     """Get zip file containing all Excel reports, via HTTP response."""
-    # iterate over all reports, get excel output for each, add to zip, download zip
 
-    return HttpResponse("ZIP FILE GOES HERE")
+    # Use the same timestamp for all reports and for zip file.
+    timestamp = datetime.now().strftime("%Y%m%d%H%M")
+    response = HttpResponse(content_type="application/zip")
+    zip_filename = f"ge_reports-{timestamp}.zip"
+    zip_file = zipfile.ZipFile(response, "w")
+
+    # Get list of reports from ReportForm.
+    report_types = [choice[0] for choice in ReportForm().fields["report_type"].choices]
+    # Get Excel workbook for each, convert to bytes, and add to zip file.
+    for report_type in report_types:
+        workbook = create_excel_output(report_type)
+        excel_filename = f"{report_type}-Report-{timestamp}.xlsx"
+        stream = get_bytes_from_workbook(workbook)
+        zip_file.writestr(excel_filename, stream)
+
+    # Attach it to the response and return it.
+    response["Content-Disposition"] = f"attachment; filename={zip_filename}"
+    return response
