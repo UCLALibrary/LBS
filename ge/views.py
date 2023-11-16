@@ -21,7 +21,7 @@ from ge.views_utils import (
 
 # TODO: Clean up auth system across qdb/ge apps
 @login_required(login_url="/login/")
-def report(request: HttpRequest):
+def report(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         upload_form = ExcelUploadForm(request.POST, request.FILES)
         # Make sure report_form is initialized, for later use.
@@ -98,3 +98,8 @@ def edit_librarydata(request: HttpRequest, item_id: int) -> HttpResponse:
     else:
         form = LibraryDataEditForm(instance=record)
     return render(request, "ge/edit_item.html", {"form": form})
+
+
+@login_required(login_url="/login/")
+def release_notes(request: HttpRequest) -> HttpResponse:
+    return render(request, "ge/release_notes.html")
