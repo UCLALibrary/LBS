@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @login_required(login_url="/login/")
-def report(request):
+def report(request: HttpRequest) -> HttpResponse:
     # This was originally "if request.is_ajax()"... which was deprecated
     # with Django 3.1, removed in 4.0.
     # For now I'm going with the equivalent, per
@@ -132,8 +132,4 @@ def run_qdb_reporter(
 
 
 def logoutandlogin(request):
-    return logout_then_login(request, login_url="/qdb/report/")
-
-
-def release_notes(request: HttpRequest) -> HttpResponse:
-    return render(request, "release_notes.html")
+    return logout_then_login(request)
