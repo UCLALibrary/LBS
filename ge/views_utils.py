@@ -652,6 +652,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
             "biomed": ["Biomed"],
             "digilib": ["DigiLib", "Digital Library"],
             "eal": ["EAL"],
+            "ftva": ["FTVA"],
             "hsc": ["History & SC Sciences"],
             "hssd": ["HSSD", "SSHD"],
             "ias": ["Int'l Studies"],
