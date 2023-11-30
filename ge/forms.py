@@ -61,6 +61,7 @@ class ReportForm(forms.Form):
             ("biomed", "Biomed"),
             ("digilib", "Digital Library"),
             ("eal", "East Asian Library"),
+            ("ftva", "Film & TV Archive"),
             ("hsc", "History & SC Sciences"),
             ("hssd", "HSSD"),
             ("ias", "Intl & Area Studies"),
