@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from ge.forms import (
     ExcelUploadForm,
     LibraryDataEditForm,
@@ -98,6 +99,21 @@ def edit_librarydata(request: HttpRequest, item_id: int) -> HttpResponse:
     else:
         form = LibraryDataEditForm(instance=record)
     return render(request, "ge/edit_item.html", {"form": form})
+
+
+@login_required(login_url="/login/")
+def add_fund(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = LibraryDataEditForm(request.POST)
+        if form.is_valid():
+            new_fund = form.save()
+            messages.success(request, "Fund added successfully.")
+            return redirect(
+                reverse("edit_librarydata", kwargs={"item_id": new_fund.pk})
+            )
+    else:
+        form = LibraryDataEditForm()
+    return render(request, "ge/add_fund.html", {"form": form})
 
 
 @login_required(login_url="/login/")
