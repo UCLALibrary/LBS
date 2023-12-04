@@ -35,7 +35,7 @@
     </thead>
     {% for item in results %}
     <tr>
-        <td><a href="{% url 'edit_librarydata' item.id %}">{{ item.id }}</a></td>
+        <td><a href="{% url 'edit_fund' item.id %}">{{ item.id }}</a></td>
         <td>{{ item.unit }}</td>
         <td>{{ item.fund_manager }}</td>
         <td>{{ item.fau_account }}</td>

@@ -1,68 +1,76 @@
 .not-visible {
-    display: none;
+  display: none;
 }
 
-a:link, a:visited {
-    color: #007bff;
-    text-decoration: none;
-    transition: color 0.15s, background 0.15s;
+a:link,
+a:visited {
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
 }
 
-.search-results th, .search-results td {
-    padding: 4px;
-    border: 1px solid;
-    vertical-align: top;
+.search-results th,
+.search-results td {
+  padding: 4px;
+  border: 1px solid;
+  vertical-align: top;
 }
 
 .data-form td {
-    border-collapse: collapse;
-    border: none;
-    vertical-align: top;
+  border-collapse: collapse;
+  border: none;
+  vertical-align: top;
 }
 
 .data-form th {
-    text-align: right;
-    vertical-align: top;
+  text-align: right;
+  vertical-align: top;
 }
 
 ul.navbar {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: #d0d0d7;
-    border: 1px solid black;
-    justify-content: unset;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #d0d0d7;
+  border: 1px solid black;
+  justify-content: unset;
 }
 
 .navbar li {
-    float: left;
-    border-right: 1px solid #bcbcc5;
+  float: left;
+  border-right: 1px solid #bcbcc5;
 }
 
 .navbar li a {
-    display: block;
-    text-align: center;
-    padding: 10px 12px;
-    text-decoration: none;
+  display: block;
+  text-align: center;
+  padding: 10px 12px;
+  text-decoration: none;
 }
 
 .tooltip {
-    position: relative;
-    display: inline-block;
+  position: relative;
+  display: inline-block;
 }
 
 .tooltip .tooltiptext {
-    visibility: hidden;
-    background-color: black;
-    color: white;
-    text-align: center;
-    padding: 5px;
-    border-radius: 6px;
-    position: fixed;
-    z-index: 1;
+  visibility: hidden;
+  background-color: black;
+  color: white;
+  text-align: center;
+  padding: 5px;
+  border-radius: 6px;
+  position: fixed;
+  z-index: 1;
 }
 
 .tooltip:hover .tooltiptext {
-    visibility: visible;
+  visibility: visible;
+}
+
+.box {
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid black;
 }
