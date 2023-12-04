@@ -88,17 +88,17 @@ def search(request: HttpRequest) -> HttpResponse:
 
 
 @login_required(login_url="/login/")
-def edit_librarydata(request: HttpRequest, item_id: int) -> HttpResponse:
+def edit_fund(request: HttpRequest, item_id: int) -> HttpResponse:
     # Get the record passed by id.
-    # TODO: Do we need to support creating new records via form?
     record = LibraryData.objects.get(pk=item_id)
     if request.method == "POST":
         form = LibraryDataEditForm(request.POST, instance=record)
         if form.is_valid():
+            messages.success(request, "Fund data saved.")
             form.save()
     else:
         form = LibraryDataEditForm(instance=record)
-    return render(request, "ge/edit_item.html", {"form": form})
+    return render(request, "ge/edit_fund.html", {"form": form})
 
 
 @login_required(login_url="/login/")
@@ -108,9 +108,7 @@ def add_fund(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             new_fund = form.save()
             messages.success(request, "Fund added successfully.")
-            return redirect(
-                reverse("edit_librarydata", kwargs={"item_id": new_fund.pk})
-            )
+            return redirect(reverse("edit_fund", kwargs={"item_id": new_fund.pk}))
     else:
         form = LibraryDataEditForm()
     return render(request, "ge/add_fund.html", {"form": form})
