@@ -20,6 +20,6 @@
 
 <form id="delete_fund" action="{% url 'delete_fund' form.instance.pk %}" method="post">
   {% csrf_token %}
-  <button type="submit" id="delete_submit">Delete this fund</button>
+  <button type="submit" id="delete_submit" onclick="return confirmDelete();">Delete this fund</button>
 </form>
 {% endblock %}

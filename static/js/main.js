@@ -83,3 +83,8 @@ $(document).ready( function () {
     optionToSelect.selected = true;
     $('#id_unit').prepend(optionToSelect);
 });
+
+// Used in show_links.html to confirm link deletion
+function confirmDelete(event) {
+    return confirm('Delete this fund?');
+}
