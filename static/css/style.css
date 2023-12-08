@@ -83,3 +83,8 @@ ul.navbar {
 #delete_fund {
   margin-left: 600px;
 }
+
+#delete_submit {
+  background: none !important;
+  color: #ff0000;
+}
