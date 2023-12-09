@@ -1,3 +1,5 @@
+// Javascript for the QDB app only; see ge_main.js for GE javascript.
+
 const spinnerBox = document.getElementById('spinner-box')
 const longBox = document.getElementById('long-box')
 var message_box = document.getElementById("error_message");
@@ -83,8 +85,3 @@ $(document).ready( function () {
     optionToSelect.selected = true;
     $('#id_unit').prepend(optionToSelect);
 });
-
-// Used in edit_fund.html to confirm deletion of a fund
-function confirmDelete(event) {
-    return confirm('Delete this fund?');
-}
