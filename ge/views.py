@@ -115,5 +115,18 @@ def add_fund(request: HttpRequest) -> HttpResponse:
 
 
 @login_required(login_url="/login/")
+def delete_fund(request: HttpRequest, item_id: int) -> HttpResponse:
+    # Get the record passed by id.
+    record = LibraryData.objects.get(pk=item_id)
+    if request.method == "POST":
+        fund_label = record.fau_fund
+        record.delete()
+        messages.success(request, f"Fund {fund_label} deleted.")
+        return redirect("search")
+    else:
+        return render(request, "ge/edit_fund.html", kwargs={"item_id": item_id})
+
+
+@login_required(login_url="/login/")
 def release_notes(request: HttpRequest) -> HttpResponse:
     return render(request, "ge/release_notes.html")

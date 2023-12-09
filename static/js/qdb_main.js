@@ -1,3 +1,5 @@
+// Javascript for the QDB app only; see ge_main.js for GE javascript.
+
 const spinnerBox = document.getElementById('spinner-box')
 const longBox = document.getElementById('long-box')
 var message_box = document.getElementById("error_message");

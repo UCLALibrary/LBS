@@ -74,3 +74,17 @@ ul.navbar {
   padding: 10px;
   border: 1px solid black;
 }
+
+#edit_fund,
+#delete_fund {
+  display: inline;
+}
+
+#delete_fund {
+  margin-left: 600px;
+}
+
+#delete_submit {
+  background: none !important;
+  color: #ff0000;
+}

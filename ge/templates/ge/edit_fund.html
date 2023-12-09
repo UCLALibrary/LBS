@@ -15,7 +15,11 @@
   <table class="data-form">
     {{ form.as_table }}
   </table>
-  <button type="submit" id="edit_submit" >Save changes</button>
+  <button type="submit" id="edit_submit">Save changes</button>
 </form>
 
+<form id="delete_fund" action="{% url 'delete_fund' form.instance.pk %}" method="post">
+  {% csrf_token %}
+  <button type="submit" id="delete_submit" onclick="return confirmDelete();">Delete this fund</button>
+</form>
 {% endblock %}
