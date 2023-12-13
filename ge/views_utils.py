@@ -857,8 +857,8 @@ def create_excel_output(rpt_type: str) -> Workbook:
             # Projected Annual Income col is Q on non-UL endowments reports
             endowments_ws["Q3"] = as_of
 
-        endowments_ws = add_border_formatting(endowments_ws)
-        gifts_ws = add_border_formatting(gifts_ws)
+        add_border_formatting(endowments_ws)
+        add_border_formatting(gifts_ws)
 
     return wb
 
@@ -912,7 +912,7 @@ def download_zip_file() -> HttpResponse:
     return response
 
 
-def add_border_formatting(ws: Worksheet) -> Worksheet:
+def add_border_formatting(ws: Worksheet) -> None:
     """Fix formatting for borders on Excel sheet header cells."""
     # row 2 contains top of column headers, and is sometimes merged with 3
     # so we count row 2, but apply the border to row 3
