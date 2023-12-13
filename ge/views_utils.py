@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime
 from django.http import HttpResponse
 from openpyxl import load_workbook
+from openpyxl.styles.borders import Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.workbook.workbook import Workbook
@@ -856,6 +857,9 @@ def create_excel_output(rpt_type: str) -> Workbook:
             # Projected Annual Income col is Q on non-UL endowments reports
             endowments_ws["Q3"] = as_of
 
+        add_border_formatting(endowments_ws)
+        add_border_formatting(gifts_ws)
+
     return wb
 
 
@@ -906,3 +910,23 @@ def download_zip_file() -> HttpResponse:
     # Attach it to the response and return it.
     response["Content-Disposition"] = f"attachment; filename={zip_filename}"
     return response
+
+
+def add_border_formatting(ws: Worksheet) -> None:
+    """Fix formatting for borders on Excel sheet header cells."""
+    # row 2 contains top of column headers, and is sometimes merged with 3
+    # so we count row 2, but apply the border to row 3
+    last_border_col = get_last_col(ws, 2)
+    # last col (LBS Notes) is excluded from border formatting, and Excel cols are 1-indexed
+    # so we use range(1, last_border_col) to get all but the last col
+    for header_cell_index in range(1, last_border_col):
+        current_cell = ws[f"{get_column_letter(header_cell_index)}3"]
+        current_cell.border = Border(
+            bottom=Side(border_style="medium"),
+            left=Side(border_style="thin"),
+            right=Side(border_style="thin"),
+        )
+    # Last col before LBS notes needs medium border on right and bottom
+    ws[f"{get_column_letter(last_border_col - 1)}3"].border = Border(
+        right=Side(border_style="medium"), bottom=Side(border_style="medium")
+    )
