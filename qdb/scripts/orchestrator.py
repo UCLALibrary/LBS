@@ -4,7 +4,6 @@ import arrow
 import logging
 import os
 import psycopg2
-
 from qdb.scripts.settings import UL_NAME
 from qdb.scripts import fetcher, formatter, sender
 from qdb.scripts.parser import Parser
@@ -167,7 +166,7 @@ class Orchestrator:
                 if len(rows) == 0:  # pragma: no cover
                     logger.warning(f"No data from QDB for {account}{cc_list}")
                     continue
-                result = parser.add_account(account, cc_list, rows)
+                result = parser.add_account(unit_id, account, cc_list, rows)
                 if result is False:  # pragma: no cover
                     logger.warning(f"Account {account} is empty. Exclude from report")
             if len(parser.data["accounts"]) == 0:  # pragma: no cover
