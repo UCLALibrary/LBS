@@ -12,7 +12,6 @@ import os
 
 class AdminTestCase(TestCase):
     fixtures = ["sample_data.json"]
-    nameunit = Unit.objects.get(name="Oral History")
 
     def test_recipientadmin(self):
         recipient = Recipient.objects.get(pk=1)
@@ -85,6 +84,8 @@ class FormatterTest(TestCase):
 
 
 class OrchestratorTest(TestCase):
+    fixtures = ["sample_data.json"]
+
     def setUp(self):
         self.orch = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
 
@@ -151,14 +152,15 @@ class OrchestratorTest(TestCase):
             self.orch.validate_date(2020, 13, True)
 
     def test_get_all_units(self):
-        units = self.orch.get_all_units()
+        # get_units() with no parameter gets all units
+        units = self.orch.get_units()
         self.assertEqual(type(units), list)
         self.assertTrue(len(units) > 0)
 
-    def test_validate_gets_all_units(self):
-        units = self.orch.validate_units()
+    def test_get_single_unit(self):
+        units = self.orch.get_units(27)
         self.assertEqual(type(units), list)
-        self.assertTrue(len(units) > 0)
+        self.assertEqual(len(units), 1)
 
     def test_get_accounts_for_unit(self):
         results = self.orch.get_accounts_for_unit(27)
