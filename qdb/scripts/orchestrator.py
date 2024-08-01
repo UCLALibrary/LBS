@@ -89,6 +89,11 @@ class Orchestrator:
 
         accounts = []
         for data in [lm_data, non_lm_data]:
+            # Each "data" is a Django QuerySet containing a list of tuples
+            # (account, cost center), and many accounts have multiple cost centers.
+            # Example input: [("606000", "AD"), ("606000", "LB")]
+            # Convert each data list into a tuple (account, [list of cost centers]).
+            # Example output: [("606000", ["AD", "LB"])]
             structured_accounts = [
                 (k, [v for _, v in g]) for k, g in groupby(list(data), lambda x: x[0])
             ]
@@ -150,8 +155,8 @@ class Orchestrator:
         list_recipients=False,
     ):
         for unit in units:
-            unit_id = unit[0]
-            unit_name = unit[1]
+            unit_id = unit.id
+            unit_name = unit.name
             if override_recipients is not None:
                 recipients = override_recipients
             else:
