@@ -22,8 +22,6 @@ def report(request: HttpRequest) -> HttpResponse:
     # https://docs.djangoproject.com/en/3.1/ref/request-response/#django.http.HttpRequest.is_ajax
     # TODO: Is this ajax check really needed?
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        # TODO: submitbutton is never used explicitly; why is "submit" checked here?
-        submitbutton = request.POST.get("submit")
         form = ReportForm(request.POST or None)
         if form.is_valid():
             unit = form.cleaned_data["unit"].id
@@ -45,6 +43,9 @@ def report(request: HttpRequest) -> HttpResponse:
                     request, "QDB report successfully generated.", extra_tags=unit_name
                 )
             except Exception as e:
+                # Show the entire error stack for diagnosis.
+                logger.exception(e)
+                # Also capture a friendly representation and check it for specifics.
                 exception_message = str(e)
                 logger.error(exception_message)
                 if "Login failed for user" in exception_message:
@@ -54,7 +55,7 @@ def report(request: HttpRequest) -> HttpResponse:
                             "Remote database not available: no report could be generated."
                             "<br>-----"
                             "<br>Please try again later as this may be due to routine maintenance."
-                            "<br>Note: Middle-of-the-night maintenance can take up to 60 minutes"
+                            "<br>Note: Middle-of-the-night maintenance can take up to 60 minutes."
                         ),
                         extra_tags=unit_name,
                     )
@@ -63,10 +64,15 @@ def report(request: HttpRequest) -> HttpResponse:
                     messages.error(
                         request,
                         format_html(
-                            "Network problem: no report could be generated."
-                            "<br>-----"
-                            "<br>Please use the <a href='https://www.it.ucla.edu/it-support-center/services/virtual-private-network-vpn-clients'>UCLA VPN</a> when off campus."
-                            "<br><a href='https://uclalibrary.github.io/research-tips/get-configured/'>Help with VPN</a> (tutorials on how to connect)."
+                            (
+                                "Network problem: no report could be generated."
+                                "<br>-----"
+                                "<br>Please use the <a href='https://www.it.ucla.edu/it-support-"
+                                "center/services/virtual-private-network-vpn-clients'>UCLA VPN</a> "
+                                "when off campus."
+                                "<br><a href='https://uclalibrary.github.io/research-tips/"
+                                "get-configured/'>Help with VPN</a> (tutorials on how to connect)."
+                            )
                         ),
                         extra_tags=unit_name,
                     )
@@ -74,11 +80,14 @@ def report(request: HttpRequest) -> HttpResponse:
                     messages.error(
                         request,
                         format_html(
-                            "Error: no report could be generated."
-                            "<br>-----"
-                            "<br>Please report this to the DIIT Help Desk:"
-                            "<br><a href='https://uclalibrary.atlassian.net/servicedesk/customer/portals'>"
-                            "UCLA Library Service Portal</a>"
+                            (
+                                "Error: no report could be generated."
+                                "<br>-----"
+                                "<br>Please report this to the DIIT Help Desk:"
+                                "<br><a href='https://uclalibrary.atlassian.net/"
+                                "servicedesk/customer/portals'>"
+                                "UCLA Library Service Portal</a>"
+                            )
                         ),
                         extra_tags=unit_name,
                     )
@@ -124,7 +133,7 @@ def run_qdb_reporter(
         list_units=list_units,
         year=int(year_from_form),
         month=int(month_from_form),
-        units=[unit_from_form],
+        unit=unit_from_form,
         email=send_email,
         list_recipients=True,
         override_recipients=override_recipients,
