@@ -207,7 +207,7 @@ class OrchestratorTest(TestCase):
 
 class ParserTest(TestCase):
     def setUp(self):
-        self.parser = Parser("202101", "Access Services")
+        self.parser = Parser("202101", "Fake unit")
 
     def test_calculate_percent(self):
         actual = self.parser.calculate_percent_left(100, 50)
@@ -288,3 +288,51 @@ class ParserTest(TestCase):
             "ytd_expense": Decimal("0"),
         }
         self.assertTrue(self.parser.exclude(row))
+
+    def test_exclude_ftva_aul_row_raises_error_with_wrong_unit(self):
+        # Only valid for units 27 and 35, caller is responsible.
+        with self.assertRaises(ValueError):
+            self.parser.exclude_ftva_aul_row(unit_id=99, row={})
+
+    def test_exclude_ftva_aul_row_skips_irrelevant_funds(self):
+        # Irrelevant funds (those without the specific account or cost center
+        # we care about) do not get excluded from their reports.
+        # Caller: exclude this?
+        # Response: No (False), do not exclude it.
+        # Only valid for units 27 and 35.
+        row = {
+            "account_number": "invalid",
+            "cost_center_code": "invalid",
+            "fund_number": "irrelevant",
+        }
+        self.assertFalse(self.parser.exclude_ftva_aul_row(unit_id=27, row=row))
+
+    def test_exclude_ftva_aul_row_ftva_fund_number(self):
+        # Only valid for units 27 and 35.
+        # Relevant funds are "432975-AD-*" only.
+        # Unit 27 (FTVA report) excludes fund number 19933, allows all others.
+        row = {
+            "account_number": "432975",
+            "cost_center_code": "AD",
+            "fund_number": "19933",
+        }
+        # True, it's excluded
+        self.assertTrue(self.parser.exclude_ftva_aul_row(unit_id=27, row=row))
+        row["fund_number"] = "not 19933"
+        # False, it's not excluded (allowed)
+        self.assertFalse(self.parser.exclude_ftva_aul_row(unit_id=27, row=row))
+
+    def test_exclude_ftva_aul_row_aul_fund_number(self):
+        # Only valid for units 27 and 35.
+        # Relevant funds are "432975-AD-*" only.
+        # Unit 35 (FTVA AUL report) includes fund number 19933, excludes all others.
+        row = {
+            "account_number": "432975",
+            "cost_center_code": "AD",
+            "fund_number": "19933",
+        }
+        # False, 19933 is not excluded
+        self.assertFalse(self.parser.exclude_ftva_aul_row(unit_id=35, row=row))
+        row["fund_number"] = "not 19933"
+        # True, non-19933 is excluded
+        self.assertTrue(self.parser.exclude_ftva_aul_row(unit_id=35, row=row))
