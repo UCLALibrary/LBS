@@ -42,7 +42,31 @@ class Parser:
                 return False
         return True
 
-    def add_account(self, account, cc_list, rows):
+    def exclude_ftva_aul_row(self, unit_id: int, row: dict):
+        # Handle FTVA AUL fund reporting differently, per SYS-1659.
+
+        # Should only get called for relevant units, but check anyhow.
+        # Unit 27: FTVA; unit 35: HaDuong - AUL Discretionary Funds
+        if unit_id not in [27, 35]:
+            # Not a relevant unit, tell caller it made a mistake.
+            raise ValueError(f"Call this only with units 27 or 35, not {unit_id}")
+
+        account_number = row["account_number"]
+        cost_center = row["cost_center_code"]
+        fund_number = row["fund_number"]
+        # Look at 432975-AD funds only
+        if (account_number, cost_center) != ("432975", "AD"):
+            # Not a relevant fund, tell caller not to exclude it.
+            return False
+
+        # If unit is FTVA (27), exclude 432975-AD-19933;
+        if unit_id == 27:
+            return fund_number == "19933"
+        # if unit is HaDuong - AUL Discretionary Funds (35), exclude all except 432975-AD-19933.
+        if unit_id == 35:
+            return fund_number != "19933"
+
+    def add_account(self, unit_id, account, cc_list, rows):
         acct_dict = {
             "title": rows[0]["account_title"].strip(),
             "account": account,
@@ -52,6 +76,12 @@ class Parser:
         for row in rows:
             if self.exclude(row):
                 continue
+            # Handle FTVA AUL fund reporting differently, per SYS-1659
+            # Unit 27: FTVA; unit 35: HaDuong - AUL Discretionary Funds
+            if unit_id in [27, 35]:
+                if self.exclude_ftva_aul_row(unit_id, row):
+                    continue
+
             fau = f"{row['account_number']}-{row['cost_center_code']}-{row['fund_number']}"
             if fau not in acct_dict["faus"].keys():
                 acct_dict["faus"][fau] = {"fund_title": row["fund_title"], "subs": {}}

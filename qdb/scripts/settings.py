@@ -25,7 +25,7 @@ DB_PASSWORD = os.environ.get("QDB_DB_PASSWORD", "")  # not relevant for CI build
 REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 
 # University Librarian
-UL_NAME = "Ginny Steel"
+UL_NAME = "Athena Jackson"
 
 # Staff contacts
 LBS_CONTACT = "Doris Wang"
@@ -40,7 +40,6 @@ SLDS_CONTACT_EMAIL = "joshuagomez@library.ucla.edu"
 TEST_RECIPIENT = os.environ.get("QDB_TEST_RECIPIENT", FROM_ADDRESS)
 
 DEV_RECIPIENTS = [
-    "joshuagomez@library.ucla.edu",  # Joshua Gomez
     "akohler@library.ucla.edu",  # Andy Kohler
 ]
 
