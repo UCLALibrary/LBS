@@ -42,14 +42,14 @@ class Parser:
                 return False
         return True
 
-    def exclude_ftva_aul_row(self, unit_id, row):
+    def exclude_ftva_aul_row(self, unit_id: int, row: dict):
         # Handle FTVA AUL fund reporting differently, per SYS-1659.
 
         # Should only get called for relevant units, but check anyhow.
         # Unit 27: FTVA; unit 35: HaDuong - AUL Discretionary Funds
         if unit_id not in [27, 35]:
-            # Not a relevant unit, tell caller not to exclude it.
-            return False
+            # Not a relevant unit, tell caller it made a mistake.
+            raise ValueError(f"Call this only with units 27 or 35, not {unit_id}")
 
         account_number = row["account_number"]
         cost_center = row["cost_center_code"]
