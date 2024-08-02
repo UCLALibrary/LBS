@@ -122,8 +122,8 @@ class Orchestrator:
 
         # Legacy code alert: Apparently, if unit_name parameter is "LBS", only the
         # unit head should get the report, instead of all unit-designated recipients.
-        # Normally, caller passes a matching unit_id and unit_name... but maybe this
-        # used to be an override, an "LBS-mode"? Web UI does not support this now, though.
+        # Normally, everyone in LBS_RECIPIENTS (which is used for DEFAULT_RECIPIENTS
+        # in production) will get a copy of every report.
         if unit_name == "LBS":
             roles = ["head"]
         else:
