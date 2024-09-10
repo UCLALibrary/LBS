@@ -12,7 +12,7 @@ python-tds==1.13.0
 # but assumes it's installed... it's not, by default.
 setuptools==74.1.2
 pytz==2023.3.post1
-sqlparse==0.4.4
+sqlparse==0.5.1
 whitenoise==6.5.0
 # Used by pandas for Excel .xls support
 xlrd==2.0.1
