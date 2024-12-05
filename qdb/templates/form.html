@@ -1,25 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<!-- Container -->
-<div id="container">
-
-    <!-- Header -->
-    <div id="header">
-        <div id="branding">
-            <h1 id="site-name"><a href="/admin/">QDB Reports</a></h1>
-            <h1>|</h1>
-            <h1 id="site-name"><a href="/ge/report/">GE Reports</a></h1>
-        </div>
-        <div id="user-tools">
-            Welcome,
-            <strong>{{request.user.username}}</strong>.
-            <a href="/admin/">View admin page</a> /
-            <a href="/qdb/logout/">Log out</a>
-        </div>
-    </div>
-
     <!-- Body -->
     <div id="alert-box"></div>
     <div class="main shifted" id="main">
@@ -59,7 +40,4 @@
             <div id="footer"></div>
         </div>
     </div>
-</div>
-<!-- END Container -->
-
 {% endblock %}
