@@ -74,5 +74,12 @@ class CronJob(models.Model):
     permanent_id = models.SmallIntegerField(default=1)
 
     def save(self, *args, **kwargs):
-        self.pk = self.permanent_id
+        # If there's already an object, and we're trying to create a new one,
+        # disable creation (remove the insert request) and use the existing id
+        # to trigger an update instead.
+        object_count = CronJob.objects.count()
+        if object_count > 0:
+            # Remove the insert request, so the record just gets replaced.
+            kwargs.pop("force_insert", None)
+        self.id = self.permanent_id
         super().save(*args, **kwargs)
