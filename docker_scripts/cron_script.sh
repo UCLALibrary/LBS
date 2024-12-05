@@ -1,5 +1,14 @@
 #!/bin/bash
 
+shopt -s nocasematch
+
+if [ -n "$1" ]; then
+    MODE="$1"
+else
+    echo "Usage: $0 PROD|TEST"
+    exit 1
+fi
+
 cd /home/django/LBS
 
 # Enable export of KEY=VALUE variables to environment
@@ -20,10 +29,24 @@ MONTH=`date -d 'last month' "+%m"` # 2-digit month, 01-12
 
 echo "Running reports for ${YEAR}-${MONTH} via $0"
 
-# TESTING: 21 | DIIT Software Development
-/usr/local/bin/python /home/django/LBS/manage.py run_qdb_reporter \
---year ${YEAR} \
---month ${MONTH} \
---unit 21 \
---email \
---o akohler@library.ucla.edu
+COMMAND="/usr/local/bin/python /home/django/LBS/manage.py run_qdb_reporter"
+COMMON_ARGS="--year ${YEAR} --month ${MONTH} --email"
+
+# TESTING: use unit 21 for DIIT Software Development
+# and send email only to developers.
+TEST_ARGS="--unit 21 --override_recipients akohler@library.ucla.edu zoetucker@library.ucla.edu"
+
+# Set command arguments based on mode
+case "${MODE}" in
+    "test" )
+        ARGS="${COMMON_ARGS} ${TEST_ARGS}" ;;
+    "prod" )
+        ARGS="${COMMON_ARGS}" ;;
+    * )
+        echo "Unknown mode ${MODE} - exiting"
+        exit 1
+        ;;
+esac
+
+# Finally, if all is OK, run it
+eval "${COMMAND} ${ARGS}"
