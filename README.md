@@ -209,8 +209,26 @@ After first login, register the local database server.
 See [pgAdmin documentation](https://www.pgadmin.org/docs/) for more information.
 
 ## Viewing the log
+
 Local development environment: `view logs/application.log`.
 
 In deployed container:
 * `/logs/`: see latest 200 lines of the log
 * `/logs/nnn`: see latest `nnn` lines of the log
+
+## Scheduling QDB reports
+
+The QDB reports can be scheduled to run monthly (or at other intervals), via the `/qdb/cron/` URL (available via the QDB header as "QDB Scheduling").
+This uses a basic `CronJob` Django model, which stores the standard `cron` schedule fields (minutes, hours, days of month, months, days of week),
+the command to run, and an `enabled` field to turn the job on or off.
+
+`CronJob` records are formatted as needed and output to the `django` user's `crontab` via the `update_crontab` Django management command.
+This command is called when `CronJob` records are updated via the `crontab` Django view.
+
+This currently is a very basic implementation:
+* Only one `CronJob` is allowed (enforced via an overridden `CronJob.save()`).
+* No validation of cron format is done, since the scheduling fields allow ranges and intervals (e.g., `5-10`, `*/5`, `5,10,20,39`, etc.).
+* However, the underlying Linux `crontab` program does some validation, and will reject invalid data.
+
+If there is a future need for multiple `crontab` entries, or for user-friendly schedule entry, more programming will be needed or a
+more complex 3rd-party solution may be a better choice.
