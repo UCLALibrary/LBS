@@ -1,5 +1,5 @@
 from django import forms
-from .models import Unit
+from .models import Unit, CronJob
 import datetime
 
 MONTHS = [
@@ -41,3 +41,21 @@ class ReportForm(forms.Form):
     month = forms.ChoiceField(choices=MONTHS, initial=month_default)
     send_email = forms.BooleanField(required=False, initial=True)
     override_recipients = forms.CharField(required=False)
+
+
+class CronForm(forms.ModelForm):
+    class Meta:
+        model = CronJob
+        fields = [
+            "minutes",
+            "hours",
+            "days_of_month",
+            "months",
+            "days_of_week",
+            "command",
+            "enabled",
+        ]
+        # Default sizes are fine except for command field
+        widgets = {
+            "command": forms.TextInput(attrs={"size": 100}),
+        }

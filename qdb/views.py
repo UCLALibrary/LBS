@@ -6,7 +6,9 @@ from django.http.response import HttpResponse
 from django.core.management import call_command
 from django.contrib.auth.views import logout_then_login
 from django.contrib.auth.decorators import login_required
-from .forms import ReportForm
+
+from qdb.models import CronJob
+from qdb.forms import CronForm, ReportForm
 from django.contrib import messages
 from django.utils.html import format_html
 from qdb.scripts.settings import ENV
@@ -138,6 +140,28 @@ def run_qdb_reporter(
         list_recipients=True,
         override_recipients=override_recipients,
     )
+
+
+@login_required(login_url="/login/")
+def crontab(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = CronForm(request.POST)
+        if form.is_valid():
+            # No extra validation or data manipulation is needed.
+            # This is a ModelForm, so data can be saved directly.
+            form.save()
+            # Update the operating system crontab (for the django user) with the new data.
+            # This can raise a ValueError if the cron data is bad. I'm deliberately not
+            # catching it, as I want the immediate failure and feedback via the UI.
+            # If it does fail, the previous crontab is left unchanged.
+            call_command("update_crontab")
+    else:
+        # There's only one record, ever; get it if it exists,
+        # otherwise, create it using defaults defined on the model.
+        # Ignore "created" flag returned as second part of tuple.
+        record, _ = CronJob.objects.get_or_create(pk=1)
+        form = CronForm(instance=record)
+    return render(request, "cron.html", {"form": form})
 
 
 def logoutandlogin(request):
