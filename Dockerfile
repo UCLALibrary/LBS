@@ -5,8 +5,8 @@ RUN apt-get update
 # Set correct timezone
 RUN ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
 
-# Install dependencies needed to build psycopg2 python module, along with cron.
-RUN apt-get install -y gcc python3-dev libpq-dev cron
+# Install dependencies needed to build psycopg2 python module.
+RUN apt-get install -y gcc python3-dev libpq-dev
 
 # For this application, also install cron and sudo,
 # and allow django to start cron.
