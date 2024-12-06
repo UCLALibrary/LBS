@@ -232,3 +232,12 @@ This currently is a very basic implementation:
 
 If there is a future need for multiple `crontab` entries, or for user-friendly schedule entry, more programming will be needed or a
 more complex 3rd-party solution may be a better choice.
+
+The reports themselves, when run via `cron`, must be run using `docker_scripts/cron_script.sh`. This is a shell script which
+* obtains the full Django environment (since `cron` has only minimal environment)
+* sets the appropriate parameters for the `run_qdb_reporter` Django management command
+* runs and sends the reports
+
+`docker_scripts/cron_script.sh` requires one parameter: `PROD` or `TEST` (case-insensitive):
+* `PROD`: send reports for all units to their default recipients
+* 'TEST': send report only for DIIT Software Development, only to the developers listed in the script
