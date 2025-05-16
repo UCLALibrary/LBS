@@ -102,3 +102,15 @@ button.button-link {
   background: none !important;
   color: #ff0000;
 }
+
+.qdb-header {
+  padding: 0 1rem;
+  margin: 0;
+  font-weight: 300;
+  font-size: 1.5rem;
+}
+.qdb-header a,
+#branding h1 {
+  color: var(--header-branding-color) !important;
+  margin: 0;
+}
