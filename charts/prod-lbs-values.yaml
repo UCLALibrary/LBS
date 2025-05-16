@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: uclalibrary/lbs
-  tag: 1.2.1
+  tag: 1.2.2
   pullPolicy: Always
 
 nameOverride: ""
@@ -44,7 +44,7 @@ django:
       - lbs.library.ucla.edu
     csrf_trusted_origins:
       - https://lbs.library.ucla.edu
-    db_backend: "django.db.backends.postgresql_psycopg2"
+    db_backend: "django.db.backends.postgresql"
     db_name: "qdb"
     db_user: "qdb"
     db_host: "p-d-postgres.library.ucla.edu"
