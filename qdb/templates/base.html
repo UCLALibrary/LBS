@@ -77,7 +77,10 @@
                     Welcome,
                     <strong>{{request.user.username}}</strong>.
                     <a href="/admin/">View admin page</a> /
-                    <a href="/qdb/logout/">Log out</a>
+                    <form id="logout-form" action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Log out</button>
+                    </form>
                 </div>
             </div>
         </div>
