@@ -76,7 +76,7 @@ class ReportForm(forms.Form):
             ("sel", "SEL"),
             ("ul", "UL"),
             ("aul_benedetti", "AUL Benedetti"),
-            ("aul_consales", "AUL Consales"),
+            ("aul_gomez", "AUL Gomez"),
             ("aul_grappone", "AUL Grappone"),
         ],
         widget=forms.Select(),

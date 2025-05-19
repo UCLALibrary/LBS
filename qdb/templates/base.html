@@ -65,19 +65,22 @@
             <!-- Header -->
             <div id="header">
                 <div id="branding">
-                    <h1 id="site-name"><a href="/admin/">QDB Reports</a></h1>
+                    <h1 class="qdb-header"><a href="/admin/">QDB Reports</a></h1>
                     <h1>|</h1>
-                    <h1 id="site-name"><a href="/ge/report/">GE Reports</a></h1>
+                    <h1 class="qdb-header"><a href="/ge/report/">GE Reports</a></h1>
                     <h1>|</h1>
-                    <h1 id="site-name"><a href="/qdb/cron/">QDB Scheduling</a></h1>
+                    <h1 class="qdb-header"><a href="/qdb/cron/">QDB Scheduling</a></h1>
                     <h1>|</h1>
-                    <h1 id="site-name"><a href="/logs/">Logs</a></h1>
+                    <h1 class="qdb-header"><a href="/logs/">Logs</a></h1>
                 </div>
                 <div id="user-tools">
                     Welcome,
                     <strong>{{request.user.username}}</strong>.
                     <a href="/admin/">View admin page</a> /
-                    <a href="/qdb/logout/">Log out</a>
+                    <form id="logout-form" action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Log out</button>
+                    </form>
                 </div>
             </div>
         </div>
