@@ -628,9 +628,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
         for col in ("L", "M", "N", "O", "P", "Q", "S"):
             for row in range(5, len(ws[col]) + 1):
                 # Excel "format code" for Accounting, 2 decimal places, $, comma separator
-                ws[
-                    f"{col}{row}"
-                ].number_format = (
+                ws[f"{col}{row}"].number_format = (
                     """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
                 )
         # add filters on all cols
@@ -668,7 +666,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
             "sel": ["SEL"],
             "ul": ["UL"],
             "aul_benedetti": ["Benedetti"],
-            "aul_consales": ["Consales"],
+            "aul_gomez": ["Gomez"],
             "aul_grappone": ["Grappone"],
         }
 
@@ -678,7 +676,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
         gifts_qset = LibraryData.objects.none()
 
         # AUL reports require fuzzy matching on unit and home_unit_dept
-        if rpt_type in ["aul_benedetti", "aul_consales", "aul_grappone"]:
+        if rpt_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
             endowments_qset = LibraryData.objects.filter(
                 unit__icontains=rpt_query_dict[rpt_type][0]
             ).filter(fund_type="Endowment").order_by(
@@ -815,9 +813,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
             sum_col(gifts_ws, col)
             for row in range(5, len(gifts_ws[col]) + 1):
                 # Excel "format code" for Accounting, 2 decimal places, $, comma separator
-                gifts_ws[
-                    f"{col}{row}"
-                ].number_format = (
+                gifts_ws[f"{col}{row}"].number_format = (
                     """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
                 )
 
@@ -825,9 +821,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
             sum_col(endowments_ws, col)
             for row in range(5, len(endowments_ws[col]) + 1):
                 # Excel "format code" for Accounting, 2 decimal places, $, comma separator
-                endowments_ws[
-                    f"{col}{row}"
-                ].number_format = (
+                endowments_ws[f"{col}{row}"].number_format = (
                     """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
                 )
 
@@ -882,9 +876,9 @@ def download_excel_file(rpt_type: str) -> HttpResponse:
         content=stream,
         content_type="application/ms-excel",
     )
-    response[
-        "Content-Disposition"
-    ] = f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+    response["Content-Disposition"] = (
+        f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+    )
 
     return response
 
