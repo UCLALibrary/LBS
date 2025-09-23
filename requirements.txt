@@ -1,6 +1,6 @@
 arrow==1.2.3
 asgiref==3.8.1
-Django==5.2.1
+Django==5.2.6
 gunicorn==23.0.0
 openpyxl==3.1.2
 pandas==2.2.3
@@ -8,7 +8,7 @@ psycopg==3.2.9
 python-tds==1.13.0
 # python-tds (pytds) requires pkg_resources from setuptools,
 # but assumes it's installed... it's not, by default.
-setuptools==74.1.2
+setuptools==80.9.0
 pytz==2023.3.post1
 whitenoise==6.5.0
 # Used by pandas for Excel .xls support
