@@ -24,9 +24,6 @@ DB_PASSWORD = os.environ.get("QDB_DB_PASSWORD", "")  # not relevant for CI build
 # Folder for reports
 REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 
-# University Librarian
-UL_NAME = "Athena Jackson"
-
 # Staff contacts
 LBS_CONTACT = "Doris Wang"
 LBS_CONTACT_TITLE = "Director, Library Business Services"

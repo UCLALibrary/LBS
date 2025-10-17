@@ -129,15 +129,9 @@ class Orchestrator:
         else:
             roles = ["aul", "head", "assoc"]
 
-        # Legacy code alert: The University Librarian (UL) apparently is not supposed to get
-        # these reports... even though that person is not listed as a recipient.  Seems like
-        # if the UL is acting head of a unit, they'd want to get this report....?
-        # UL_NAME comes from imported settings.
-        unit_recipients = (
-            Recipient.objects.filter(unit_id=unit_id, role__in=roles)
-            .exclude(recipient__name=UL_NAME)
-            .values_list("recipient__email", flat=True)
-        )
+        unit_recipients = Recipient.objects.filter(
+            unit_id=unit_id, role__in=roles
+        ).values_list("recipient__email", flat=True)
 
         recipients.update(unit_recipients)
         return recipients
