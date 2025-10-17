@@ -1,9 +1,9 @@
 from itertools import groupby
+from datetime import datetime
 import arrow
 import logging
 import os
 from qdb.models import Account, Recipient, Unit
-from qdb.scripts.settings import UL_NAME
 from qdb.scripts import fetcher, formatter, sender
 from qdb.scripts.parser import Parser
 
@@ -11,11 +11,28 @@ logger = logging.getLogger(__name__)
 
 
 class Orchestrator:
-    def __init__(self, reports_dir, recipients):
+    """Orchestrator class for generating reports."""
+
+    def __init__(self, reports_dir: str, recipients: list[str]):
+        """Initialize the Orchestrator.
+
+        :param reports_dir: The directory to save the reports to
+        :param recipients: The recipients to send the reports to
+        """
         self.reports_dir = reports_dir
         self.recipients = recipients
 
-    def validate_date(self, year=None, month=None, yyyymm=False):
+    def validate_date(
+        self, year: int | None = None, month: int | None = None, yyyymm: bool = False
+    ) -> str | tuple[int, int]:
+        """Validate the date.
+
+        :param year: The year to validate
+        :param month: The month to validate
+        :param yyyymm: Whether to return the date in YYYYMM format
+        :return: The validated date, either as a string in YYYYMM format or a tuple of (year, month)
+        :raises ValueError: If the date is invalid
+        """
         today = arrow.now()
         if year is None and month is None:
             report_date = today.shift(months=-1)
@@ -27,18 +44,30 @@ class Orchestrator:
             raise ValueError("ERROR: month must be a number from 1 to 12")
         # arrow.now() defaults to local timezone; arrow.get() defaults to UTC...
         # Must tell arrow.get() to use same timezone as today.
-        elif arrow.get(year=year, month=month, day=1, tzinfo=today.tzinfo) > today:
+        elif (
+            arrow.get(datetime(year=year, month=month, day=1), tzinfo=today.tzinfo)
+            > today
+        ):
             raise ValueError("ERROR: cannot request a future report")
         if yyyymm is True:
             return f"{year}{month:02}"
         return year, month
 
-    def get_all_units(self):
+    def get_all_units(self) -> list[Unit]:
+        """Get all units, ordered by name.
+
+        :return: A list of all units
+        """
         # Caller expects a list
         units = Unit.objects.all().order_by("name")
         return [unit for unit in units]
 
     def get_units(self, unit_id: int | None = None) -> list:
+        """Get units, ordered by name.
+
+        :param unit_id: The ID of the unit to get
+        :return: A list of units
+        """
         # Caller didn't ask for a specific unit: return all
         if unit_id is None:
             return self.get_all_units()
@@ -51,6 +80,10 @@ class Orchestrator:
             return [unit]
 
     def list_units(self) -> str:
+        """List all units.
+
+        :return: A string representing the list of units
+        """
         units = self.get_all_units()
         name_length = max([len(unit.name) for unit in units])
         header = "\nID | Name"
@@ -62,11 +95,12 @@ class Orchestrator:
 
     def get_accounts_for_unit(self, unit_id: int) -> list[tuple[str, list[str]]]:
         """Gets account and cost center information for a unit.
-        Returns a list of tuples, with each tuple consisting of 2 elements:
+
+        :param unit_id: The ID of the unit to get
+        :return: A list of tuples, with each tuple consisting of 2 elements:
         1: account
         2: list of cost centers
-        Example response (partial):
-        [('606000', ['AD', 'LB']), ('606000', ['LM'])]
+        Example response (partial): [('606000', ['AD', 'LB']), ('606000', ['LM'])]
         """
 
         # Data can be obtained by a union of 2 queries which each use the
@@ -103,6 +137,7 @@ class Orchestrator:
         return sorted(accounts)
 
     def cleanup_reports_dir(self):
+        """Cleanup the reports directory by deleting all files except .gitignore."""
         for f in os.listdir(self.reports_dir):
             if f == ".gitignore":
                 continue
@@ -114,6 +149,10 @@ class Orchestrator:
     def get_recipients(self, unit_id: int, unit_name: str) -> set:
         """Gets the recipients (email addresses) to which a unit's report
         should be sent.
+
+        :param unit_id: The ID of the unit to get
+        :param unit_name: The name of the unit to get
+        :return: A set of email addresses
         """
 
         # This is set on class instantiation based on DEFAULT_RECIPIENTS,
@@ -136,18 +175,32 @@ class Orchestrator:
         recipients.update(unit_recipients)
         return recipients
 
-    def generate_filename(self, unit_name, yyyymm):
-        name = f"{unit_name.replace(' ','_')}_{yyyymm[:4]}_{yyyymm[4:]}.xlsx"
+    def generate_filename(self, unit_name: str, yyyymm: str) -> str:
+        """Generate the filename for the report.
+
+        :param unit_name: The name of the unit to get
+        :param yyyymm: The year and month in YYYYMM format
+        :return: The filename for the report
+        """
+        name = f"{unit_name.replace(' ', '_')}_{yyyymm[:4]}_{yyyymm[4:]}.xlsx"
         return os.path.join(self.reports_dir, name)
 
     def run(
         self,
-        yyyymm,
-        units,
-        send_email=False,
-        override_recipients=None,
-        list_recipients=False,
+        yyyymm: str,
+        units: list[Unit],
+        send_email: bool = False,
+        override_recipients: list[str] | None = None,
+        list_recipients: bool = False,
     ):
+        """Run the orchestrator.
+
+        :param yyyymm: The year and month in YYYYMM format
+        :param units: The units to run the report for
+        :param send_email: Whether to send the report by email
+        :param override_recipients: The recipients to override the default recipients
+        :param list_recipients: Whether to list the recipients
+        """
         for unit in units:
             unit_id = unit.id
             unit_name = unit.name

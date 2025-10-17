@@ -58,14 +58,26 @@ ORDER BY fau, glb.sub_code
 """
 
 
-def get_qdb_query(is_fye=False):
+def get_qdb_query(is_fye: bool = False) -> str:
+    """Get the QDB query string, with or without fiscal year end (fye) filter.
+
+    :param is_fye: Whether to include the fiscal year end (fye) filter
+    :return: The complete QDB query string
+    """
     query = QDB_QUERY_SELECT_CLAUSE + QDB_QUERY_WHERE_CLAUSE
     if is_fye:
         query += QDB_QUERY_FYE_FILTER
     return query + QDB_QUERY_GROUP_ORDER_CLAUSE
 
 
-def get_qdb_data(yyyymm, account_number, cc_codes):
+def get_qdb_data(yyyymm: str, account_number: str, cc_codes: list[str]) -> list:
+    """Get the QDB data for a given account and cost center codes.
+
+    :param yyyymm: The year and month in YYYYMM format
+    :param account_number: The account number
+    :param cc_codes: The list of cost center codes
+    :return: A list representing rows of QDB data
+    """
     # determine if this is a Fiscal Year End (June) report
     is_fye = yyyymm.endswith("06")
 

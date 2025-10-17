@@ -57,6 +57,9 @@ class Command(BaseCommand):
             if list_units is True:
                 print(orchestrator.list_units())
             yyyymm = orchestrator.validate_date(year, month, yyyymm=True)
+            if isinstance(yyyymm, tuple):
+                year, month = yyyymm
+                yyyymm = f"{year}{month:02}"
             units = orchestrator.get_units(unit)
             orchestrator.run(
                 yyyymm,
@@ -67,4 +70,4 @@ class Command(BaseCommand):
             )
             return
         except ValueError as e:
-            exit(e)
+            exit(str(e))
