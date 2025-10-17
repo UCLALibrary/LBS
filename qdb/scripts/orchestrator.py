@@ -192,6 +192,7 @@ class Orchestrator:
         send_email: bool = False,
         override_recipients: list[str] | None = None,
         list_recipients: bool = False,
+        dry_run: bool = False,
     ):
         """Run the orchestrator.
 
@@ -200,7 +201,12 @@ class Orchestrator:
         :param send_email: Whether to send the report by email
         :param override_recipients: The recipients to override the default recipients
         :param list_recipients: Whether to list the recipients
+        :param dry_run: Whether to perform a dry run of the report
         """
+        if dry_run:
+            print("---RUNNING REPORT ORCHESTRATOR IN DRY RUN MODE---")
+            logger.info("---RUNNING REPORT ORCHESTRATOR IN DRY RUN MODE---")
+
         for unit in units:
             unit_id = unit.id
             unit_name = unit.name
@@ -218,6 +224,12 @@ class Orchestrator:
             print("See logs for other output.")
             parser = Parser(yyyymm, unit_name)
             for account, cc_list in self.get_accounts_for_unit(unit_id):
+                if dry_run:
+                    logger.info(
+                        f"Dry run: would have run {yyyymm} report "
+                        f"of {account}{cc_list} for unit {unit_name}"
+                    )
+                    continue
                 logger.info(
                     f"Running {yyyymm} report of {account}{cc_list} for unit {unit_name}"
                 )
@@ -228,10 +240,17 @@ class Orchestrator:
                 result = parser.add_account(unit_id, account, cc_list, rows)
                 if result is False:  # pragma: no cover
                     logger.warning(f"Account {account} is empty. Exclude from report")
-            if len(parser.data["accounts"]) == 0:  # pragma: no cover
+            if len(parser.data["accounts"]) == 0 and not dry_run:  # pragma: no cover
                 logger.warning(f"All accounts empty. No report generated for {unit}")
                 continue
             filename = self.generate_filename(unit_name, yyyymm)
+            if dry_run:
+                logger.info(
+                    f"Dry run: would have sent report {filename} to {recipients}"
+                )
+                logger.info("---DRY RUN COMPLETE---")
+                return
+
             formatter.generate_report(parser.data, filename)
 
             if send_email is True:
