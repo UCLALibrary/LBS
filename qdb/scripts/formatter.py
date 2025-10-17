@@ -27,33 +27,64 @@ CENTER = Alignment(horizontal="center")
 RIGHT = Alignment(horizontal="right")
 
 
-def adjust_column_widths(ws):
+def adjust_column_widths(ws: Worksheet):
+    """Adjust the column widths for the worksheet.
+
+    :param ws: The worksheet to adjust
+    """
     for char, width in zip(COLUMNS, WIDTHS):
         ws.column_dimensions[char].width = width
-    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    if ws.sheet_properties.pageSetUpPr:
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
     ws.page_setup.fitToHeight = False
 
 
-def adjust_row_heights(ws, lastrow):
+def adjust_row_heights(ws: Worksheet, lastrow: int):
+    """Adjust the row heights for the worksheet.
+
+    :param ws: The worksheet to adjust
+    :param lastrow: The last row to adjust
+    """
     for rownum in range(1, lastrow):
         ws.row_dimensions[rownum].height = 20
 
 
-def clear_borders(ws, lastrow):
+def clear_borders(ws: Worksheet, lastrow: int):
+    """Clear the borders for the worksheet.
+
+    :param ws: The worksheet to clear
+    :param lastrow: The last row to clear
+    """
     s = Side(color=WHITE, border_style="medium")
     for c, r in [(col, row) for row in range(1, lastrow) for col in COLUMNS]:
         ws[f"{c}{r}"].border = Border(top=s, bottom=s, left=s, right=s)
         ws[f"{c}{r}"].font = DEFAULT_FONT
 
 
-def underline_row(ws, row, color, style="thick", columns=COLUMNS):
+def underline_row(
+    ws: Worksheet, row: int, color: str, style: str = "thick", columns: str = COLUMNS
+):
+    """Underline the row for the worksheet.
+
+    :param ws: The worksheet to underline
+    :param row: The row to underline
+    :param color: The color of the underline
+    :param style: The style of the underline
+    :param columns: The columns to underline
+    """
     w = Side(color=WHITE, border_style="medium")
     u = Side(color=color, border_style=style)
     for c in columns:
         ws[f"{c}{row}"].border = Border(top=w, left=w, right=w, bottom=u)
 
 
-def get_total_rows(account, is_lib_materials):
+def get_total_rows(account: dict, is_lib_materials: bool) -> int:
+    """Get the total number of rows for the worksheet.
+
+    :param account: The account data
+    :param is_lib_materials: Whether the account is lib materials
+    :return: The total number of rows
+    """
     total = 7  # start with main report header
     total += (
         len(account["faus"].keys()) * 3
@@ -64,13 +95,27 @@ def get_total_rows(account, is_lib_materials):
     return total
 
 
-def calculate_fiscal_year_remainder(month):
+def calculate_fiscal_year_remainder(month: int) -> str:
+    """Calculate the fiscal year remainder.
+
+    :param month: The month to calculate the remainder for
+    :return: The fiscal year remainder as a percentage
+    """
     offset = 6 if month < 7 else -6
     remainder = 1 - ((month + offset) / 12)
     return f"{remainder:.0%}"
 
 
-def build_report_header(ws, month, month_name, unit="Unit not specified"):
+def build_report_header(
+    ws: Worksheet, month: int, month_name: str, unit: str = "Unit not specified"
+):
+    """Build the report header for the worksheet.
+
+    :param ws: The worksheet to build the header for
+    :param month: The month to build the header for
+    :param month_name: The name of the month
+    :param unit: The unit to build the header for
+    """
     today = arrow.now()
     # Row 1
     ws.merge_cells("A1:F1")
@@ -99,7 +144,12 @@ def build_report_header(ws, month, month_name, unit="Unit not specified"):
     underline_row(ws, 4, BLACK)
 
 
-def build_table_header(ws, row):
+def build_table_header(ws: Worksheet, row: int):
+    """Build the table header for the worksheet.
+
+    :param ws: The worksheet to build the header for
+    :param row: The row to build the header for
+    """
     # first row
     ws.merge_cells(f"I{row}:J{row}")
     r1_headers = [("E", "A"), ("F", "B"), ("G", "C"), ("H", "D"), ("I", "A-B-C-D")]
@@ -137,7 +187,14 @@ def build_table_header(ws, row):
     return row + 1
 
 
-def build_table(ws, fau, data, row):
+def build_table(ws: Worksheet, fau: str, data: dict, row: int):
+    """Build the table for the worksheet.
+
+    :param ws: The worksheet to build the table for
+    :param fau: The FAU to build the table for
+    :param data: The data to build the table for
+    :param row: The row to build the table for
+    """
     # FAU data
     ws.merge_cells(f"A{row}:J{row}")
     ws[f"A{row}"] = f"{fau} {data['fund_title']}"
@@ -175,7 +232,12 @@ def build_table(ws, fau, data, row):
     return row + 2
 
 
-def build_subcode_legend(ws, row):
+def build_subcode_legend(ws: Worksheet, row: int):
+    """Build the subcode legend for the worksheet.
+
+    :param ws: The worksheet to build the legend for
+    :param row: The row to build the legend for
+    """
     row += 1
     ws[f"A{row}"] = "Sub"
     ws[f"A{row}"].font = H3
@@ -202,14 +264,26 @@ def build_subcode_legend(ws, row):
     return row
 
 
-def generate_sheet_name(account, is_lib_materials):
+def generate_sheet_name(account: dict, is_lib_materials: bool) -> str:
+    """Generate the sheet name for the worksheet.
+
+    :param account: The account data
+    :param is_lib_materials: Whether the account is lib materials
+    :return: The sheet name
+    """
     name = account["account"]
     if is_lib_materials:
         name += "-LM"
     return name
 
 
-def add_sub02_tab(wb, data, tab_index):
+def add_sub02_tab(wb: Workbook, data: dict, tab_index: int):
+    """Add the sub02 tab to the workbook.
+
+    :param wb: The workbook to add the tab to
+    :param data: The data to add the tab to
+    :param tab_index: The index of the tab
+    """
     # create sub02 tab
     sheetname = "Sub02 Report"
     ws = wb.create_sheet(sheetname, tab_index)
@@ -244,7 +318,12 @@ def add_sub02_tab(wb, data, tab_index):
     return row
 
 
-def generate_report(data, filename, today=None):
+def generate_report(data: dict, filename: str):
+    """Generate the report for the workbook.
+
+    :param data: The data to generate the report for
+    :param filename: The filename to generate the report for
+    """
     # setup
     wb = Workbook()
     for tab_index, account in enumerate(data["accounts"]):
@@ -266,7 +345,8 @@ def generate_report(data, filename, today=None):
         adjust_row_heights(ws, row)
         Worksheet.set_printer_settings(ws, paper_size=1, orientation="landscape")
     if len(data["sub02s"]) > 0:
-        row = add_sub02_tab(wb, data, tab_index + 1)
+        # The sub02 data needs to go in a sheet (tab) after the accounts data.
+        row = add_sub02_tab(wb, data, tab_index=len(data["accounts"]))
     del wb["Sheet"]
     wb.save(filename)
     return filename

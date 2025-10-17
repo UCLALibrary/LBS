@@ -13,9 +13,21 @@ QDB:
  - Imports data from multiple Excel files
  - Processes data to generate a report for each library unit / manager
 
+## Dev container
+
+This project comes with a basic dev container definition, in `.devcontainer/devcontainer.json`. It's known to work with VS Code,
+and may work with other IDEs like PyCharm.  For VS Code, it also installs the Python, Black (formatter), and Flake8 (linter)
+extensions.
+
+When prompted by VS Code, click "Reopen in container".  This will (re)build the Django container, `lbs-django`. It will also
+(re)build a copy of that container, install VS Code development tools & extensions within that container,
+and start the `docker compose` system.  VS Code will be connected to the Django container, with all code available for editing in that context.
+
+The project's directory is available within the container at `/home/django/LBS`.
+
 ## Developer Setup on Docker
 
-This is the preferred way to run the project for development.
+Utilizing the dev container is the preferred way to run the project for development, but a development environment can also be set up directly in Docker:
 
 * Code is automatically mounted in the django container, so local changes are reflected in the running system.
 * Data is stored in a local postgres container and persisted to a local volume.

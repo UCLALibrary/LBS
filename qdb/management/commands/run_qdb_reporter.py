@@ -41,6 +41,12 @@ class Command(BaseCommand):
             default=None,
             help="Space-delimited email address(es) to email for each report",
         )
+        parser.add_argument(
+            "-d",
+            "--dry_run",
+            action="store_true",
+            help="Perform a dry run of the report",
+        )
 
     def handle(self, *args, **options):
         list_units = options["list_units"]
@@ -50,13 +56,16 @@ class Command(BaseCommand):
         email = options["email"]
         list_recipients = options["list_recipients"]
         override_recipients = options["override_recipients"]
-
+        dry_run = options["dry_run"]
         # using code from __main__ of orchestrator
         try:
             orchestrator = Orchestrator(REPORTS_DIR, DEFAULT_RECIPIENTS)
             if list_units is True:
                 print(orchestrator.list_units())
             yyyymm = orchestrator.validate_date(year, month, yyyymm=True)
+            if isinstance(yyyymm, tuple):
+                year, month = yyyymm
+                yyyymm = f"{year}{month:02}"
             units = orchestrator.get_units(unit)
             orchestrator.run(
                 yyyymm,
@@ -64,7 +73,8 @@ class Command(BaseCommand):
                 send_email=email,
                 list_recipients=list_recipients,
                 override_recipients=override_recipients,
+                dry_run=dry_run,
             )
             return
         except ValueError as e:
-            exit(e)
+            exit(str(e))
