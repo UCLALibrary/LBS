@@ -6,7 +6,12 @@ LOCALE = arrow.locales.EnglishLocale()
 
 
 class Parser:
-    def __init__(self, yyyymm, unit_name):
+    def __init__(self, yyyymm: str, unit_name: str):
+        """Initialize the Parser.
+
+        :param yyyymm: The year and month in YYYYMM format
+        :param unit_name: The name of the unit
+        """
         self.data = {
             "unit": unit_name,
             "year": int(yyyymm[:4]),
@@ -16,12 +21,23 @@ class Parser:
             "sub02s": [],
         }
 
-    def calculate_percent_left(self, approp, amount):
+    def calculate_percent_left(self, approp: Decimal, amount: Decimal) -> Decimal:
+        """Calculate the percentage left.
+
+        :param approp: The appropriation
+        :param amount: The amount
+        :return: The percentage left
+        """
         if approp > 0:
             return Decimal(max(0.00, amount / approp))
         return Decimal(0.00)
 
-    def calculate_totals(self, subs):
+    def calculate_totals(self, subs: dict) -> dict:
+        """Calculate totals for a given set of subcodes.
+
+        :param subs: The subcodes
+        :return: The totals
+        """
         return {
             "Appropriation": sum([s["Appropriation"] for s in subs.values()]),
             "Expense": sum([s["Expense"] for s in subs.values()]),
@@ -30,7 +46,12 @@ class Parser:
             "Amount": sum([s["Amount"] for s in subs.values()]),
         }
 
-    def exclude(self, row):
+    def exclude(self, row: dict) -> bool:
+        """Exclude rows with zero values for specified fields
+
+        :param row: The row to check
+        :return: True if the row should be excluded, False otherwise
+        """
         for field in [
             "ytd_approp",
             "ytd_expense",
@@ -42,7 +63,13 @@ class Parser:
                 return False
         return True
 
-    def exclude_ftva_aul_row(self, unit_id: int, row: dict):
+    def exclude_ftva_aul_row(self, unit_id: int, row: dict) -> bool | None:
+        """Exclude the FTVA AUL row.
+
+        :param unit_id: The ID of the unit
+        :param row: The row to exclude
+        :return: True if the row should be excluded, False otherwise
+        """
         # Handle FTVA AUL fund reporting differently, per SYS-1659.
 
         # Should only get called for relevant units, but check anyhow.
@@ -66,7 +93,17 @@ class Parser:
         if unit_id == 35:
             return fund_number != "19933"
 
-    def add_account(self, unit_id, account, cc_list, rows):
+    def add_account(
+        self, unit_id: int, account: str, cc_list: list[str], rows: list[dict]
+    ) -> bool:
+        """Add an account to the data if it meets certain criteria.
+
+        :param unit_id: The ID of the unit
+        :param account: The account number
+        :param cc_list: The list of cost center codes
+        :param rows: The rows to check
+        :return: True if the account was added, False otherwise
+        """
         acct_dict = {
             "title": rows[0]["account_title"].strip(),
             "account": account,
