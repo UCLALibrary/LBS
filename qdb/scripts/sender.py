@@ -17,7 +17,17 @@ from .settings import (
 )
 
 
-def get_message_body(month_name, year, unit, accounts):
+def get_message_body(
+    month_name: str, year: int | str, unit: str, accounts: list[str]
+) -> str:
+    """Get the message body for the report.
+
+    :param month_name: The name of the month
+    :param year: The year
+    :param unit: The name of the unit
+    :param accounts: The accounts to include in the report
+    :return: The message body
+    """
     msg = "Please find attached the general ledger summary report for"
     msg += f" {month_name} {year} for {unit}, which covers the following accounts:"
     for acct in accounts:
@@ -25,11 +35,24 @@ def get_message_body(month_name, year, unit, accounts):
     return msg + MESSAGE_CLOSER
 
 
-def get_message_subject(month_name, year, unit):
+def get_message_subject(month_name: str, year: int | str, unit: str) -> str:
+    """Get the message subject for the report.
+
+    :param month_name: The name of the month
+    :param year: The year
+    :param unit: The name of the unit
+    :return: The message subject
+    """
     return f"{month_name} {year} Financial Report: {unit}"
 
 
-def send_report(data, filename, recipients):
+def send_report(data: dict, filename: str, recipients: list[str] | set[str]):
+    """Send the report.
+
+    :param data: The data to include in the report
+    :param filename: The filename of the report
+    :param recipients: The emails of recipients to send the report to
+    """
     accts = [d["account"] for d in data["accounts"]]
     body = get_message_body(data["month_name"], data["year"], data["unit"], accts)
 
@@ -54,7 +77,7 @@ def send_report(data, filename, recipients):
     message.attach(part)
     text = message.as_string()
 
-    with SMTP(SMTP_SERVER, PORT, APP_IP) as server:
+    with SMTP(SMTP_SERVER, int(PORT), APP_IP) as server:
         # Local devs use gmail which requires smtp auth and tls.
         # Central test/prod environment uses ucla smtp: no auth/tls, ip-restricted.
         if ENV == "dev":
@@ -62,4 +85,4 @@ def send_report(data, filename, recipients):
             server.starttls(context=create_default_context())
             server.ehlo()
             server.login(FROM_ADDRESS, PASSWORD)
-        server.sendmail(FROM_ADDRESS, recipients, text)
+        server.sendmail(FROM_ADDRESS, list(recipients), text)

@@ -22,7 +22,7 @@ class Parser:
         }
 
     def calculate_percent_left(self, approp: Decimal, amount: Decimal) -> Decimal:
-        """Calculate the percentage left.
+        """Calculate the percentage left of an appropriation.
 
         :param approp: The appropriation
         :param amount: The amount
