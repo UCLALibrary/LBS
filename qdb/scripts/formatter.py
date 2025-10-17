@@ -345,7 +345,8 @@ def generate_report(data: dict, filename: str):
         adjust_row_heights(ws, row)
         Worksheet.set_printer_settings(ws, paper_size=1, orientation="landscape")
     if len(data["sub02s"]) > 0:
-        row = add_sub02_tab(wb, data, len(data["accounts"]))
+        # The sub02 data needs to go in a sheet (tab) after the accounts data.
+        row = add_sub02_tab(wb, data, tab_index=len(data["accounts"]))
     del wb["Sheet"]
     wb.save(filename)
     return filename
