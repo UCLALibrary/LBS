@@ -4,6 +4,8 @@ Django==5.2.10
 gunicorn==23.0.0
 openpyxl==3.1.2
 pandas==2.2.3
+# Pin numpy to 2.3.5 for now, see DIGINF-262
+numpy==2.3.5
 psycopg==3.2.9
 python-tds==1.13.0
 # python-tds (pytds) requires pkg_resources from setuptools,

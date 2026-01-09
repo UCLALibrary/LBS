@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: uclalibrary/lbs
-  tag: 1.2.5
+  tag: 1.2.6
   pullPolicy: Always
 
 nameOverride: ""
