@@ -23,6 +23,7 @@ from ge.views_utils import (
 # TODO: Clean up auth system across qdb/ge apps
 @login_required(login_url="/login/")
 def report(request: HttpRequest) -> HttpResponse:
+    context = {}  # default, for final render
     if request.method == "POST":
         upload_form = ExcelUploadForm(request.POST, request.FILES)
         # Make sure report_form is initialized, for later use.
@@ -32,27 +33,29 @@ def report(request: HttpRequest) -> HttpResponse:
             cdw_file = request.FILES["cdw_filename"]
             mtf_file = request.FILES["mtf_filename"]
             try:
-                import_excel_data(bfs_file, BFSImport)
-                import_excel_data(cdw_file, CDWImport)
-                import_excel_data(mtf_file, MTFImport)
+                # Ignore these type errors; Excel import will be removed.
+                import_excel_data(bfs_file, BFSImport)  # type: ignore
+                import_excel_data(cdw_file, CDWImport)  # type: ignore
+                import_excel_data(mtf_file, MTFImport)  # type: ignore
                 messages.success(request, "All data was imported successfully.")
                 add_funds()
                 update_data()
 
             except KeyError as ex:
                 # Exception re-raised from import_excel_data has useful info already.
-                messages.error(request, ex)
+                messages.error(request, str(ex))
 
     elif "report_submit" in request.GET:
         report_form = ReportForm(request.GET)
         if report_form.is_valid():
-            return download_excel_file(request.GET.get("report_type"))
+            return download_excel_file(request.GET.get("report_type", ""))
     elif "download_zip_submit" in request.GET:
         return download_zip_file()
     else:
         upload_form = ExcelUploadForm()
         report_form = ReportForm()
-    context = {"upload_form": upload_form, "report_form": report_form}
+        context = {"upload_form": upload_form, "report_form": report_form}
+
     return render(request, "ge/ge_report.html", context)
 
 
@@ -74,6 +77,7 @@ def show_log(request, line_count: int = 200) -> HttpResponse:
 
 @login_required(login_url="/login/")
 def search(request: HttpRequest) -> HttpResponse:
+    context = {}  # default, for final render
     if request.method == "POST":
         form = LibraryDataSearchForm(request.POST)
         if form.is_valid():
@@ -124,7 +128,7 @@ def delete_fund(request: HttpRequest, item_id: int) -> HttpResponse:
         messages.success(request, f"Fund {fund_label} deleted.")
         return redirect("search")
     else:
-        return render(request, "ge/edit_fund.html", kwargs={"item_id": item_id})
+        return render(request, "ge/edit_fund.html", context={"item_id": item_id})
 
 
 @login_required(login_url="/login/")
