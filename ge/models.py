@@ -2,6 +2,7 @@ from django.db import models
 
 
 # Data imported from UCLA Business and Finance Solutions
+# 2026-06 akohler: Made Float fields non-null, default 0.
 class BFSImport(models.Model):
     source = models.CharField(max_length=1, null=True)
     organization = models.CharField(max_length=50, null=True)
@@ -15,22 +16,22 @@ class BFSImport(models.Model):
     fund_old = models.CharField(max_length=50, null=True)
     purpose = models.CharField(max_length=50, null=True)
     description = models.CharField(max_length=200, null=True)
-    beginning_balance = models.FloatField(null=True)
-    contributions = models.FloatField(null=True)
-    investment_income = models.FloatField(null=True)
-    gift_fee_payments = models.FloatField(null=True)
-    real_gl = models.FloatField(null=True)
-    unreal_gl = models.FloatField(null=True)
-    foundation_transfers = models.FloatField(null=True)
-    transfers_to_univ = models.FloatField(null=True)
-    expenditures = models.FloatField(null=True)
-    transfers_adj = models.FloatField(null=True)
-    ending_balance = models.FloatField(null=True)
-    available = models.FloatField(null=True)
-    unavailable = models.FloatField(null=True)
-    principal = models.FloatField(null=True)
-    market_value = models.FloatField(null=True)
-    projected_income = models.FloatField(null=True)
+    beginning_balance = models.FloatField(null=False, default=0.0)
+    contributions = models.FloatField(null=False, default=0.0)
+    investment_income = models.FloatField(null=False, default=0.0)
+    gift_fee_payments = models.FloatField(null=False, default=0.0)
+    real_gl = models.FloatField(null=False, default=0.0)
+    unreal_gl = models.FloatField(null=False, default=0.0)
+    foundation_transfers = models.FloatField(null=False, default=0.0)
+    transfers_to_univ = models.FloatField(null=False, default=0.0)
+    expenditures = models.FloatField(null=False, default=0.0)
+    transfers_adj = models.FloatField(null=False, default=0.0)
+    ending_balance = models.FloatField(null=False, default=0.0)
+    available = models.FloatField(null=False, default=0.0)
+    unavailable = models.FloatField(null=False, default=0.0)
+    principal = models.FloatField(null=False, default=0.0)
+    market_value = models.FloatField(null=False, default=0.0)
+    projected_income = models.FloatField(null=False, default=0.0)
     sort_account = models.CharField(max_length=7, null=True)
     fund_summary = models.CharField(max_length=2000, null=True)
     # No values in sample file, not sure what this is
@@ -108,7 +109,8 @@ class MTFImport(models.Model):
 # Straight import now, to explore data.
 # Allow all fields to be blank (empty) as none are really required
 # and must be blank=True so they're not required when editing via form.
-# Numeric fields can be null; text fields should be blank (empty strings).
+# Text fields should be blank (empty strings).
+# 2026-06 akohler: Made Float fields non-null, default 0.
 class LibraryData(models.Model):
     original_id = models.SmallIntegerField(null=True, blank=True)
     # TODO: Remove unit_grande, confirmed not needed
@@ -127,15 +129,15 @@ class LibraryData(models.Model):
     # Normally 5 chars but some data has 6...
     # How are "Fund No" and "Fund" different?
     fau_fund = models.CharField(max_length=6, blank=True)
-    ytd_appropriation = models.FloatField(null=True, blank=True)
-    ytd_expenditure = models.FloatField(null=True, blank=True)
-    commitments = models.FloatField(null=True, blank=True)
-    operating_balance = models.FloatField(null=True, blank=True)
-    max_mtf_trf_amt = models.FloatField(null=True, blank=True)
-    total_balance = models.FloatField(null=True, blank=True)
+    ytd_appropriation = models.FloatField(null=False, default=0.0, blank=True)
+    ytd_expenditure = models.FloatField(null=False, default=0.0, blank=True)
+    commitments = models.FloatField(null=False, default=0.0, blank=True)
+    operating_balance = models.FloatField(null=False, default=0.0, blank=True)
+    max_mtf_trf_amt = models.FloatField(null=False, default=0.0, blank=True)
+    total_balance = models.FloatField(null=False, default=0.0, blank=True)
     mtf_authority = models.CharField(max_length=50, blank=True)
-    total_fund_value = models.FloatField(null=True, blank=True)
-    projected_annual_income = models.FloatField(null=True, blank=True)
+    total_fund_value = models.FloatField(null=False, default=0.0, blank=True)
+    projected_annual_income = models.FloatField(null=False, default=0.0, blank=True)
     fund_summary = models.CharField(max_length=1000, blank=True)
     fund_purpose = models.CharField(max_length=2000, blank=True)
     notes = models.CharField(max_length=1000, blank=True)
