@@ -35,7 +35,7 @@ class ImportExcelDataTestCase(TestCase):
         self.assertEqual(data_funds, self.bfs_expected_funds)
 
     def test_bfs_import(self):
-        import_excel_data(self.bfs_sample_file, BFSImport)
+        import_excel_data(self.bfs_sample_file, BFSImport)  # type: ignore
         self.assertEqual(BFSImport.objects.count(), 5)
         # Confirm the 0-padded Fund values are stored and read correctly.
         model_funds = set(BFSImport.objects.all().values_list("fau_fund", flat=True))
@@ -49,7 +49,7 @@ class ImportExcelDataTestCase(TestCase):
         self.assertEqual(data_depts, self.cdw_expected_depts)
 
     def test_cdw_import(self):
-        import_excel_data(self.cdw_sample_file, CDWImport)
+        import_excel_data(self.cdw_sample_file, CDWImport)  # type: ignore
         self.assertEqual(CDWImport.objects.count(), 6)
         # Confirm the 0-padded Department values are stored and read correctly.
         model_depts = set(CDWImport.objects.all().values_list("fau_dept", flat=True))
@@ -63,7 +63,7 @@ class ImportExcelDataTestCase(TestCase):
         self.assertEqual(data_bals, self.mtf_expected_bals)
 
     def test_mtf_import(self):
-        import_excel_data(self.mtf_sample_file, MTFImport)
+        import_excel_data(self.mtf_sample_file, MTFImport)  # type: ignore
         self.assertEqual(MTFImport.objects.count(), 4)
         # Confirm the floating point balances are stored and read correctly.
         model_bals = [
@@ -143,7 +143,7 @@ class UpdateDataTestCase(TestCase):
     ]
 
     @classmethod
-    def setup(self):
+    def setup(cls):
         # All of these tests require that add_data() has already run.
         add_funds()
 
@@ -324,7 +324,8 @@ class ExcelOutputTestCase(TestCase):
 
     def test_master_report_rows(self):
         result = create_excel_output("master")
-        # 13 rows in sample data. Data starts on row 5, so we should have data in rows 5-17 and not in 18
+        # 13 rows in sample data. Data starts on row 5, so we should have data
+        # in rows 5-17 and not in 18.
         # Master report isn't sorted, so just check if data exists
         self.assertNotEqual(result["G&E"]["A17"].value, None)
         self.assertEqual(result["G&E"]["A18"].value, None)
