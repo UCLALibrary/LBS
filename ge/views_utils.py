@@ -17,7 +17,6 @@ from ge.forms import ReportForm
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 from lbs.settings import BASE_DIR
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +30,7 @@ def import_excel_data(excel_file: str, model: Model) -> None:
     data = get_data_from_excel(excel_file)
     # Get the Excel -> model field mapping for this model.
     # model._meta is internal, but apparently well and permanently supported.
-    model_name = model._meta.object_name
+    model_name = model._meta.object_name or ""
     mapping = get_mapping(model_name)
     # Clear out old data before importing.
     model.objects.all().delete()
@@ -39,7 +38,8 @@ def import_excel_data(excel_file: str, model: Model) -> None:
         # Iterate through rows of data, creating and saving an object for each.
         for row in data:
             # Create initial empty object.
-            obj = model()
+            # Ignore type error, Django magic and Excel import will be removed.
+            obj = model()  # pyright: ignore[reportCallIssue]
             for excel_name, field_name in mapping.items():
                 # Set the value for each field.
                 setattr(obj, field_name, row[excel_name])
@@ -554,7 +554,7 @@ def get_as_of_date(date: datetime = datetime.now()) -> str:
         end_date = "9/30"
         year = date.year
     # return as-of date in MM/DD/YY format
-    return f"as of {end_date}/{year%100}"
+    return f"as of {end_date}/{year % 100}"
 
 
 def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
@@ -890,7 +890,8 @@ def download_zip_file() -> HttpResponse:
     timestamp = datetime.now().strftime("%Y%m%d%H%M")
     response = HttpResponse(content_type="application/zip")
     zip_filename = f"ge_reports-{timestamp}.zip"
-    zip_file = zipfile.ZipFile(response, "w")
+    # This works, because Django's HttpResponse is a file-like object.
+    zip_file = zipfile.ZipFile(response, mode="w")  # type: ignore
 
     # Get list of reports from ReportForm.
     report_types = [choice[0] for choice in ReportForm().fields["report_type"].choices]
