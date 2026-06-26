@@ -15,6 +15,7 @@ from ge.views_utils import (
     download_excel_file,
     download_zip_file,
     get_librarydata_results,
+    get_qdb_data,
     import_excel_data,
     update_data,
 )
@@ -134,3 +135,26 @@ def delete_fund(request: HttpRequest, item_id: int) -> HttpResponse:
 @login_required(login_url="/login/")
 def release_notes(request: HttpRequest) -> HttpResponse:
     return render(request, "ge/release_notes.html")
+
+
+@login_required(login_url="/login/")
+def report_from_qdb_temp(request: HttpRequest) -> HttpResponse:
+    context = {}
+    if request.method == "POST":
+        # Make sure report_form is initialized, for later use.
+        report_form = ReportForm()
+    elif "report_submit" in request.GET:
+        report_form = ReportForm(request.GET)
+        if report_form.is_valid():
+            report_type = request.GET.get("report_type", "")
+            # Original method
+            # return download_excel_file(report_type)
+            # Temporary new method
+            qdb_data = get_qdb_data(report_type)
+            context = {"report_form": report_form, "qdb_data": qdb_data}
+    elif "download_zip_submit" in request.GET:
+        return download_zip_file()
+    else:
+        report_form = ReportForm()
+        context = {"report_form": report_form}
+    return render(request, "ge/report_from_qdb_temp.html", context)
