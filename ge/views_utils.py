@@ -1,10 +1,12 @@
-from functools import reduce
 import logging
 import zipfile
-from django.db.models import Model, Q
 import pandas as pd
+import pytds
+
+from django.db.models import Model, Q
 from datetime import datetime
 from django.http import HttpResponse
+from functools import reduce
 from openpyxl import load_workbook
 from openpyxl.styles.borders import Border, Side
 from openpyxl.utils import get_column_letter
@@ -16,6 +18,7 @@ from tempfile import NamedTemporaryFile
 from ge.forms import ReportForm
 from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
 from lbs.settings import BASE_DIR
+from qdb.scripts.settings import DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD
 
 logger = logging.getLogger(__name__)
 
@@ -925,3 +928,67 @@ def add_border_formatting(ws: Worksheet) -> None:
     ws[f"{get_column_letter(last_border_col - 1)}3"].border = Border(
         right=Side(border_style="medium"), bottom=Side(border_style="medium")
     )
+
+
+def get_qdb_query(report_type: str) -> str:
+    # TODO: Splice this into create_excel_output() or similar, when local data is finalized.
+    QDB_GE_QUERY = """
+        select
+            fun.fund_title
+        ,	fun.foundatn_fund_num
+        ,	glb.account_number
+        ,	glb.cost_center_code
+        ,	glb.fund_number
+        ,	fun.fund_purpose_code
+        ,	fun.fund_restr_code
+        ,	sum (-glb.ytd_appropriation) AS ytd_approp
+        ,	sum (glb.ytd_financial) AS ytd_expense
+        ,	sum (glb.encumbrance) AS encumbrance
+        ,	sum (glb.memo_lien) AS memo_lien
+        ,	sum (-glb.bal_operating) AS operating_bal_am
+        FROM qdb.dbo.gl_balances glb
+        INNER JOIN qdb.dbo.account acc
+            ON glb.location_code = acc.location_code
+            AND glb.account_number = acc.account_number
+            AND glb.cost_center_code = acc.cost_center_code
+        INNER JOIN qdb.dbo.fund fun
+            ON glb.location_code = fun.location_code
+            AND glb.fund_number = fun.fund_number
+        -- Hard-coded filters first
+        WHERE glb.location_code = '4'
+        AND (glb.dept_code_account LIKE '54%%' OR glb.dept_code_account = '0461')
+        AND fun.fund_closed_flag <> 'Y'
+        -- Variable filters provided by caller
+        -- TODO: Pass these to query
+        AND glb.account_number = '603500'
+        AND glb.cost_center_code = 'MU'
+        AND glb.fund_number in ('40075', '50133', '56979')
+        AND glb.ledger_year_month = '202604'
+        GROUP BY
+            fun.fund_title
+        ,	fun.foundatn_fund_num
+        ,	glb.account_number
+        ,	glb.cost_center_code
+        ,	glb.fund_number
+        ,	fun.fund_purpose_code
+        ,	fun.fund_restr_code
+        -- ORDER BY fau, glb.sub_code
+        ;
+        """
+    return QDB_GE_QUERY
+
+
+def get_qdb_data(report_type) -> list:
+    conn = pytds.connect(DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD)
+    # Connection and cursor are closed automatically via 'with'
+    with conn:
+        conn.as_dict = True
+        cursor = conn.cursor()
+        # TODO: Query will be built based on parameters passed to this method.
+        # For now, just use static query.
+        qdb_query = get_qdb_query(report_type)
+        # Run query with the other, real, parameters
+        # cursor.execute(qdb_final_query % (yyyymm, account_number))
+        cursor.execute(qdb_query)
+        rows = cursor.fetchall()
+        return rows
