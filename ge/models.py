@@ -148,3 +148,23 @@ class LibraryData(models.Model):
 
     def __str__(self):
         return f"{self.fund_title}: {self.fau_account}-{self.fau_cost_center}-{self.fau_fund}"
+
+class GeStaff(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.CharField(max_length=100)
+
+class GeUnit(models.Model):
+    name = models.CharField(max_length=100)
+
+class GeFund(models.Model):
+    account = models.CharField(max_length=6)
+    cost_center = models.CharField(max_length=2)
+    fund = models.CharField(max_length=5)
+    title = models.CharField(max_length=100)
+    manager = models.ForeignKey(GeStaff, blank=True, on_delete=models.DO_NOTHING)
+    mtf_authority = models.ForeignKey(GeStaff, blank=True, on_delete=models.DO_NOTHING)
+    fund_purpose = models.TextField(blank=True)
+    fund_summary = models.TextField(blank=True)
+    fund_restriction = models.TextField(blank=True)
+    general_notes = models.TextField(blank=True)
+    lbs_notes = models.TextField(blank=True)
