@@ -1,4 +1,4 @@
-from django.utils.html import mark_safe
+from django.contrib import admin
 from .models import GeStaff, GeUnit, GeFund
 
 # Register your models here.
