@@ -157,12 +157,18 @@ class GeStaff(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = "GE Staff"
+
 
 class GeUnit(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name_plural = "GE Units"
 
 
 class GeFund(models.Model):
@@ -192,3 +198,7 @@ class GeFund(models.Model):
 
     def __str__(self):
         return f"{self.account}-{self.cost_center}-{self.fund}"
+
+    class Meta:
+        verbose_name_plural = "GE Funds"
+
