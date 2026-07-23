@@ -148,3 +148,57 @@ class LibraryData(models.Model):
 
     def __str__(self):
         return f"{self.fund_title}: {self.fau_account}-{self.fau_cost_center}-{self.fau_fund}"
+
+
+class GeStaff(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "GE Staff"
+
+
+class GeUnit(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "GE Units"
+
+
+class GeFund(models.Model):
+    account = models.CharField(max_length=6)
+    cost_center = models.CharField(max_length=2)
+    fund = models.CharField(max_length=5)
+    title = models.CharField(max_length=100)
+    manager = models.ForeignKey(
+        GeStaff,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="funds_manager",
+    )
+    mtf_authority = models.ForeignKey(
+        GeStaff,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="funds_authority",
+    )
+    fund_purpose = models.TextField(blank=True)
+    fund_summary = models.TextField(blank=True)
+    fund_restriction = models.TextField(blank=True)
+    general_notes = models.TextField(blank=True)
+    lbs_notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.account}-{self.cost_center}-{self.fund}"
+
+    class Meta:
+        verbose_name_plural = "GE Funds"
+
