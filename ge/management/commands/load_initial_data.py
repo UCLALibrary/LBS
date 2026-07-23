@@ -69,7 +69,19 @@ def populate_funds(self, funds_file):
             self.stdout.write(f"\tProcessing {title}...")
 
             # Fund
-            fund = _create_fund(account, cost_center, fund, title, manager, mtf_authority, fund_purpose, fund_summary, fund_restriction, general_notes, lbs_notes)
+            fund = _create_fund(
+                account,
+                cost_center,
+                fund,
+                title,
+                manager,
+                mtf_authority,
+                fund_purpose,
+                fund_summary,
+                fund_restriction,
+                general_notes,
+                lbs_notes,
+            )
 
 
 def _create_staff(name, email):
@@ -92,17 +104,19 @@ def _create_fund(acct, cost_center, fund, title, manager, mtf_authority, fund_pu
     # get foreign keys first
     fund_mgr = GeStaff.objects.get(id=manager)
     fund_auth = GeStaff.objects.get(id=mtf_authority)
-    row, created = GeFund.objects.get_or_create(account=acct,
-                                                 cost_center=cost_center,
-                                                 fund=fund,
-                                                 title=title,
-                                                 manager=fund_mgr,
-                                                 mtf_authority=fund_auth,
-                                                 fund_purpose=fund_purpose,
-                                                 fund_summary=fund_summary,
-                                                 fund_restriction=fund_restriction,
-                                                 general_notes=general_notes,
-                                                 lbs_notes=lbs_notes)
+    row, created = GeFund.objects.get_or_create(
+        account=acct,
+        cost_center=cost_center,
+        fund=fund,
+        title=title,
+        manager=fund_mgr,
+        mtf_authority=fund_auth,
+        fund_purpose=fund_purpose,
+        fund_summary=fund_summary,
+        fund_restriction=fund_restriction,
+        general_notes=general_notes,
+        lbs_notes=lbs_notes,
+    )
 
     row.save()
     return row
