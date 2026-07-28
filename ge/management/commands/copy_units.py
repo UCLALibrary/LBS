@@ -1,24 +1,23 @@
 from django.core.management.base import BaseCommand
-from ge.models import GeUnit
-from qdb.models import Unit
+from ge.models import GeUnit, LibraryData
 
 
 def populate_units(self):
-    source_records = Unit.objects.all()
+    unit_records = LibraryData.objects.all().values_list('unit', flat=True).distinct()
 
-    target_instances = [
+    unit_instances = [
         GeUnit(
-            name=record.name
+            name=record
         )
-        for record in source_records
+        for record in unit_records
     ]
 
-    GeUnit.objects.bulk_create(target_instances)
+    GeUnit.objects.bulk_create(unit_instances)
 
 
 class Command(BaseCommand):
 
-    help = "Copies unit records from the QDB database to the GE database."
+    help = "Copies unit records from the LibraryData table to the GeUnit table."
 
     def handle(self, *args, **options):
         populate_units(self)
