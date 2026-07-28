@@ -1,26 +1,26 @@
 from django.core.management.base import BaseCommand
-from ge.models import GeStaff
-from qdb.models import Staff
+from ge.models import GeStaff, LibraryData
 
 
 def populate_staff(self):
-    source_records = Staff.objects.all()
+    mgr_records = LibraryData.objects.all().values_list('fund_manager', flat=True).distinct()
+    mtf_auth_records = LibraryData.objects.all().values_list('mtf_authority', flat=True).distinct()
+    deduped_merged_records = set(mgr_records).union(set(mtf_auth_records))
 
-    target_instances = [
+    staff_instances = [
         GeStaff(
-            name=record.name,
-            email=record.email
+            name=record,
+            email="fake@library.ucla.edu"
         )
-        for record in source_records
+        for record in deduped_merged_records
     ]
 
-    GeStaff.objects.bulk_create(target_instances)
+    GeStaff.objects.bulk_create(staff_instances)
 
 
 class Command(BaseCommand):
 
-    help = "Copies staff records from the QDB database to the GE database."
+    help = "Copies staff records from the LibraryData table to the GeStaff table."
 
     def handle(self, *args, **options):
         populate_staff(self)
-
