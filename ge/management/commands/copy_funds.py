@@ -17,7 +17,7 @@ def populate_funds(self):
             fund_summary=record.fund_summary,
             fund_restriction=record.fund_restriction,
             general_notes=record.notes,
-            lbs_notes=record.lbs_notes
+            lbs_notes=record.lbs_notes,
         )
         for record in acct_records
     ]

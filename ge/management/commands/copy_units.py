@@ -3,14 +3,9 @@ from ge.models import GeUnit, LibraryData
 
 
 def populate_units(self):
-    unit_records = LibraryData.objects.all().values_list('unit', flat=True).distinct()
+    unit_records = LibraryData.objects.all().values_list("unit", flat=True).distinct()
 
-    unit_instances = [
-        GeUnit(
-            name=record
-        )
-        for record in unit_records
-    ]
+    unit_instances = [GeUnit(name=record) for record in unit_records]
 
     GeUnit.objects.bulk_create(unit_instances)
 
@@ -21,4 +16,3 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         populate_units(self)
-
