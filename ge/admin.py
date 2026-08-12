@@ -24,5 +24,4 @@ class GeFundAdmin(admin.ModelAdmin):
     list_display = ('account', 'cost_center', 'fund', 'title', 'manager', 'mtf_authority', 'fund_purpose', 'fund_summary', 'fund_restriction', 'general_notes', 'lbs_notes')
     ordering = ('account',)
     search_fields = ('account', 'fund', 'title')
-
-
+    list_filter = ["manager", "mtf_authority"]
