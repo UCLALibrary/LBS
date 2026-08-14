@@ -37,5 +37,5 @@ class GeFundAdmin(admin.ModelAdmin):
         "lbs_notes",
     )
     ordering = ("account",)
-    search_fields = ("account", "fund", "title")
+    search_fields = ("account", "fund", "title", "unit")
     list_filter = ["manager", "mtf_authority"]
