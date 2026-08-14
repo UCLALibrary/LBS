@@ -163,6 +163,7 @@ class GeStaff(models.Model):
 
 class GeUnit(models.Model):
     name = models.CharField(max_length=100)
+    members = models.ManyToManyField(GeStaff, through="GeRecipient")
 
     def __str__(self):
         return self.name
@@ -190,6 +191,9 @@ class GeFund(models.Model):
         on_delete=models.PROTECT,
         related_name="funds_authority",
     )
+    # TODO unit is currently nullable due to messy data, will need to
+    # clean up data and make this required
+    unit = models.ForeignKey(GeUnit, null=True, on_delete=models.PROTECT)
     fund_purpose = models.TextField(blank=True)
     fund_summary = models.TextField(blank=True)
     fund_restriction = models.TextField(blank=True)
@@ -201,3 +205,16 @@ class GeFund(models.Model):
 
     class Meta:
         verbose_name_plural = "GE Funds"
+
+
+class GeRecipient(models.Model):
+    unit = models.ForeignKey(GeUnit, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(GeStaff, on_delete=models.CASCADE)
+    role_choices = [("aul", "AUL"), ("head", "Head")]
+    role = models.CharField(max_length=100, choices=role_choices)
+
+    def __str__(self):
+        return self.recipient.name
+
+    class Meta:
+        verbose_name_plural = "GE Recipients"
