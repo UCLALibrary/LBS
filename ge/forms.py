@@ -3,24 +3,6 @@ from django import forms
 from ge.models import LibraryData
 
 
-class ExcelUploadForm(forms.Form):
-    bfs_filename = forms.FileField(
-        label="BFS File:",
-        help_text="Data from UCLA Business and Finance Solutions",
-        widget=forms.FileInput(),
-    )
-    cdw_filename = forms.FileField(
-        label="CDW File:",
-        help_text="Data from UCLA Campus Data Warehouse",
-        widget=forms.FileInput(),
-    )
-    mtf_filename = forms.FileField(
-        label="MTF File:",
-        help_text="Data from UCLA Monetary Transfer Form system",
-        widget=forms.FileInput(),
-    )
-
-
 class LibraryDataSearchForm(forms.Form):
     search_types = [
         ("fund", "Fund"),

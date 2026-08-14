@@ -4,20 +4,19 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from ge.forms import (
-    ExcelUploadForm,
     LibraryDataEditForm,
     LibraryDataSearchForm,
     ReportForm,
 )
-from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
+from ge.models import LibraryData
 from ge.views_utils import (
-    add_funds,
+    # add_funds,
     download_excel_file,
     download_zip_file,
     get_librarydata_results,
     get_qdb_data,
-    import_excel_data,
-    update_data,
+    # import_excel_data,
+    # update_data,
 )
 
 
@@ -25,37 +24,12 @@ from ge.views_utils import (
 @login_required(login_url="/login/")
 def report(request: HttpRequest) -> HttpResponse:
     context = {}  # default, for final render
-    if request.method == "POST":
-        upload_form = ExcelUploadForm(request.POST, request.FILES)
-        # Make sure report_form is initialized, for later use.
-        report_form = ReportForm()
-        if upload_form.is_valid():
-            bfs_file = request.FILES["bfs_filename"]
-            cdw_file = request.FILES["cdw_filename"]
-            mtf_file = request.FILES["mtf_filename"]
-            try:
-                # Ignore these type errors; Excel import will be removed.
-                import_excel_data(bfs_file, BFSImport)  # type: ignore
-                import_excel_data(cdw_file, CDWImport)  # type: ignore
-                import_excel_data(mtf_file, MTFImport)  # type: ignore
-                messages.success(request, "All data was imported successfully.")
-                add_funds()
-                update_data()
-
-            except KeyError as ex:
-                # Exception re-raised from import_excel_data has useful info already.
-                messages.error(request, str(ex))
-
-    elif "report_submit" in request.GET:
+    if "report_submit" in request.GET:
         report_form = ReportForm(request.GET)
         if report_form.is_valid():
             return download_excel_file(request.GET.get("report_type", ""))
     elif "download_zip_submit" in request.GET:
         return download_zip_file()
-    else:
-        upload_form = ExcelUploadForm()
-        report_form = ReportForm()
-        context = {"upload_form": upload_form, "report_form": report_form}
 
     return render(request, "ge/ge_report.html", context)
 
