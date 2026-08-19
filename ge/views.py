@@ -15,8 +15,6 @@ from ge.views_utils import (
     download_zip_file,
     get_librarydata_results,
     get_qdb_data,
-    # import_excel_data,
-    # update_data,
 )
 
 

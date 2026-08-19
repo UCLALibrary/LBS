@@ -3,7 +3,7 @@ import zipfile
 import pandas as pd
 import pytds
 
-from django.db.models import Model, Q
+from django.db.models import Q
 from datetime import datetime
 from django.http import HttpResponse
 from functools import reduce
@@ -21,51 +21,6 @@ from lbs.settings import BASE_DIR
 from qdb.scripts.settings import DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD
 
 logger = logging.getLogger(__name__)
-
-
-def import_excel_data(excel_file: str, model: Model) -> None:
-    """Import Excel data into a table.
-
-    Parameters:
-    excel_file -- The name of the Excel file.
-    model -- The Django model to use.
-    """
-    data = get_data_from_excel(excel_file)
-    # Get the Excel -> model field mapping for this model.
-    # model._meta is internal, but apparently well and permanently supported.
-    model_name = model._meta.object_name or ""
-    mapping = get_mapping(model_name)
-    # Clear out old data before importing.
-    model.objects.all().delete()
-    try:
-        # Iterate through rows of data, creating and saving an object for each.
-        for row in data:
-            # Create initial empty object.
-            # Ignore type error, Django magic and Excel import will be removed.
-            obj = model()  # pyright: ignore[reportCallIssue]
-            for excel_name, field_name in mapping.items():
-                # Set the value for each field.
-                setattr(obj, field_name, row[excel_name])
-            obj.save()
-    except KeyError as ex:
-        # Add useful info and re-raise up to caller
-        error_message = f"Unexpected column {str(ex)} in {excel_file} for {model_name}"
-        raise KeyError(error_message) from None
-
-
-def get_data_from_excel(excel_file: str) -> list[dict]:
-    """Read data from an Excel file (either .xls or .xlsx).
-    Only reads data from the first worksheet, which is all we need.
-
-    Returns a list of dictionaries, one for each row of data,
-    keyed by the column names in the Excel file's header row.
-    """
-    # keep_default_na=False: Return empty strings instead of NaN or na.
-    # dtype=object: Return the actual data from Excel, not an intepretation of it.
-    df = pd.read_excel(excel_file, keep_default_na=False, dtype=object)
-    # Uses pandas.DataFrame.to_dict with 'records' parameter:
-    # 'records' : list like [{column -> value}, … , {column -> value}]
-    return df.to_dict("records")
 
 
 def get_mapping(model_name: str) -> dict:
