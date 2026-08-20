@@ -30,6 +30,9 @@ class GeFundAdmin(admin.ModelAdmin):
         "manager",
         "mtf_authority",
         "unit",
+        "home_unit_dept",
+        "projected_annual_income",
+        "active",
         "fund_purpose",
         "fund_summary",
         "fund_restriction",
@@ -37,8 +40,8 @@ class GeFundAdmin(admin.ModelAdmin):
         "lbs_notes",
     )
     ordering = ("account",)
-    search_fields = ("account", "fund", "title", "unit__name")
-    list_filter = ["manager", "mtf_authority"]
+    search_fields = ("account", "fund", "title", "unit__name", "home_unit_dept")
+    list_filter = ["manager", "mtf_authority", "active"]
 
 
 @admin.register(GeRecipient)

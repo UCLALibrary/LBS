@@ -177,23 +177,14 @@ class GeFund(models.Model):
     cost_center = models.CharField(max_length=2)
     fund = models.CharField(max_length=5)
     title = models.CharField(max_length=100)
-    manager = models.ForeignKey(
-        GeStaff,
-        blank=True,
-        null=True,
-        on_delete=models.PROTECT,
-        related_name="funds_manager",
-    )
-    mtf_authority = models.ForeignKey(
-        GeStaff,
-        blank=True,
-        null=True,
-        on_delete=models.PROTECT,
-        related_name="funds_authority",
-    )
+    manager = models.CharField(max_length=50, blank=True)
+    mtf_authority = models.CharField(max_length=50, blank=True)
     # TODO unit is currently nullable due to messy data, will need to
     # clean up data and make this required
     unit = models.ForeignKey(GeUnit, null=True, on_delete=models.PROTECT)
+    home_unit_dept = models.CharField(max_length=50, blank=True)
+    projected_annual_income = models.FloatField(null=False, default=0.0, blank=True)
+    active = models.BooleanField(default=False)
     fund_purpose = models.TextField(blank=True)
     fund_summary = models.TextField(blank=True)
     fund_restriction = models.TextField(blank=True)
