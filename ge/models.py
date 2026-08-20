@@ -177,8 +177,8 @@ class GeFund(models.Model):
     cost_center = models.CharField(max_length=2)
     fund = models.CharField(max_length=5)
     title = models.CharField(max_length=100)
-    manager = models.CharField(max_length=50, blank=True)
-    mtf_authority = models.CharField(max_length=50, blank=True)
+    manager = models.CharField(max_length=50, null=True, blank=True)
+    mtf_authority = models.CharField(max_length=50, null=True, blank=True)
     # TODO unit is currently nullable due to messy data, will need to
     # clean up data and make this required
     unit = models.ForeignKey(GeUnit, null=True, on_delete=models.PROTECT)
