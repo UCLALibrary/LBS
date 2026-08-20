@@ -10,7 +10,6 @@ from ge.forms import (
 )
 from ge.models import LibraryData
 from ge.views_utils import (
-    # add_funds,
     download_excel_file,
     download_zip_file,
     get_librarydata_results,
@@ -22,12 +21,20 @@ from ge.views_utils import (
 @login_required(login_url="/login/")
 def report(request: HttpRequest) -> HttpResponse:
     context = {}  # default, for final render
+    if request.method == "POST":
+        # Make sure report_form is initialized, for later use.
+        report_form = ReportForm()
+
     if "report_submit" in request.GET:
         report_form = ReportForm(request.GET)
         if report_form.is_valid():
             return download_excel_file(request.GET.get("report_type", ""))
     elif "download_zip_submit" in request.GET:
         return download_zip_file()
+    else:
+        # upload_form = ExcelUploadForm()
+        report_form = ReportForm()
+        context = {"report_form": report_form}
 
     return render(request, "ge/ge_report.html", context)
 
