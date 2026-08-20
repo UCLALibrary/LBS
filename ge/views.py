@@ -32,7 +32,6 @@ def report(request: HttpRequest) -> HttpResponse:
     elif "download_zip_submit" in request.GET:
         return download_zip_file()
     else:
-        # upload_form = ExcelUploadForm()
         report_form = ReportForm()
         context = {"report_form": report_form}
 
