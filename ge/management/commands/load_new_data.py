@@ -3,9 +3,9 @@ from django.core.management.base import BaseCommand
 from ge.models import GeFund, GeRecipient, GeStaff, GeUnit
 
 
-def import_excel_data(excel_file: str) -> None:
+def import_excel_data(self, funds_file):
     """Import data from an Excel file into the specified Django model."""
-    data = get_data_from_excel(excel_file)
+    data = get_data_from_excel(funds_file)
     for row in data:
         aul = row["UL/AUL"]
         head = row["Unit Head"]
@@ -149,29 +149,9 @@ class Command(BaseCommand):
 
     help = "Loads new GE data from Excel file to GeFund."
 
+    def add_arguments(self, parser):
+        parser.add_argument("funds_file")
+
     def handle(self, *args, **options):
-        # TODO: Implement the logic to load new data from an Excel file into the GeFund model.
-        """
-        This command should read data from a specified Excel file and create new GeFund instances
-        Read Excel file into dictionary, canabilize get_data_from_excel()
-        for each row in the dictionary:
-            If the incoming Account + CC + Fund values exactly match an existing record in GeFund,
-                update the relevant other columns in the matched record from the Excel data.
-            If the incoming data does not exactly match an existing record, create a new GeFund
-                record with the incoming data.
-            Ignore columns A-C, E, J, K, M, Q-T
-            Several columns of incoming data will need special handling:
-                D (UL/AUL) and F (Unit Head): Create (or look up and use) a GeStaff record to
-                    create a GeRecipient record with the appropriate role.
-                G (Unit): Create (or look up and use) a GeUnit record.
-                H (Home Unit/Dept): Import into new field GeFund.home_unit_dept.
-                L (Fund Manager) and U (MTF_Authority): Import into the corresponding
-                    redefined fields.
-                V (Projected Annual Income): Import into the new GeFund.projected_annual_income.
-                Y (Last FY Activity): LBS asked for an Active vs Inactive flag.  However, they also
-                    said their Excel data represents “current active list of funds”.  So:
-                        For every GeFund record added/updated via import, set GeFund.active = True.
-                        If column Y contains a value other than “FY26”, append the value to the
-                            record's lbs_notes value.
-        """
-        pass
+        funds_file = options["funds_file"]
+        import_excel_data(self, funds_file)
