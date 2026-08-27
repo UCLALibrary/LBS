@@ -7,12 +7,13 @@ def import_excel_data(self, funds_file):
     """Import data from an Excel file into the specified Django model."""
     data = get_data_from_excel(funds_file)
     for row in data:
-        print(row)
         aul = row["UL/AUL"]
         head = row["Unit Head"]
         unit_name = row["Unit"]
-        add_recipient(aul, unit_name, "AUL")
-        add_recipient(head, unit_name, "Head")
+        if not recipient_exists(aul, unit_name, "AUL"):
+            add_recipient(aul, unit_name, "AUL")
+        if not recipient_exists(head, unit_name, "Head"):
+            add_recipient(head, unit_name, "Head")
         if fund_exists(row["Account"], row["CC"], row["Fund"]):
             update_fund(row)
         else:
@@ -31,7 +32,7 @@ def update_fund(row: dict) -> None:
     fund.fund_restriction = row["Fund Restriction"]
     fund.unit = get_unit(row["Unit"])
     fund.home_unit_dept = row["Home Unit/Dept"]
-    fund.projected_annual_income = row[" Projected Annual Income As of March 2026 "]
+    fund.projected_annual_income = row["Projected Annual Income\nAs of March 2026"]
     if row["Last FY Activity"] != "FY26":
         fund.lbs_notes += f" {row['Last FY Activity']}"
     fund.active = True
@@ -51,7 +52,7 @@ def create_fund(row: dict) -> None:
         fund_restriction=row["Fund Restriction"],
         unit=get_unit(row["Unit"]),
         home_unit_dept=row["Home Unit/Dept"],
-        projected_annual_income=row[" Projected Annual Income As of March 2026 "],
+        projected_annual_income=row["Projected Annual Income\nAs of March 2026"],
         lbs_notes="" if row["Last FY Activity"] == "FY26" else row["Last FY Activity"],
         active=True,
     )
@@ -71,6 +72,19 @@ def get_data_from_excel(excel_file: str) -> list[dict]:
     # Uses pandas.DataFrame.to_dict with 'records' parameter:
     # 'records' : list like [{column -> value}, … , {column -> value}]
     return df.to_dict("records")
+
+
+def recipient_exists(staff_name: str, unit_name: str, staff_role: str) -> bool:
+    """Check if a GeRecipient record exists with the given staff name, unit name, and role."""
+    recipient_staff = GeStaff.objects.filter(name=staff_name).first()
+    if not recipient_staff:
+        recipient_staff = None
+    recipient_unit = GeUnit.objects.filter(name=unit_name).first()
+    if not recipient_unit:
+        recipient_unit = None
+    return GeRecipient.objects.filter(
+        recipient=recipient_staff, unit=recipient_unit, role=staff_role
+    ).exists()
 
 
 def fund_exists(account: str, cost_center: str, fund: str) -> bool:
@@ -101,15 +115,12 @@ def get_unit(name: str) -> GeUnit | None:
 
 def add_recipient(staff_name: str, unit_name: str, staff_role: str) -> GeRecipient:
     """Create a new GeRecipient record with the given name and role, and return it."""
-    print(f"Adding recipient: {staff_name}, {unit_name}, {staff_role}")
     recipient_staff = GeStaff.objects.filter(name=staff_name).first()
     if not recipient_staff:
         recipient_staff = add_staff(staff_name)
-    print(f"Staff: {recipient_staff}")
     recipient_unit = GeUnit.objects.filter(name=unit_name).first()
     if not recipient_unit:
         recipient_unit = add_unit(unit_name)
-    print(f"Unit: {recipient_unit}")
     recipient = GeRecipient(staff=recipient_staff, unit=recipient_unit, role=staff_role)
     recipient.save()
     return recipient
