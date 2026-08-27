@@ -7,6 +7,7 @@ def import_excel_data(self, funds_file):
     """Import data from an Excel file into the specified Django model."""
     data = get_data_from_excel(funds_file)
     for row in data:
+        print(row)
         aul = row["UL/AUL"]
         head = row["Unit Head"]
         unit_name = row["Unit"]
@@ -98,15 +99,18 @@ def get_unit(name: str) -> GeUnit | None:
     return GeUnit.objects.filter(name=name).first()
 
 
-def add_recipient(name: str, unit_name: str, role: str) -> GeRecipient:
+def add_recipient(staff_name: str, unit_name: str, staff_role: str) -> GeRecipient:
     """Create a new GeRecipient record with the given name and role, and return it."""
-    staff = GeStaff.objects.filter(name=name).first()
-    if not staff:
-        staff = add_staff(name)
-    unit = GeUnit.objects.filter(name=unit_name).first()
-    if not unit:
-        unit = add_unit(unit_name)
-    recipient = GeRecipient(staff=staff, unit=unit, role=role)
+    print(f"Adding recipient: {staff_name}, {unit_name}, {staff_role}")
+    recipient_staff = GeStaff.objects.filter(name=staff_name).first()
+    if not recipient_staff:
+        recipient_staff = add_staff(staff_name)
+    print(f"Staff: {recipient_staff}")
+    recipient_unit = GeUnit.objects.filter(name=unit_name).first()
+    if not recipient_unit:
+        recipient_unit = add_unit(unit_name)
+    print(f"Unit: {recipient_unit}")
+    recipient = GeRecipient(staff=recipient_staff, unit=recipient_unit, role=staff_role)
     recipient.save()
     return recipient
 
