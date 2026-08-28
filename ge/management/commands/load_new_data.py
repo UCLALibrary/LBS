@@ -15,13 +15,14 @@ def import_excel_data(self, funds_file):
         if not recipient_exists(head, unit_name, "Head"):
             add_recipient(head, unit_name, "Head")
         if fund_exists(row["Account"], row["CC"], row["Fund"]):
-            update_fund(row)
+            update_fund(self, row)
         else:
-            create_fund(row)
+            create_fund(self, row)
 
 
-def update_fund(row: dict) -> None:
+def update_fund(self, row: dict) -> None:
     """Update an existing GeFund record with the given data."""
+    self.stdout.write(f"Updating fund: {row['Account']} - {row['CC']} - {row['Fund']}")
     fund = GeFund.objects.get(
         account=row["Account"], cost_center=row["CC"], fund=row["Fund"]
     )
@@ -39,8 +40,9 @@ def update_fund(row: dict) -> None:
     fund.save()
 
 
-def create_fund(row: dict) -> None:
+def create_fund(self, row: dict) -> None:
     """Create a new GeFund record with the given data."""
+    self.stdout.write(f"Creating fund: {row['Account']} - {row['CC']} - {row['Fund']}")
     fund = GeFund(
         account=row["Account"],
         cost_center=row["CC"],
@@ -77,11 +79,7 @@ def get_data_from_excel(excel_file: str) -> list[dict]:
 def recipient_exists(staff_name: str, unit_name: str, staff_role: str) -> bool:
     """Check if a GeRecipient record exists with the given staff name, unit name, and role."""
     recipient_staff = GeStaff.objects.filter(name=staff_name).first()
-    if not recipient_staff:
-        recipient_staff = None
     recipient_unit = GeUnit.objects.filter(name=unit_name).first()
-    if not recipient_unit:
-        recipient_unit = None
     return GeRecipient.objects.filter(
         recipient=recipient_staff, unit=recipient_unit, role=staff_role
     ).exists()
@@ -113,7 +111,7 @@ def get_unit(name: str) -> GeUnit | None:
     return GeUnit.objects.filter(name=name).first()
 
 
-def add_recipient(staff_name: str, unit_name: str, staff_role: str) -> GeRecipient:
+def add_recipient(staff_name: str, unit_name: str, staff_role: str):
     """Create a new GeRecipient record with the given name and role, and return it."""
     recipient_staff = GeStaff.objects.filter(name=staff_name).first()
     if not recipient_staff:
@@ -121,43 +119,10 @@ def add_recipient(staff_name: str, unit_name: str, staff_role: str) -> GeRecipie
     recipient_unit = GeUnit.objects.filter(name=unit_name).first()
     if not recipient_unit:
         recipient_unit = add_unit(unit_name)
-    recipient = GeRecipient(staff=recipient_staff, unit=recipient_unit, role=staff_role)
+    recipient = GeRecipient(
+        recipient=recipient_staff, unit=recipient_unit, role=staff_role
+    )
     recipient.save()
-    return recipient
-
-
-def get_fund_mapping() -> dict:
-    """Return a mapping of Excel column names to model field names
-    for the various imports of data.
-    """
-    GeFund = {
-        "Fiscal Year": "ignore",
-        "Quarterly": "ignore",
-        "Ledger Month": "ignore",
-        "UL/AUL": "gerecipient",
-        "Fund Type": "ignore",
-        "Unit Head": "gerecipient",
-        "Unit": "unit",
-        "Home Unit/Dept": "home_unit_dept",
-        "Fund Title": "title",
-        "Fund Type": "ignore",
-        "Regental/ Foundation": "ignore",
-        "Fund Manager": "manager",
-        "UCOP/ Foundation No.": "ignore",
-        "Account": "account",
-        "CC": "cost_center",
-        "Fund": "fund",
-        "YTD Appropriation": "ignore",
-        "YTD Expenditure": "ignore",
-        "Commitments": "ignore",
-        "Operating Balance": "ignore",
-        "MTF_Authority": "mtf_authority",
-        " Projected Annual Income As of March 2026 ": "projected_annual_income",
-        "Fund Purpose": "fund_purpose",
-        "Fund Restriction": "fund_restriction",
-        "Last FY Activity": "maybeappendtolbsnotes",
-    }
-    return GeFund
 
 
 class Command(BaseCommand):
