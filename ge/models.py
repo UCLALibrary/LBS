@@ -176,7 +176,7 @@ class GeFund(models.Model):
     account = models.CharField(max_length=6)
     cost_center = models.CharField(max_length=2)
     fund = models.CharField(max_length=5)
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=250)
     manager = models.CharField(max_length=50, blank=True)
     mtf_authority = models.CharField(max_length=50, blank=True)
     # TODO unit is currently nullable due to messy data, will need to
