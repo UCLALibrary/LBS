@@ -76,10 +76,18 @@ def get_data_from_excel(excel_file: str) -> list[dict]:
     return df.to_dict("records")
 
 
+def get_or_create_staff(name: str) -> GeStaff:
+    """Get or create a GeStaff record with the given name."""
+    staff, created = GeStaff.objects.get_or_create(
+        name=name, defaults={"email": "fake@library.ucla.edu"}
+    )
+    return staff
+
+
 def recipient_exists(staff_name: str, unit_name: str, staff_role: str) -> bool:
     """Check if a GeRecipient record exists with the given staff name, unit name, and role."""
-    recipient_staff = GeStaff.objects.filter(name=staff_name).first()
-    recipient_unit = GeUnit.objects.filter(name=unit_name).first()
+    recipient_staff = get_or_create_staff(staff_name)
+    recipient_unit = get_unit(unit_name)
     return GeRecipient.objects.filter(
         recipient=recipient_staff, unit=recipient_unit, role=staff_role
     ).exists()
@@ -113,10 +121,8 @@ def get_unit(name: str) -> GeUnit | None:
 
 def add_recipient(staff_name: str, unit_name: str, staff_role: str):
     """Create a new GeRecipient record with the given name and role, and return it."""
-    recipient_staff = GeStaff.objects.filter(name=staff_name).first()
-    if not recipient_staff:
-        recipient_staff = add_staff(staff_name)
-    recipient_unit = GeUnit.objects.filter(name=unit_name).first()
+    recipient_staff = get_or_create_staff(staff_name)
+    recipient_unit = get_unit(unit_name)
     if not recipient_unit:
         recipient_unit = add_unit(unit_name)
     recipient = GeRecipient(
