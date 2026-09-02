@@ -16,7 +16,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from os import path
 from tempfile import NamedTemporaryFile
 from ge.forms import ReportForm
-from ge.models import BFSImport, CDWImport, LibraryData, MTFImport
+from ge.models import BFSImport, CDWImport, GeFund, LibraryData, MTFImport
 from lbs.settings import BASE_DIR
 from qdb.scripts.settings import DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD
 
@@ -792,10 +792,10 @@ def get_qdb_query(report_type: str) -> str:
         AND fun.fund_closed_flag <> 'Y'
         -- Variable filters provided by caller
         -- TODO: Pass these to query
-        AND glb.account_number = '603500'
-        AND glb.cost_center_code = 'MU'
-        AND glb.fund_number in ('40075', '50133', '56979')
-        AND glb.ledger_year_month = '202604'
+        AND glb.account_number = %s
+        AND glb.cost_center_code = %s
+        AND glb.fund_number = %s
+        AND glb.ledger_year_month = %s
         GROUP BY
             fun.fund_title
         ,	fun.foundatn_fund_num
@@ -810,7 +810,13 @@ def get_qdb_query(report_type: str) -> str:
     return QDB_GE_QUERY
 
 
-def get_qdb_data(report_type) -> list:
+def get_qdb_data(
+    report_type,
+    account_number: str,
+    cost_center_code: str,
+    fund_number: str,
+    ledger_year_month: str,
+) -> list:
     conn = pytds.connect(DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD)
     # Connection and cursor are closed automatically via 'with'
     with conn:
@@ -820,7 +826,33 @@ def get_qdb_data(report_type) -> list:
         # For now, just use static query.
         qdb_query = get_qdb_query(report_type)
         # Run query with the other, real, parameters
-        # cursor.execute(qdb_final_query % (yyyymm, account_number))
-        cursor.execute(qdb_query)
+        cursor.execute(
+            qdb_query
+            % (account_number, cost_center_code, fund_number, ledger_year_month)
+        )
         rows = cursor.fetchall()
         return rows
+
+
+def get_qdb_by_report(report_type, ledger_year_month) -> list:
+    all_data = list()
+    faus = (
+        GeFund.objects.filter(unit__name=report_type)
+        .values_list("account")
+        .values_list("cost_center")
+        .values_list("fund")
+        .all()
+    )
+    for fau in faus:
+        account_number = fau[0]
+        cost_center_code = fau[1]
+        fund_number = fau[2]
+        qdb_data = get_qdb_data(
+            report_type,
+            account_number,
+            cost_center_code,
+            fund_number,
+            ledger_year_month,
+        )
+        all_data.append(qdb_data)
+    return all_data
