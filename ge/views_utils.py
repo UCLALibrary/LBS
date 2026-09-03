@@ -836,22 +836,13 @@ def get_qdb_data(
 
 def get_qdb_by_report(report_type, ledger_year_month) -> list:
     all_data = list()
-    faus = (
-        GeFund.objects.filter(unit__name=report_type)
-        .values_list("account")
-        .values_list("cost_center")
-        .values_list("fund")
-        .all()
-    )
+    faus = GeFund.objects.filter(unit__name=report_type).all()
     for fau in faus:
-        account_number = fau[0]
-        cost_center_code = fau[1]
-        fund_number = fau[2]
         qdb_data = get_qdb_data(
             report_type,
-            account_number,
-            cost_center_code,
-            fund_number,
+            fau.account,
+            fau.cost_center,
+            fau.fund,
             ledger_year_month,
         )
         all_data.append(qdb_data)
