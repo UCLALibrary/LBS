@@ -497,7 +497,7 @@ def get_legacy_data_for_report(
         )
 
 
-def get_columns_for_report(rpt_type: str, tab_type: str = "master") -> list[str]:
+def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[str]:
     # Most columns are used in all reports, but not all.
     # Column order matters, but from Python 3.7 dict key order is preserved;
     # using a dict here allows removing unwanted columns by name instead of by position.
@@ -527,10 +527,10 @@ def get_columns_for_report(rpt_type: str, tab_type: str = "master") -> list[str]
         "notes": ["endowments", "gifts", "master"],
         "lbs_notes": ["endowments", "master"],
     }
-    if rpt_type == "master":
+    if report_type == "master":
         # All columns are used in master report; tab_type is not relevant.
         return [column_name for column_name in report_columns.keys()]
-    elif rpt_type == "ul":
+    elif report_type == "ul":
         # UL report also gets some columns only master report does
         # (max_mtf_trf_amt and total_balance), but also needs the
         # endowments vs. gifts distinctions of tab_type.
@@ -548,7 +548,7 @@ def get_columns_for_report(rpt_type: str, tab_type: str = "master") -> list[str]
         ]
 
 
-def get_units_for_report(rpt_type: str) -> list[str]:
+def get_units_for_report(report_type: str) -> list[str]:
     # map each report type to list of strings needed for query
     report_units = {
         "archives": ["Archives"],
@@ -574,23 +574,23 @@ def get_units_for_report(rpt_type: str) -> list[str]:
         "aul_gomez": ["Gomez"],
         "aul_grappone": ["Grappone"],
     }
-    return report_units.get(rpt_type, [])
+    return report_units.get(report_type, [])
 
 
-def create_excel_output(rpt_type: str) -> Workbook:
+def create_excel_output(report_type: str) -> Workbook:
     """Create Excel output for a report.
 
     Returns a Workbook, for direct download or archiving as needed.
     """
 
     # UL and Master reports have extra columns, so use a different template
-    if rpt_type in ("master", "ul"):
+    if report_type in ("master", "ul"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
     else:
         template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
     wb = load_workbook(template_file)
 
-    if rpt_type == "master":
+    if report_type == "master":
         # only one sheet in master report, so remove the other and rename
         gifts = wb["Gifts"]
         wb.remove(gifts)
@@ -601,8 +601,8 @@ def create_excel_output(rpt_type: str) -> Workbook:
 
         # TODO: Consider passing columns and report type to one method?
         # Only one sheet in master report, so only one set of data.
-        (df,) = get_legacy_data_for_report(rpt_type)
-        master_cols = get_columns_for_report(rpt_type)
+        (df,) = get_legacy_data_for_report(report_type)
+        master_cols = get_columns_for_report(report_type)
         df = df[master_cols]
         ws = df_to_excel(df, ws)
 
@@ -627,11 +627,11 @@ def create_excel_output(rpt_type: str) -> Workbook:
 
     else:
         # map each report type to list of strings needed for query
-        report_units = get_units_for_report(rpt_type)
-        endowments_df, gifts_df = get_legacy_data_for_report(rpt_type, report_units)
+        report_units = get_units_for_report(report_type)
+        endowments_df, gifts_df = get_legacy_data_for_report(report_type, report_units)
 
         # basic cols for endowments reports
-        endowments_cols = get_columns_for_report(rpt_type, tab_type="endowments")
+        endowments_cols = get_columns_for_report(report_type, tab_type="endowments")
 
         if not endowments_df.empty:
             endowments_df = endowments_df[endowments_cols]
@@ -640,13 +640,13 @@ def create_excel_output(rpt_type: str) -> Workbook:
             if all(endowments_df["fund_restriction"].isin([""])):
                 endowments_df.drop(columns=["fund_restriction"], inplace=True)
                 # remove column from Excel template - col U for UL, S for others
-                if rpt_type == "ul":
+                if report_type == "ul":
                     wb["Endowments"].delete_cols(21)
                 else:
                     wb["Endowments"].delete_cols(19)
 
         # basic cols for gifts reports
-        gifts_cols = get_columns_for_report(rpt_type, tab_type="gifts")
+        gifts_cols = get_columns_for_report(report_type, tab_type="gifts")
 
         if not gifts_df.empty:
             gifts_df = gifts_df[gifts_cols]
@@ -655,7 +655,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
             if all(gifts_df["fund_restriction"].isin([""])):
                 gifts_df.drop(columns=["fund_restriction"], inplace=True)
                 # remove column from Excel template - col T for UL, R for others
-                if rpt_type == "ul":
+                if report_type == "ul":
                     wb["Gifts"].delete_cols(20)
                 else:
                     wb["Gifts"].delete_cols(18)
@@ -669,7 +669,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
         # add totals and formatting for money columns
         gifts_money_cols = ["L", "M", "N", "O"]
         endowments_money_cols = ["L", "M", "N", "O", "Q"]
-        if rpt_type == "ul":
+        if report_type == "ul":
             gifts_money_cols.extend(["P", "Q"])
             endowments_money_cols.extend(["P", "S"])
 
@@ -705,7 +705,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
         # L3 is always the start of the 4 common financial cols
         endowments_ws["L3"] = as_of
         gifts_ws["L3"] = as_of
-        if rpt_type == "ul":
+        if report_type == "ul":
             # UL has extra MTF col on both sheets (P), and one other extra col
             # that pushes the Projected Annual Income col to S
             gifts_ws["P3"] = as_of
@@ -730,9 +730,9 @@ def get_bytes_from_workbook(workbook: Workbook) -> bytes:
     return stream
 
 
-def download_excel_file(rpt_type: str) -> HttpResponse:
+def download_excel_file(report_type: str) -> HttpResponse:
     """Get Excel file via HTTP response."""
-    workbook = create_excel_output(rpt_type)
+    workbook = create_excel_output(report_type)
 
     stream = get_bytes_from_workbook(workbook)
 
@@ -741,7 +741,7 @@ def download_excel_file(rpt_type: str) -> HttpResponse:
         content_type="application/ms-excel",
     )
     response["Content-Disposition"] = (
-        f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+        f'attachment; filename={report_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
     )
 
     return response
