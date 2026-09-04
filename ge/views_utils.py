@@ -765,48 +765,48 @@ def add_border_formatting(ws: Worksheet) -> None:
 def get_qdb_query(report_type: str) -> str:
     # TODO: Splice this into create_excel_output() or similar, when local data is finalized.
     QDB_GE_QUERY = """
-        select
-            fun.fund_title
-        ,	fun.foundatn_fund_num
-        ,	glb.account_number
-        ,	glb.cost_center_code
-        ,	glb.fund_number
-        ,	fun.fund_purpose_code
-        ,	fun.fund_restr_code
-        ,	sum (-glb.ytd_appropriation) AS ytd_approp
-        ,	sum (glb.ytd_financial) AS ytd_expense
-        ,	sum (glb.encumbrance) AS encumbrance
-        ,	sum (glb.memo_lien) AS memo_lien
-        ,	sum (-glb.bal_operating) AS operating_bal_am
-        FROM qdb.dbo.gl_balances glb
-        INNER JOIN qdb.dbo.account acc
-            ON glb.location_code = acc.location_code
-            AND glb.account_number = acc.account_number
-            AND glb.cost_center_code = acc.cost_center_code
-        INNER JOIN qdb.dbo.fund fun
-            ON glb.location_code = fun.location_code
-            AND glb.fund_number = fun.fund_number
-        -- Hard-coded filters first
-        WHERE glb.location_code = '4'
-        AND (glb.dept_code_account LIKE '54%%' OR glb.dept_code_account = '0461')
-        AND fun.fund_closed_flag <> 'Y'
-        -- Variable filters provided by caller
-        -- TODO: Pass these to query
-        AND glb.account_number = %s
-        AND glb.cost_center_code = %s
-        AND glb.fund_number = %s
-        AND glb.ledger_year_month = %s
-        GROUP BY
-            fun.fund_title
-        ,	fun.foundatn_fund_num
-        ,	glb.account_number
-        ,	glb.cost_center_code
-        ,	glb.fund_number
-        ,	fun.fund_purpose_code
-        ,	fun.fund_restr_code
-        -- ORDER BY fau, glb.sub_code
-        ;
-        """
+SELECT
+    fun.fund_title
+,	fun.foundatn_fund_num
+,	glb.account_number
+,	glb.cost_center_code
+,	glb.fund_number
+,	fun.fund_purpose_code
+,	fun.fund_restr_code
+,	sum(-glb.ytd_appropriation) AS ytd_approp
+,	sum(glb.ytd_financial) AS ytd_expense
+,	sum(glb.encumbrance) AS encumbrance
+,	sum(glb.memo_lien) AS memo_lien
+,	sum(-glb.bal_operating) AS operating_bal_am
+FROM qdb.dbo.gl_balances glb
+INNER JOIN qdb.dbo.account acc
+    ON glb.location_code = acc.location_code
+    AND glb.account_number = acc.account_number
+    AND glb.cost_center_code = acc.cost_center_code
+INNER JOIN qdb.dbo.fund fun
+    ON glb.location_code = fun.location_code
+    AND glb.fund_number = fun.fund_number
+-- Hard-coded filters first
+WHERE glb.location_code = '4'
+AND (glb.dept_code_account LIKE '54%%' OR glb.dept_code_account = '0461')
+AND fun.fund_closed_flag <> 'Y'
+-- Variable filters provided by caller
+-- TODO: Figure out why quoting these is needed when IT SHOULD NOT BE!
+AND glb.account_number = '%s'
+AND glb.cost_center_code = '%s'
+AND glb.fund_number = '%s'
+AND glb.ledger_year_month = '%s'
+GROUP BY
+    fun.fund_title
+,	fun.foundatn_fund_num
+,	glb.account_number
+,	glb.cost_center_code
+,	glb.fund_number
+,	fun.fund_purpose_code
+,	fun.fund_restr_code
+ORDER BY glb.account_number, glb.cost_center_code, glb.fund_number
+;
+"""
     return QDB_GE_QUERY
 
 
