@@ -3,7 +3,7 @@ import zipfile
 import pandas as pd
 import pytds
 
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from datetime import datetime
 from django.http import HttpResponse
 from functools import reduce
@@ -403,6 +403,75 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     return ws
 
 
+def get_legacy_endowment_data(rpt_type: str) -> QuerySet:
+    endowments_qset = LibraryData.objects.none()
+    return endowments_qset
+
+
+def get_legacy_gifts_data(rpt_type: str) -> QuerySet:
+    gifts_qset = LibraryData.objects.none()
+    return gifts_qset
+
+
+def get_legacy_data_for_report(rpt_type: str) -> tuple[QuerySet, QuerySet]:
+    # some reports require multiple queries, so start with a blank queryset
+    # and OR them together
+    endowments_qset = get_legacy_endowment_data(rpt_type)
+    gifts_qset = get_legacy_gifts_data(rpt_type)
+    return (endowments_qset, gifts_qset)
+
+
+def get_columns_for_report(rpt_type: str, tab_type: str = "master") -> list[str]:
+    # Most columns are used in all reports, but not all.
+    # Column order matters, but from Python 3.7 dict key order is preserved;
+    # using a dict here allows removing unwanted columns by name instead of by position.
+    # These are: column_name : [tab_type, ...]
+    report_columns = {
+        "unit": ["endowments", "gifts", "master"],
+        "home_unit_dept": ["endowments", "gifts", "master"],
+        "fund_title": ["endowments", "gifts", "master"],
+        "fund_type": ["endowments", "gifts", "master"],
+        "reg_fdn": ["endowments", "gifts", "master"],
+        "fund_manager": ["endowments", "gifts", "master"],
+        "ucop_fdn_no": ["endowments", "gifts", "master"],
+        "fau_fund_no": ["endowments", "gifts", "master"],
+        "fau_account": ["endowments", "gifts", "master"],
+        "fau_cost_center": ["endowments", "gifts", "master"],
+        "fau_fund": ["endowments", "gifts", "master"],
+        "ytd_appropriation": ["endowments", "gifts", "master"],
+        "ytd_expenditure": ["endowments", "gifts", "master"],
+        "commitments": ["endowments", "gifts", "master"],
+        "operating_balance": ["endowments", "gifts", "master"],
+        "max_mtf_trf_amt": ["master"],
+        "total_balance": ["master"],
+        "mtf_authority": ["endowments", "gifts", "master"],
+        "projected_annual_income": ["endowments", "master"],
+        "fund_purpose": ["endowments", "gifts", "master"],
+        "fund_restriction": ["endowments", "gifts", "master"],
+        "notes": ["endowments", "gifts", "master"],
+        "lbs_notes": ["endowments", "master"],
+    }
+    if rpt_type == "master":
+        # All columns are used in master report; tab_type is not relevant.
+        return [column_name for column_name in report_columns.keys()]
+    elif rpt_type == "ul":
+        # UL report also gets some columns only master report does
+        # (max_mtf_trf_amt and total_balance), but also needs the
+        # endowments vs. gifts distinctions of tab_type.
+        return [
+            column_name
+            for column_name, tab_types in report_columns.items()
+            if "master" in tab_types and tab_type in tab_types
+        ]
+    else:
+        # Ordinary reports, with fewer fields, and tab_type matters.
+        return [
+            column_name
+            for column_name, tab_types in report_columns.items()
+            if tab_type in tab_types
+        ]
+
+
 def create_excel_output(rpt_type: str) -> Workbook:
     """Create Excel output for a report.
 
@@ -429,34 +498,8 @@ def create_excel_output(rpt_type: str) -> Workbook:
         df = pd.DataFrame.from_records(
             LibraryData.objects.filter(~Q(unit="SPARE ROW")).values()
         )
-        # get correct cols in correct order
-        master_cols = [
-            "unit",
-            "home_unit_dept",
-            "fund_title",
-            "fund_type",
-            "reg_fdn",
-            "fund_manager",
-            "ucop_fdn_no",
-            "fau_fund_no",
-            "fau_account",
-            "fau_cost_center",
-            "fau_fund",
-            "ytd_appropriation",
-            "ytd_expenditure",
-            "commitments",
-            "operating_balance",
-            "max_mtf_trf_amt",
-            "total_balance",
-            "mtf_authority",
-            "projected_annual_income",
-            "fund_purpose",
-            "fund_restriction",
-            "notes",
-            "lbs_notes",
-        ]
+        master_cols = get_columns_for_report(rpt_type)
         df = df[master_cols]
-
         ws = df_to_excel(df, ws)
 
         # add correct cell formatting
@@ -552,29 +595,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
         gifts_df = pd.DataFrame.from_records(gifts_qset.values())
 
         # basic cols for endowments reports
-        endowments_cols = [
-            "unit",
-            "home_unit_dept",
-            "fund_title",
-            "fund_type",
-            "reg_fdn",
-            "fund_manager",
-            "ucop_fdn_no",
-            "fau_fund_no",
-            "fau_account",
-            "fau_cost_center",
-            "fau_fund",
-            "ytd_appropriation",
-            "ytd_expenditure",
-            "commitments",
-            "operating_balance",
-            "mtf_authority",
-            "projected_annual_income",
-            "fund_purpose",
-            "fund_restriction",
-            "notes",
-            "lbs_notes",
-        ]
+        endowments_cols = get_columns_for_report(rpt_type, tab_type="endowments")
         # extra cols for UL report
         if rpt_type == "ul":
             endowments_cols.insert(15, "max_mtf_trf_amt")
@@ -593,27 +614,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
                     wb["Endowments"].delete_cols(19)
 
         # basic cols for gifts reports
-        gifts_cols = [
-            "unit",
-            "home_unit_dept",
-            "fund_title",
-            "fund_type",
-            "reg_fdn",
-            "fund_manager",
-            "ucop_fdn_no",
-            "fau_fund_no",
-            "fau_account",
-            "fau_cost_center",
-            "fau_fund",
-            "ytd_appropriation",
-            "ytd_expenditure",
-            "commitments",
-            "operating_balance",
-            "mtf_authority",
-            "fund_purpose",
-            "fund_restriction",
-            "notes",
-        ]
+        gifts_cols = get_columns_for_report(rpt_type, tab_type="gifts")
         # extra cols for UL report
         if rpt_type == "ul":
             gifts_cols.insert(15, "max_mtf_trf_amt")
