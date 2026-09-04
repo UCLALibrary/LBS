@@ -1,9 +1,10 @@
 import logging
+from warnings import deprecated
 import zipfile
 import pandas as pd
 import pytds
 
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 from datetime import datetime
 from django.http import HttpResponse
 from functools import reduce
@@ -403,22 +404,97 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     return ws
 
 
-def get_legacy_endowment_data(rpt_type: str) -> QuerySet:
-    endowments_qset = LibraryData.objects.none()
-    return endowments_qset
+@deprecated(
+    "Used only to isolate LibraryData access from Excel output; will be removed soon."
+)
+def get_legacy_endowment_data(
+    report_type: str, report_units: list[str]
+) -> pd.DataFrame:
+    if report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
+        # Only one report_unit is relevant for the AUL reports,
+        # but it needs fuzzy matching.
+        report_unit = report_units[0]
+        endowments_qset = LibraryData.objects.filter(
+            unit__icontains=report_unit
+        ).filter(fund_type="Endowment").order_by(
+            "fau_fund_no"
+        ) | LibraryData.objects.filter(
+            home_unit_dept__icontains=report_unit
+        ).filter(
+            fund_type="Endowment"
+        ).order_by(
+            "fau_fund_no"
+        )
+    else:
+        # Start with empty query set, then add filters based on input parameters.
+        # There can be multiple units associated with a fund, so iterate over them.
+        endowments_qset = LibraryData.objects.none()
+        # Get funds for each real unit
+        for report_unit in report_units:
+            endowments_qset |= (
+                LibraryData.objects.filter(unit=report_unit)
+                .filter(fund_type="Endowment")
+                .order_by("fau_fund_no")
+            )
+
+    return pd.DataFrame.from_records(endowments_qset.values())
 
 
-def get_legacy_gifts_data(rpt_type: str) -> QuerySet:
-    gifts_qset = LibraryData.objects.none()
-    return gifts_qset
+@deprecated(
+    "Used only to isolate LibraryData access from Excel output; will be removed soon."
+)
+def get_legacy_gifts_data(report_type: str, report_units: list[str]) -> pd.DataFrame:
+    if report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
+        # Only one report_unit is relevant for the AUL reports,
+        # but it needs fuzzy matching.
+        report_unit = report_units[0]
+        gifts_qset = LibraryData.objects.filter(unit__icontains=report_unit).filter(
+            fund_type="Current Expenditure"
+        ).order_by("fau_fund_no") | LibraryData.objects.filter(
+            home_unit_dept__icontains=report_unit
+        ).filter(
+            fund_type="Current Expenditure"
+        ).order_by(
+            "fau_fund_no"
+        )
+    else:
+        # Start with empty query set, then add filters based on input parameters.
+        # There can be multiple units associated with a fund, so iterate over them.
+        gifts_qset = LibraryData.objects.none()
+        for report_unit in report_units:
+            gifts_qset |= (
+                LibraryData.objects.filter(unit=report_unit)
+                .filter(fund_type="Current Expenditure")
+                .order_by("fau_fund_no")
+            )
+
+    return pd.DataFrame.from_records(gifts_qset.values())
 
 
-def get_legacy_data_for_report(rpt_type: str) -> tuple[QuerySet, QuerySet]:
-    # some reports require multiple queries, so start with a blank queryset
-    # and OR them together
-    endowments_qset = get_legacy_endowment_data(rpt_type)
-    gifts_qset = get_legacy_gifts_data(rpt_type)
-    return (endowments_qset, gifts_qset)
+@deprecated(
+    "Used only to isolate LibraryData access from Excel output; will be removed soon."
+)
+def get_legacy_data_for_report(
+    report_type: str, report_units: list[str] | None = None
+) -> tuple[pd.DataFrame, ...]:
+    if not report_units:
+        report_units = []
+    if report_type == "master":
+        # Master report gets all data, except SPARE ROW (legacy only);
+        # Gifts and Endowment separation is not done.
+        # `report_unit` is not relevant.
+        # Get all data from LibraryData table as a dataframe, excluding SPARE ROWs.
+        df = pd.DataFrame.from_records(
+            LibraryData.objects.filter(~Q(unit="SPARE ROW")).values()
+        )
+        return (df,)
+    else:
+        endowments_df = get_legacy_endowment_data(report_type, report_units)
+        gifts_df = get_legacy_gifts_data(report_type, report_units)
+        return (
+            endowments_df,
+            gifts_df,
+        )
 
 
 def get_columns_for_report(rpt_type: str, tab_type: str = "master") -> list[str]:
@@ -472,6 +548,35 @@ def get_columns_for_report(rpt_type: str, tab_type: str = "master") -> list[str]
         ]
 
 
+def get_units_for_report(rpt_type: str) -> list[str]:
+    # map each report type to list of strings needed for query
+    report_units = {
+        "archives": ["Archives"],
+        "arts": ["Arts"],
+        "biomed": ["Biomed"],
+        "digilib": ["DigiLib", "Digital Library"],
+        "eal": ["EAL"],
+        "ftva": ["FTVA"],
+        "hsc": ["History & SC Sciences"],
+        "hssd": ["HSSD", "SSHD"],
+        "ias": ["Int'l Studies"],
+        "lhr": ["LHR"],
+        "lsc": ["LSC"],
+        "management": ["Management"],
+        "music": ["Music"],
+        "oh": ["Oral History"],
+        "pa": ["Performing Arts"],
+        "powell": ["Powell"],
+        "preservation": ["Preservation"],
+        "sel": ["SEL"],
+        "ul": ["UL"],
+        "aul_benedetti": ["Benedetti"],
+        "aul_gomez": ["Gomez"],
+        "aul_grappone": ["Grappone"],
+    }
+    return report_units.get(rpt_type, [])
+
+
 def create_excel_output(rpt_type: str) -> Workbook:
     """Create Excel output for a report.
 
@@ -488,16 +593,15 @@ def create_excel_output(rpt_type: str) -> Workbook:
     if rpt_type == "master":
         # only one sheet in master report, so remove the other and rename
         gifts = wb["Gifts"]
-        wb.remove_sheet(gifts)
+        wb.remove(gifts)
         ws = wb["Endowments"]
         ws.title = "G&E"
         # clear label in template
         ws["A1"] = ""
 
-        # get all data from LibraryData table as a dataframe, excluding SPARE ROWs
-        df = pd.DataFrame.from_records(
-            LibraryData.objects.filter(~Q(unit="SPARE ROW")).values()
-        )
+        # TODO: Consider passing columns and report type to one method?
+        # Only one sheet in master report, so only one set of data.
+        (df,) = get_legacy_data_for_report(rpt_type)
         master_cols = get_columns_for_report(rpt_type)
         df = df[master_cols]
         ws = df_to_excel(df, ws)
@@ -523,83 +627,11 @@ def create_excel_output(rpt_type: str) -> Workbook:
 
     else:
         # map each report type to list of strings needed for query
-        rpt_query_dict = {
-            "archives": ["Archives"],
-            "arts": ["Arts"],
-            "biomed": ["Biomed"],
-            "digilib": ["DigiLib", "Digital Library"],
-            "eal": ["EAL"],
-            "ftva": ["FTVA"],
-            "hsc": ["History & SC Sciences"],
-            "hssd": ["HSSD", "SSHD"],
-            "ias": ["Int'l Studies"],
-            "lhr": ["LHR"],
-            "lsc": ["LSC"],
-            "management": ["Management"],
-            "music": ["Music"],
-            "oh": ["Oral History"],
-            "pa": ["Performing Arts"],
-            "powell": ["Powell"],
-            "preservation": ["Preservation"],
-            "sel": ["SEL"],
-            "ul": ["UL"],
-            "aul_benedetti": ["Benedetti"],
-            "aul_gomez": ["Gomez"],
-            "aul_grappone": ["Grappone"],
-        }
-
-        # some reports require multiple queries, so start with a blank queryset
-        # and OR them together
-        endowments_qset = LibraryData.objects.none()
-        gifts_qset = LibraryData.objects.none()
-
-        # AUL reports require fuzzy matching on unit and home_unit_dept
-        if rpt_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
-            endowments_qset = LibraryData.objects.filter(
-                unit__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(fund_type="Endowment").order_by(
-                "fau_fund_no"
-            ) | LibraryData.objects.filter(
-                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(
-                fund_type="Endowment"
-            ).order_by(
-                "fau_fund_no"
-            )
-            gifts_qset = LibraryData.objects.filter(
-                unit__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(fund_type="Current Expenditure").order_by(
-                "fau_fund_no"
-            ) | LibraryData.objects.filter(
-                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(
-                fund_type="Current Expenditure"
-            ).order_by(
-                "fau_fund_no"
-            )
-
-        else:
-            for query_str in rpt_query_dict[rpt_type]:
-                endowments_qset |= (
-                    LibraryData.objects.filter(unit=query_str)
-                    .filter(fund_type="Endowment")
-                    .order_by("fau_fund_no")
-                )
-                gifts_qset |= (
-                    LibraryData.objects.filter(unit=query_str)
-                    .filter(fund_type="Current Expenditure")
-                    .order_by("fau_fund_no")
-                )
-
-        endowments_df = pd.DataFrame.from_records(endowments_qset.values())
-        gifts_df = pd.DataFrame.from_records(gifts_qset.values())
+        report_units = get_units_for_report(rpt_type)
+        endowments_df, gifts_df = get_legacy_data_for_report(rpt_type, report_units)
 
         # basic cols for endowments reports
         endowments_cols = get_columns_for_report(rpt_type, tab_type="endowments")
-        # extra cols for UL report
-        if rpt_type == "ul":
-            endowments_cols.insert(15, "max_mtf_trf_amt")
-            endowments_cols.insert(16, "total_balance")
 
         if not endowments_df.empty:
             endowments_df = endowments_df[endowments_cols]
@@ -615,10 +647,6 @@ def create_excel_output(rpt_type: str) -> Workbook:
 
         # basic cols for gifts reports
         gifts_cols = get_columns_for_report(rpt_type, tab_type="gifts")
-        # extra cols for UL report
-        if rpt_type == "ul":
-            gifts_cols.insert(15, "max_mtf_trf_amt")
-            gifts_cols.insert(16, "total_balance")
 
         if not gifts_df.empty:
             gifts_df = gifts_df[gifts_cols]
