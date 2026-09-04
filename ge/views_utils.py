@@ -1,4 +1,5 @@
 import logging
+from warnings import deprecated
 import zipfile
 import pandas as pd
 import pytds
@@ -403,60 +404,206 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     return ws
 
 
-def create_excel_output(rpt_type: str) -> Workbook:
+@deprecated(
+    "Used only to isolate LibraryData access from Excel output; will be removed soon."
+)
+def get_legacy_endowment_data(
+    report_type: str, report_units: list[str]
+) -> pd.DataFrame:
+    if report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
+        # Only one report_unit is relevant for the AUL reports,
+        # but it needs fuzzy matching.
+        report_unit = report_units[0]
+        endowments_qset = LibraryData.objects.filter(
+            unit__icontains=report_unit
+        ).filter(fund_type="Endowment").order_by(
+            "fau_fund_no"
+        ) | LibraryData.objects.filter(
+            home_unit_dept__icontains=report_unit
+        ).filter(
+            fund_type="Endowment"
+        ).order_by(
+            "fau_fund_no"
+        )
+    else:
+        # Start with empty query set, then add filters based on input parameters.
+        # There can be multiple units associated with a fund, so iterate over them.
+        endowments_qset = LibraryData.objects.none()
+        # Get funds for each real unit
+        for report_unit in report_units:
+            endowments_qset |= (
+                LibraryData.objects.filter(unit=report_unit)
+                .filter(fund_type="Endowment")
+                .order_by("fau_fund_no")
+            )
+
+    return pd.DataFrame.from_records(endowments_qset.values())
+
+
+@deprecated(
+    "Used only to isolate LibraryData access from Excel output; will be removed soon."
+)
+def get_legacy_gifts_data(report_type: str, report_units: list[str]) -> pd.DataFrame:
+    if report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
+        # Only one report_unit is relevant for the AUL reports,
+        # but it needs fuzzy matching.
+        report_unit = report_units[0]
+        gifts_qset = LibraryData.objects.filter(unit__icontains=report_unit).filter(
+            fund_type="Current Expenditure"
+        ).order_by("fau_fund_no") | LibraryData.objects.filter(
+            home_unit_dept__icontains=report_unit
+        ).filter(
+            fund_type="Current Expenditure"
+        ).order_by(
+            "fau_fund_no"
+        )
+    else:
+        # Start with empty query set, then add filters based on input parameters.
+        # There can be multiple units associated with a fund, so iterate over them.
+        gifts_qset = LibraryData.objects.none()
+        for report_unit in report_units:
+            gifts_qset |= (
+                LibraryData.objects.filter(unit=report_unit)
+                .filter(fund_type="Current Expenditure")
+                .order_by("fau_fund_no")
+            )
+
+    return pd.DataFrame.from_records(gifts_qset.values())
+
+
+@deprecated(
+    "Used only to isolate LibraryData access from Excel output; will be removed soon."
+)
+def get_legacy_data_for_report(
+    report_type: str, report_units: list[str] | None = None
+) -> tuple[pd.DataFrame, ...]:
+    if not report_units:
+        report_units = []
+    if report_type == "master":
+        # Master report gets all data, except SPARE ROW (legacy only);
+        # Gifts and Endowment separation is not done.
+        # `report_unit` is not relevant.
+        # Get all data from LibraryData table as a dataframe, excluding SPARE ROWs.
+        df = pd.DataFrame.from_records(
+            LibraryData.objects.filter(~Q(unit="SPARE ROW")).values()
+        )
+        return (df,)
+    else:
+        endowments_df = get_legacy_endowment_data(report_type, report_units)
+        gifts_df = get_legacy_gifts_data(report_type, report_units)
+        return (
+            endowments_df,
+            gifts_df,
+        )
+
+
+def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[str]:
+    # Most columns are used in all reports, but not all.
+    # Column order matters, but from Python 3.7 dict key order is preserved;
+    # using a dict here allows removing unwanted columns by name instead of by position.
+    # These are: column_name : [tab_type, ...]
+    report_columns = {
+        "unit": ["endowments", "gifts", "master"],
+        "home_unit_dept": ["endowments", "gifts", "master"],
+        "fund_title": ["endowments", "gifts", "master"],
+        "fund_type": ["endowments", "gifts", "master"],
+        "reg_fdn": ["endowments", "gifts", "master"],
+        "fund_manager": ["endowments", "gifts", "master"],
+        "ucop_fdn_no": ["endowments", "gifts", "master"],
+        "fau_fund_no": ["endowments", "gifts", "master"],
+        "fau_account": ["endowments", "gifts", "master"],
+        "fau_cost_center": ["endowments", "gifts", "master"],
+        "fau_fund": ["endowments", "gifts", "master"],
+        "ytd_appropriation": ["endowments", "gifts", "master"],
+        "ytd_expenditure": ["endowments", "gifts", "master"],
+        "commitments": ["endowments", "gifts", "master"],
+        "operating_balance": ["endowments", "gifts", "master"],
+        "max_mtf_trf_amt": ["master"],
+        "total_balance": ["master"],
+        "mtf_authority": ["endowments", "gifts", "master"],
+        "projected_annual_income": ["endowments", "master"],
+        "fund_purpose": ["endowments", "gifts", "master"],
+        "fund_restriction": ["endowments", "gifts", "master"],
+        "notes": ["endowments", "gifts", "master"],
+        "lbs_notes": ["endowments", "master"],
+    }
+    if report_type == "master":
+        # All columns are used in master report; tab_type is not relevant.
+        return [column_name for column_name in report_columns.keys()]
+    elif report_type == "ul":
+        # UL report also gets some columns only master report does
+        # (max_mtf_trf_amt and total_balance), but also needs the
+        # endowments vs. gifts distinctions of tab_type.
+        return [
+            column_name
+            for column_name, tab_types in report_columns.items()
+            if "master" in tab_types and tab_type in tab_types
+        ]
+    else:
+        # Ordinary reports, with fewer fields, and tab_type matters.
+        return [
+            column_name
+            for column_name, tab_types in report_columns.items()
+            if tab_type in tab_types
+        ]
+
+
+def get_units_for_report(report_type: str) -> list[str]:
+    # map each report type to list of strings needed for query
+    report_units = {
+        "archives": ["Archives"],
+        "arts": ["Arts"],
+        "biomed": ["Biomed"],
+        "digilib": ["DigiLib", "Digital Library"],
+        "eal": ["EAL"],
+        "ftva": ["FTVA"],
+        "hsc": ["History & SC Sciences"],
+        "hssd": ["HSSD", "SSHD"],
+        "ias": ["Int'l Studies"],
+        "lhr": ["LHR"],
+        "lsc": ["LSC"],
+        "management": ["Management"],
+        "music": ["Music"],
+        "oh": ["Oral History"],
+        "pa": ["Performing Arts"],
+        "powell": ["Powell"],
+        "preservation": ["Preservation"],
+        "sel": ["SEL"],
+        "ul": ["UL"],
+        "aul_benedetti": ["Benedetti"],
+        "aul_gomez": ["Gomez"],
+        "aul_grappone": ["Grappone"],
+    }
+    return report_units.get(report_type, [])
+
+
+def create_excel_output(report_type: str) -> Workbook:
     """Create Excel output for a report.
 
     Returns a Workbook, for direct download or archiving as needed.
     """
 
     # UL and Master reports have extra columns, so use a different template
-    if rpt_type in ("master", "ul"):
+    if report_type in ("master", "ul"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
     else:
         template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
     wb = load_workbook(template_file)
 
-    if rpt_type == "master":
+    if report_type == "master":
         # only one sheet in master report, so remove the other and rename
         gifts = wb["Gifts"]
-        wb.remove_sheet(gifts)
+        wb.remove(gifts)
         ws = wb["Endowments"]
         ws.title = "G&E"
         # clear label in template
         ws["A1"] = ""
 
-        # get all data from LibraryData table as a dataframe, excluding SPARE ROWs
-        df = pd.DataFrame.from_records(
-            LibraryData.objects.filter(~Q(unit="SPARE ROW")).values()
-        )
-        # get correct cols in correct order
-        master_cols = [
-            "unit",
-            "home_unit_dept",
-            "fund_title",
-            "fund_type",
-            "reg_fdn",
-            "fund_manager",
-            "ucop_fdn_no",
-            "fau_fund_no",
-            "fau_account",
-            "fau_cost_center",
-            "fau_fund",
-            "ytd_appropriation",
-            "ytd_expenditure",
-            "commitments",
-            "operating_balance",
-            "max_mtf_trf_amt",
-            "total_balance",
-            "mtf_authority",
-            "projected_annual_income",
-            "fund_purpose",
-            "fund_restriction",
-            "notes",
-            "lbs_notes",
-        ]
+        # TODO: Consider passing columns and report type to one method?
+        # Only one sheet in master report, so only one set of data.
+        (df,) = get_legacy_data_for_report(report_type)
+        master_cols = get_columns_for_report(report_type)
         df = df[master_cols]
-
         ws = df_to_excel(df, ws)
 
         # add correct cell formatting
@@ -480,105 +627,11 @@ def create_excel_output(rpt_type: str) -> Workbook:
 
     else:
         # map each report type to list of strings needed for query
-        rpt_query_dict = {
-            "archives": ["Archives"],
-            "arts": ["Arts"],
-            "biomed": ["Biomed"],
-            "digilib": ["DigiLib", "Digital Library"],
-            "eal": ["EAL"],
-            "ftva": ["FTVA"],
-            "hsc": ["History & SC Sciences"],
-            "hssd": ["HSSD", "SSHD"],
-            "ias": ["Int'l Studies"],
-            "lhr": ["LHR"],
-            "lsc": ["LSC"],
-            "management": ["Management"],
-            "music": ["Music"],
-            "oh": ["Oral History"],
-            "pa": ["Performing Arts"],
-            "powell": ["Powell"],
-            "preservation": ["Preservation"],
-            "sel": ["SEL"],
-            "ul": ["UL"],
-            "aul_benedetti": ["Benedetti"],
-            "aul_gomez": ["Gomez"],
-            "aul_grappone": ["Grappone"],
-        }
-
-        # some reports require multiple queries, so start with a blank queryset
-        # and OR them together
-        endowments_qset = LibraryData.objects.none()
-        gifts_qset = LibraryData.objects.none()
-
-        # AUL reports require fuzzy matching on unit and home_unit_dept
-        if rpt_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
-            endowments_qset = LibraryData.objects.filter(
-                unit__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(fund_type="Endowment").order_by(
-                "fau_fund_no"
-            ) | LibraryData.objects.filter(
-                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(
-                fund_type="Endowment"
-            ).order_by(
-                "fau_fund_no"
-            )
-            gifts_qset = LibraryData.objects.filter(
-                unit__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(fund_type="Current Expenditure").order_by(
-                "fau_fund_no"
-            ) | LibraryData.objects.filter(
-                home_unit_dept__icontains=rpt_query_dict[rpt_type][0]
-            ).filter(
-                fund_type="Current Expenditure"
-            ).order_by(
-                "fau_fund_no"
-            )
-
-        else:
-            for query_str in rpt_query_dict[rpt_type]:
-                endowments_qset |= (
-                    LibraryData.objects.filter(unit=query_str)
-                    .filter(fund_type="Endowment")
-                    .order_by("fau_fund_no")
-                )
-                gifts_qset |= (
-                    LibraryData.objects.filter(unit=query_str)
-                    .filter(fund_type="Current Expenditure")
-                    .order_by("fau_fund_no")
-                )
-
-        endowments_df = pd.DataFrame.from_records(endowments_qset.values())
-        gifts_df = pd.DataFrame.from_records(gifts_qset.values())
+        report_units = get_units_for_report(report_type)
+        endowments_df, gifts_df = get_legacy_data_for_report(report_type, report_units)
 
         # basic cols for endowments reports
-        endowments_cols = [
-            "unit",
-            "home_unit_dept",
-            "fund_title",
-            "fund_type",
-            "reg_fdn",
-            "fund_manager",
-            "ucop_fdn_no",
-            "fau_fund_no",
-            "fau_account",
-            "fau_cost_center",
-            "fau_fund",
-            "ytd_appropriation",
-            "ytd_expenditure",
-            "commitments",
-            "operating_balance",
-            "mtf_authority",
-            "projected_annual_income",
-            "fund_purpose",
-            "fund_restriction",
-            "notes",
-            "lbs_notes",
-        ]
-        # extra cols for UL report
-        if rpt_type == "ul":
-            endowments_cols.insert(15, "max_mtf_trf_amt")
-            endowments_cols.insert(16, "total_balance")
+        endowments_cols = get_columns_for_report(report_type, tab_type="endowments")
 
         if not endowments_df.empty:
             endowments_df = endowments_df[endowments_cols]
@@ -587,37 +640,13 @@ def create_excel_output(rpt_type: str) -> Workbook:
             if all(endowments_df["fund_restriction"].isin([""])):
                 endowments_df.drop(columns=["fund_restriction"], inplace=True)
                 # remove column from Excel template - col U for UL, S for others
-                if rpt_type == "ul":
+                if report_type == "ul":
                     wb["Endowments"].delete_cols(21)
                 else:
                     wb["Endowments"].delete_cols(19)
 
         # basic cols for gifts reports
-        gifts_cols = [
-            "unit",
-            "home_unit_dept",
-            "fund_title",
-            "fund_type",
-            "reg_fdn",
-            "fund_manager",
-            "ucop_fdn_no",
-            "fau_fund_no",
-            "fau_account",
-            "fau_cost_center",
-            "fau_fund",
-            "ytd_appropriation",
-            "ytd_expenditure",
-            "commitments",
-            "operating_balance",
-            "mtf_authority",
-            "fund_purpose",
-            "fund_restriction",
-            "notes",
-        ]
-        # extra cols for UL report
-        if rpt_type == "ul":
-            gifts_cols.insert(15, "max_mtf_trf_amt")
-            gifts_cols.insert(16, "total_balance")
+        gifts_cols = get_columns_for_report(report_type, tab_type="gifts")
 
         if not gifts_df.empty:
             gifts_df = gifts_df[gifts_cols]
@@ -626,7 +655,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
             if all(gifts_df["fund_restriction"].isin([""])):
                 gifts_df.drop(columns=["fund_restriction"], inplace=True)
                 # remove column from Excel template - col T for UL, R for others
-                if rpt_type == "ul":
+                if report_type == "ul":
                     wb["Gifts"].delete_cols(20)
                 else:
                     wb["Gifts"].delete_cols(18)
@@ -640,7 +669,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
         # add totals and formatting for money columns
         gifts_money_cols = ["L", "M", "N", "O"]
         endowments_money_cols = ["L", "M", "N", "O", "Q"]
-        if rpt_type == "ul":
+        if report_type == "ul":
             gifts_money_cols.extend(["P", "Q"])
             endowments_money_cols.extend(["P", "S"])
 
@@ -676,7 +705,7 @@ def create_excel_output(rpt_type: str) -> Workbook:
         # L3 is always the start of the 4 common financial cols
         endowments_ws["L3"] = as_of
         gifts_ws["L3"] = as_of
-        if rpt_type == "ul":
+        if report_type == "ul":
             # UL has extra MTF col on both sheets (P), and one other extra col
             # that pushes the Projected Annual Income col to S
             gifts_ws["P3"] = as_of
@@ -701,9 +730,9 @@ def get_bytes_from_workbook(workbook: Workbook) -> bytes:
     return stream
 
 
-def download_excel_file(rpt_type: str) -> HttpResponse:
+def download_excel_file(report_type: str) -> HttpResponse:
     """Get Excel file via HTTP response."""
-    workbook = create_excel_output(rpt_type)
+    workbook = create_excel_output(report_type)
 
     stream = get_bytes_from_workbook(workbook)
 
@@ -712,7 +741,7 @@ def download_excel_file(rpt_type: str) -> HttpResponse:
         content_type="application/ms-excel",
     )
     response["Content-Disposition"] = (
-        f'attachment; filename={rpt_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
+        f'attachment; filename={report_type}-Report-{datetime.now().strftime("%Y%m%d%H%M")}.xlsx'
     )
 
     return response
