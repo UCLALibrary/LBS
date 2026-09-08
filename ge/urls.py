@@ -11,6 +11,4 @@ urlpatterns = [
     path("logs/", views.show_log, name="show_log"),
     path("logs/<int:line_count>", views.show_log, name="show_log"),
     path("release_notes/", views.release_notes, name="release_notes"),
-    # TODO: Change this temporary path & view name, when original report is fully replaced.
-    path("ge/report_from_qdb_temp/", views.report_from_qdb_temp),
 ]
