@@ -1,5 +1,4 @@
 import logging
-from warnings import deprecated
 import zipfile
 import pandas as pd
 import pytds
@@ -402,99 +401,6 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
         for c_col_id, value in enumerate(row, 1):
             ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
     return ws
-
-
-@deprecated(
-    "Used only to isolate LibraryData access from Excel output; will be removed soon."
-)
-def get_legacy_endowment_data(
-    report_type: str, report_units: list[str]
-) -> pd.DataFrame:
-    if report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
-        # Only one report_unit is relevant for the AUL reports,
-        # but it needs fuzzy matching.
-        report_unit = report_units[0]
-        endowments_qset = LibraryData.objects.filter(
-            unit__icontains=report_unit
-        ).filter(fund_type="Endowment").order_by(
-            "fau_fund_no"
-        ) | LibraryData.objects.filter(
-            home_unit_dept__icontains=report_unit
-        ).filter(
-            fund_type="Endowment"
-        ).order_by(
-            "fau_fund_no"
-        )
-    else:
-        # Start with empty query set, then add filters based on input parameters.
-        # There can be multiple units associated with a fund, so iterate over them.
-        endowments_qset = LibraryData.objects.none()
-        # Get funds for each real unit
-        for report_unit in report_units:
-            endowments_qset |= (
-                LibraryData.objects.filter(unit=report_unit)
-                .filter(fund_type="Endowment")
-                .order_by("fau_fund_no")
-            )
-
-    return pd.DataFrame.from_records(endowments_qset.values())
-
-
-@deprecated(
-    "Used only to isolate LibraryData access from Excel output; will be removed soon."
-)
-def get_legacy_gifts_data(report_type: str, report_units: list[str]) -> pd.DataFrame:
-    if report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
-        # Only one report_unit is relevant for the AUL reports,
-        # but it needs fuzzy matching.
-        report_unit = report_units[0]
-        gifts_qset = LibraryData.objects.filter(unit__icontains=report_unit).filter(
-            fund_type="Current Expenditure"
-        ).order_by("fau_fund_no") | LibraryData.objects.filter(
-            home_unit_dept__icontains=report_unit
-        ).filter(
-            fund_type="Current Expenditure"
-        ).order_by(
-            "fau_fund_no"
-        )
-    else:
-        # Start with empty query set, then add filters based on input parameters.
-        # There can be multiple units associated with a fund, so iterate over them.
-        gifts_qset = LibraryData.objects.none()
-        for report_unit in report_units:
-            gifts_qset |= (
-                LibraryData.objects.filter(unit=report_unit)
-                .filter(fund_type="Current Expenditure")
-                .order_by("fau_fund_no")
-            )
-
-    return pd.DataFrame.from_records(gifts_qset.values())
-
-
-@deprecated(
-    "Used only to isolate LibraryData access from Excel output; will be removed soon."
-)
-def get_legacy_data_for_report(
-    report_type: str, report_units: list[str] | None = None
-) -> tuple[pd.DataFrame, ...]:
-    if not report_units:
-        report_units = []
-    if report_type == "master":
-        # Master report gets all data, except SPARE ROW (legacy only);
-        # Gifts and Endowment separation is not done.
-        # `report_unit` is not relevant.
-        # Get all data from LibraryData table as a dataframe, excluding SPARE ROWs.
-        df = pd.DataFrame.from_records(
-            LibraryData.objects.filter(~Q(unit="SPARE ROW")).values()
-        )
-        return (df,)
-    else:
-        endowments_df = get_legacy_endowment_data(report_type, report_units)
-        gifts_df = get_legacy_gifts_data(report_type, report_units)
-        return (
-            endowments_df,
-            gifts_df,
-        )
 
 
 def get_data_for_report(
