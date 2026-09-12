@@ -497,28 +497,6 @@ def get_legacy_data_for_report(
         )
 
 
-def get_local_data_for_report(
-    report_type: str, ledger_year_month: str, report_units: list[str] | None = None
-) -> tuple[pd.DataFrame, ...]:
-    # TODO: Combine local with QDB data.
-    if not report_units:
-        report_units = []
-    data = get_qdb_by_report(report_type, ledger_year_month)
-    if report_type == "master":
-        # Master report gets all data; Gifts and Endowment separation is not done.
-        # `report_unit` is not relevant.
-        # Get all data from GeFund table as a dataframe.
-        df = pd.DataFrame(data)
-        return (df,)
-    else:
-        endowments_df = get_legacy_endowment_data(report_type, report_units)
-        gifts_df = get_legacy_gifts_data(report_type, report_units)
-        return (
-            endowments_df,
-            gifts_df,
-        )
-
-
 def get_data_for_report(
     report_type: str, ledger_year_month: str
 ) -> tuple[pd.DataFrame, ...]:
