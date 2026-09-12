@@ -497,36 +497,157 @@ def get_legacy_data_for_report(
         )
 
 
+def get_local_data_for_report(
+    report_type: str, ledger_year_month: str, report_units: list[str] | None = None
+) -> tuple[pd.DataFrame, ...]:
+    # TODO: Combine local with QDB data.
+    if not report_units:
+        report_units = []
+    data = get_qdb_by_report(report_type, ledger_year_month)
+    if report_type == "master":
+        # Master report gets all data; Gifts and Endowment separation is not done.
+        # `report_unit` is not relevant.
+        # Get all data from GeFund table as a dataframe.
+        df = pd.DataFrame(data)
+        return (df,)
+    else:
+        endowments_df = get_legacy_endowment_data(report_type, report_units)
+        gifts_df = get_legacy_gifts_data(report_type, report_units)
+        return (
+            endowments_df,
+            gifts_df,
+        )
+
+
+def get_data_for_report(
+    report_type: str, ledger_year_month: str
+) -> tuple[pd.DataFrame, ...]:
+    all_data = list()
+    # Get local fund data first.
+    local_data = get_local_data(report_type)
+    # Add current QDB data associated with the local funds.
+    for fund in local_data:
+        qdb_data = get_qdb_data(
+            report_type,
+            fund.get("account", ""),
+            fund.get("cost_center", ""),
+            fund.get("fund", ""),
+            ledger_year_month,
+        )
+        # Should have 1 row; might get 0; should not have more than 1.
+        # TODO: Decide what to do / log if other than 1 row.
+        if len(qdb_data) == 1:
+            fund_with_qdb = add_qdb_to_local_data(fund, qdb_data)
+            all_data.append(fund_with_qdb)
+
+    # Reports have different data structures;
+    # split into Gifts and Endowments as needed.
+    if report_type == "master":
+        # Master report has only one set of data, combining gifts and endowments.
+        return (pd.DataFrame(all_data),)
+    else:
+        # Split by fund type.
+        endowments = [
+            record for record in all_data if record.get("fund_type", "") == "Endowment"
+        ]
+        gifts = [record for record in all_data if record.get("fund_type", "") == "Gift"]
+        return (
+            pd.DataFrame(endowments),
+            pd.DataFrame(gifts),
+        )
+
+
+def get_local_data(report_type: str) -> list[dict]:
+    # Get associated units, needed for some queries.
+    report_units = get_units_for_report(report_type)
+    # Start with all active funds.
+    funds = GeFund.objects.filter(active=True)
+    if report_type == "master":
+        # Master report gets all active funds, no additional filtering.
+        pass
+    elif report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
+        # Only one report_unit is relevant for the AUL reports,
+        # but it needs fuzzy matching.
+        report_unit = report_units[0]
+        funds = funds.filter(
+            Q(unit__name__icontains=report_unit)
+            | Q(home_unit_dept__icontains=report_unit)
+        )
+    else:
+        # There can be multiple units associated with a fund.
+        funds = funds.filter(unit__name__in=report_units)
+
+    # Sort the remaining funds by unit and FAU components.
+    funds = funds.order_by("unit__name", "account", "cost_center", "fund")
+    # Convert queryset to list of dicts, for data manipulation with no further database backing.
+    # Keep only fields needed for reporting.
+    fund_data = list(
+        funds.values(
+            "account",
+            "cost_center",
+            "fund",
+            "title",
+            "manager",
+            "mtf_authority",
+            "unit__name",
+            "home_unit_dept",
+            "projected_annual_income",
+            "fund_purpose",
+            "fund_summary",
+            "fund_restriction",
+            "general_notes",
+            "lbs_notes",
+        )
+    )
+    # Add a fund_type field, calculated from relevant data. This will be needed for reports.
+    # This is not in the database, and not on the model as a property can't be used for queries.
+    for record in fund_data:
+        record["fund_type"] = get_fund_type(record.get("fund", ""))
+
+        # TODO: For now, preserve unwanted to-be-removed columns with placeholders.
+        placeholders = {
+            # "fund_type": "REMOVE",
+            "reg_fdn": "REMOVE",
+            "fau_fund_no": "REMOVE",
+            "max_mtf_trf_amt": "UNKNOWN",
+            "total_balance": "UNKNOWN",
+        }
+        record.update(placeholders)
+
+    return fund_data
+
+
 def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[str]:
     # Most columns are used in all reports, but not all.
     # Column order matters, but from Python 3.7 dict key order is preserved;
     # using a dict here allows removing unwanted columns by name instead of by position.
     # These are: column_name : [tab_type, ...]
     report_columns = {
-        "unit": ["endowments", "gifts", "master"],
-        "home_unit_dept": ["endowments", "gifts", "master"],
-        "fund_title": ["endowments", "gifts", "master"],
-        "fund_type": ["endowments", "gifts", "master"],
-        "reg_fdn": ["endowments", "gifts", "master"],
-        "fund_manager": ["endowments", "gifts", "master"],
-        "ucop_fdn_no": ["endowments", "gifts", "master"],
-        "fau_fund_no": ["endowments", "gifts", "master"],
-        "fau_account": ["endowments", "gifts", "master"],
-        "fau_cost_center": ["endowments", "gifts", "master"],
-        "fau_fund": ["endowments", "gifts", "master"],
-        "ytd_appropriation": ["endowments", "gifts", "master"],
-        "ytd_expenditure": ["endowments", "gifts", "master"],
-        "commitments": ["endowments", "gifts", "master"],
-        "operating_balance": ["endowments", "gifts", "master"],
-        "max_mtf_trf_amt": ["master"],
-        "total_balance": ["master"],
-        "mtf_authority": ["endowments", "gifts", "master"],
-        "projected_annual_income": ["endowments", "master"],
-        "fund_purpose": ["endowments", "gifts", "master"],
-        "fund_restriction": ["endowments", "gifts", "master"],
-        "notes": ["endowments", "gifts", "master"],
-        "lbs_notes": ["endowments", "master"],
+        "unit__name": ["endowments", "gifts", "master"],  # local
+        "home_unit_dept": ["endowments", "gifts", "master"],  # local
+        "title": ["endowments", "gifts", "master"],  # local
+        "fund_type": ["endowments", "gifts", "master"],  # REMOVE
+        "reg_fdn": ["endowments", "gifts", "master"],  # REMOVE
+        "manager": ["endowments", "gifts", "master"],  # local
+        "ucop_fdn_no": ["endowments", "gifts", "master"],  # QDB
+        "fau_fund_no": ["endowments", "gifts", "master"],  # REMOVE
+        "account": ["endowments", "gifts", "master"],  # local
+        "cost_center": ["endowments", "gifts", "master"],  # local
+        "fund": ["endowments", "gifts", "master"],  # local
+        "ytd_appropriation": ["endowments", "gifts", "master"],  # QDB
+        "ytd_expenditure": ["endowments", "gifts", "master"],  # QDB
+        "commitments": ["endowments", "gifts", "master"],  # QDB
+        "operating_balance": ["endowments", "gifts", "master"],  # QDB
+        "max_mtf_trf_amt": ["master"],  # UNKNOWN
+        "total_balance": ["master"],  # UNKNOWN
+        "mtf_authority": ["endowments", "gifts", "master"],  # local
+        "projected_annual_income": ["endowments", "master"],  # local
+        "fund_purpose": ["endowments", "gifts", "master"],  # local
+        "fund_restriction": ["endowments", "gifts", "master"],  # local
+        "general_notes": ["endowments", "gifts", "master"],  # local
+        "lbs_notes": ["endowments", "master"],  # local
     }
+
     if report_type == "master":
         # All columns are used in master report; tab_type is not relevant.
         return [column_name for column_name in report_columns.keys()]
@@ -582,6 +703,8 @@ def create_excel_output(report_type: str) -> Workbook:
 
     Returns a Workbook, for direct download or archiving as needed.
     """
+    # TODO: Get this from form
+    ledger_year_month = "202607"
 
     # UL and Master reports have extra columns, so use a different template
     if report_type in ("master", "ul"):
@@ -601,7 +724,7 @@ def create_excel_output(report_type: str) -> Workbook:
 
         # TODO: Consider passing columns and report type to one method?
         # Only one sheet in master report, so only one set of data.
-        (df,) = get_legacy_data_for_report(report_type)
+        (df,) = get_data_for_report(report_type, ledger_year_month)
         master_cols = get_columns_for_report(report_type)
         df = df[master_cols]
         ws = df_to_excel(df, ws)
@@ -626,9 +749,7 @@ def create_excel_output(report_type: str) -> Workbook:
         ws["S3"] = as_of
 
     else:
-        # map each report type to list of strings needed for query
-        report_units = get_units_for_report(report_type)
-        endowments_df, gifts_df = get_legacy_data_for_report(report_type, report_units)
+        endowments_df, gifts_df = get_data_for_report(report_type, ledger_year_month)
 
         # basic cols for endowments reports
         endowments_cols = get_columns_for_report(report_type, tab_type="endowments")
@@ -796,17 +917,16 @@ def get_qdb_query(report_type: str) -> str:
     QDB_GE_QUERY = """
 SELECT
     fun.fund_title
-,	fun.foundatn_fund_num
+,	fun.foundatn_fund_num AS ucop_fdn_no
 ,	glb.account_number
 ,	glb.cost_center_code
 ,	glb.fund_number
 ,	fun.fund_purpose_code
 ,	fun.fund_restr_code
-,	sum(-glb.ytd_appropriation) AS ytd_approp
-,	sum(glb.ytd_financial) AS ytd_expense
-,	sum(glb.encumbrance) AS encumbrance
-,	sum(glb.memo_lien) AS memo_lien
-,	sum(-glb.bal_operating) AS operating_bal_am
+,	sum(-glb.ytd_appropriation) AS ytd_appropriation
+,	sum(glb.ytd_financial) AS ytd_expenditure
+,	sum(glb.encumbrance) AS commitments
+,	sum(-glb.bal_operating) AS operating_balance
 FROM qdb.dbo.gl_balances glb
 INNER JOIN qdb.dbo.account acc
     ON glb.location_code = acc.location_code
@@ -845,7 +965,7 @@ def get_qdb_data(
     cost_center_code: str,
     fund_number: str,
     ledger_year_month: str,
-) -> list:
+) -> list[dict]:
     conn = pytds.connect(DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD)
     # Connection and cursor are closed automatically via 'with'
     with conn:
@@ -859,20 +979,75 @@ def get_qdb_data(
             qdb_query
             % (account_number, cost_center_code, fund_number, ledger_year_month)
         )
+        # This query should only return one row at most, but return all rows
+        # and let the caller decide what to do.
         rows = cursor.fetchall()
         return rows
 
 
 def get_qdb_by_report(report_type, ledger_year_month) -> list:
     all_data = list()
-    faus = GeFund.objects.filter(unit__name=report_type).all()
-    for fau in faus:
+    # Using the local fund objects for a given report, pull in QDB data for each.
+    if report_type == "master":
+        funds = GeFund.objects.filter(active=True)
+    else:
+        funds = GeFund.objects.filter(unit__name=report_type).filter(active=True)
+
+    # Convert queryset to list[dict], to manipulate data without updating db records.
+    funds = list(
+        funds.values(
+            "account",
+            "cost_center",
+            "fund",
+            "title",
+            "manager",
+            "mtf_authority",
+            "unit__name",
+            "home_unit_dept",
+            "projected_annual_income",
+            "fund_purpose",
+            "fund_summary",
+            "fund_restriction",
+            "general_notes",
+            "lbs_notes",
+        )
+    )
+
+    for fund in funds:
         qdb_data = get_qdb_data(
             report_type,
-            fau.account,
-            fau.cost_center,
-            fau.fund,
+            fund.get("account", ""),
+            fund.get("cost_center", ""),
+            fund.get("fund", ""),
             ledger_year_month,
         )
-        all_data.append(qdb_data)
+        # Should have 1 row; might get 0; should not have more than 1.
+        # TODO: Decide what to do / log if other than 1 row.
+        if len(qdb_data) == 1:
+            fund_with_qdb = add_qdb_to_local_data(fund, qdb_data)
+            all_data.append(fund_with_qdb)
     return all_data
+
+
+def add_qdb_to_local_data(fund: dict, qdb_data: list) -> dict:
+    # `qdb_data` should have just one row, but make sure.
+    if len(qdb_data) == 1:
+        # Add fields from the one row of qdb data to local fund data.
+        fund.update(qdb_data[0])
+        return fund
+    else:
+        raise ValueError("qdb_data did not contain 1 row.")
+
+
+def get_fund_type(fund: str) -> str:
+    # Tried this on the GeFund model, but can't use a model property
+    # or method in a query.
+    match fund:
+        case f if "34100" <= f <= "39799":
+            return "Endowment"
+        case f if "39800" <= f <= "56999":
+            return "Gift"
+        case f if "93014" <= f <= "95215":
+            return "Endowment"
+        case _:
+            return "Unknown"
