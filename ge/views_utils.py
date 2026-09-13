@@ -529,7 +529,7 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "fund_purpose": ["endowments", "gifts", "master"],  # local
         "fund_restriction": ["endowments", "gifts", "master"],  # local
         "general_notes": ["endowments", "gifts", "master"],  # local
-        "lbs_notes": ["endowments", "master"],  # local
+        "lbs_notes": ["endowments", "gifts", "master"],  # local
     }
 
     if report_type == "master":
@@ -924,9 +924,11 @@ def add_qdb_to_local_data(fund: dict, qdb_data: list) -> dict:
 
 
 def get_fund_type(fund: str) -> str:
-    # Tried this on the GeFund model, but can't use a model property
-    # or method in a query.
+    # Ideally this would be on the GeFund model,
+    # but can't use a model property or method in a query.
     match fund:
+        case f if "10000" <= f <= "19999":
+            return "Endowment"
         case f if "34100" <= f <= "39799":
             return "Endowment"
         case f if "39800" <= f <= "56999":
