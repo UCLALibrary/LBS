@@ -869,50 +869,6 @@ def get_qdb_data(
         return rows
 
 
-def get_qdb_by_report(report_type, ledger_year_month) -> list:
-    all_data = list()
-    # Using the local fund objects for a given report, pull in QDB data for each.
-    if report_type == "master":
-        funds = GeFund.objects.filter(active=True)
-    else:
-        funds = GeFund.objects.filter(unit__name=report_type).filter(active=True)
-
-    # Convert queryset to list[dict], to manipulate data without updating db records.
-    funds = list(
-        funds.values(
-            "account",
-            "cost_center",
-            "fund",
-            "title",
-            "manager",
-            "mtf_authority",
-            "unit__name",
-            "home_unit_dept",
-            "projected_annual_income",
-            "fund_purpose",
-            "fund_summary",
-            "fund_restriction",
-            "general_notes",
-            "lbs_notes",
-        )
-    )
-
-    for fund in funds:
-        qdb_data = get_qdb_data(
-            report_type,
-            fund.get("account", ""),
-            fund.get("cost_center", ""),
-            fund.get("fund", ""),
-            ledger_year_month,
-        )
-        # Should have 1 row; might get 0; should not have more than 1.
-        # TODO: Decide what to do / log if other than 1 row.
-        if len(qdb_data) == 1:
-            fund_with_qdb = add_qdb_to_local_data(fund, qdb_data)
-            all_data.append(fund_with_qdb)
-    return all_data
-
-
 def add_qdb_to_local_data(fund: dict, qdb_data: list) -> dict:
     # `qdb_data` should have just one row, but make sure.
     if len(qdb_data) == 1:
