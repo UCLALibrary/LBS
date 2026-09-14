@@ -24,15 +24,18 @@ def report(request: HttpRequest) -> HttpResponse:
         # Make sure report_form is initialized, for later use.
         report_form = ReportForm()
 
-    if "report_submit" in request.GET:
+    if request.method == "GET":
         report_form = ReportForm(request.GET)
         if report_form.is_valid():
-            return download_excel_file(request.GET.get("report_type", ""))
-    elif "download_zip_submit" in request.GET:
-        return download_zip_file()
-    else:
-        report_form = ReportForm()
-        context = {"report_form": report_form}
+            report_type = request.GET.get("report_type", "")
+            ledger_year_month = request.GET.get("ledger_year_month", "")
+            if "report_submit" in request.GET:
+                return download_excel_file(report_type, ledger_year_month)
+            elif "download_zip_submit" in request.GET:
+                return download_zip_file(ledger_year_month)
+        else:
+            report_form = ReportForm()
+            context = {"report_form": report_form}
 
     return render(request, "ge/ge_report.html", context)
 

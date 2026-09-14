@@ -63,3 +63,7 @@ class ReportForm(forms.Form):
         ],
         widget=forms.Select(),
     )
+    # TODO: Fill this out
+    ledger_year_month = forms.ChoiceField(
+        label="Month:", choices=[("202607", "202607")]
+    )

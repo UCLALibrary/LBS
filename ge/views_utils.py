@@ -405,7 +405,7 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
 
 def get_data_for_report(
     report_type: str, ledger_year_month: str
-) -> tuple[pd.DataFrame, ...]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     all_data = list()
     # Get local fund data first.
     local_data = get_local_data(report_type)
@@ -428,17 +428,15 @@ def get_data_for_report(
     # split into Gifts and Endowments as needed.
     if report_type == "master":
         # Master report has only one set of data, combining gifts and endowments.
-        return (pd.DataFrame(all_data),)
+        # For consistency, return two dataframes, one with all data and one empty.
+        return (pd.DataFrame(all_data), pd.DataFrame())
     else:
         # Split by fund type.
         endowments = [
             record for record in all_data if record.get("fund_type", "") == "Endowment"
         ]
         gifts = [record for record in all_data if record.get("fund_type", "") == "Gift"]
-        return (
-            pd.DataFrame(endowments),
-            pd.DataFrame(gifts),
-        )
+        return (pd.DataFrame(endowments), pd.DataFrame(gifts))
 
 
 def get_local_data(report_type: str) -> list[dict]:
@@ -582,14 +580,13 @@ def get_units_for_report(report_type: str) -> list[str]:
     return report_units.get(report_type, [])
 
 
-def create_excel_output(report_type: str) -> Workbook:
+def create_excel_output(
+    report_type: str, data: tuple[pd.DataFrame, pd.DataFrame]
+) -> Workbook:
     """Create Excel output for a report.
 
     Returns a Workbook, for direct download or archiving as needed.
     """
-    # TODO: Get this from form
-    ledger_year_month = "202607"
-
     # UL and Master reports have extra columns, so use a different template
     if report_type in ("master", "ul"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
@@ -608,9 +605,9 @@ def create_excel_output(report_type: str) -> Workbook:
 
         # TODO: Consider passing columns and report type to one method?
         # Only one sheet in master report, so only one set of data.
-        (df,) = get_data_for_report(report_type, ledger_year_month)
+        endowments_df = data[0]
         master_cols = get_columns_for_report(report_type)
-        df = df[master_cols]
+        df = endowments_df[master_cols]
         ws = df_to_excel(df, ws)
 
         # add correct cell formatting
@@ -633,7 +630,8 @@ def create_excel_output(report_type: str) -> Workbook:
         ws["S3"] = as_of
 
     else:
-        endowments_df, gifts_df = get_data_for_report(report_type, ledger_year_month)
+        # Unpack tuple of dataframes into separate dataframes.
+        endowments_df, gifts_df = data
 
         # basic cols for endowments reports
         endowments_cols = get_columns_for_report(report_type, tab_type="endowments")
@@ -735,9 +733,10 @@ def get_bytes_from_workbook(workbook: Workbook) -> bytes:
     return stream
 
 
-def download_excel_file(report_type: str) -> HttpResponse:
+def download_excel_file(report_type: str, ledger_year_month: str) -> HttpResponse:
     """Get Excel file via HTTP response."""
-    workbook = create_excel_output(report_type)
+    data = get_data_for_report(report_type, ledger_year_month)
+    workbook = create_excel_output(report_type, data)
 
     stream = get_bytes_from_workbook(workbook)
 
@@ -752,7 +751,7 @@ def download_excel_file(report_type: str) -> HttpResponse:
     return response
 
 
-def download_zip_file() -> HttpResponse:
+def download_zip_file(ledger_year_month: str) -> HttpResponse:
     """Get zip file containing all Excel reports, via HTTP response."""
 
     # Use the same timestamp for all reports and for zip file.
@@ -766,7 +765,8 @@ def download_zip_file() -> HttpResponse:
     report_types = [choice[0] for choice in ReportForm().fields["report_type"].choices]
     # Get Excel workbook for each, convert to bytes, and add to zip file.
     for report_type in report_types:
-        workbook = create_excel_output(report_type)
+        data = get_data_for_report(report_type, ledger_year_month)
+        workbook = create_excel_output(report_type, data)
         excel_filename = f"{report_type}-Report-{timestamp}.xlsx"
         stream = get_bytes_from_workbook(workbook)
         zip_file.writestr(excel_filename, stream)
