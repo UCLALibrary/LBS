@@ -7,9 +7,16 @@ def import_excel_data(self, funds_file):
     """Import data from an Excel file into the specified Django model."""
     data = get_data_from_excel(funds_file)
     for row in data:
+        # Excel data can be messy; strip leading/trailing spaces.
+        for key, val in row.items():
+            if isinstance(val, str):
+                row[key] = val.strip()
+
         aul = row["UL/AUL"]
-        head = row["Unit Head"]
+        head: str = row["Unit Head"]
         unit_name = row["Unit"]
+        # Fix inconsistency in some unit head values to improve matching.
+        head.replace("Haduong", "HaDuong")
         # Values for roles need to be lower case, to match model choices.
         if not recipient_exists(aul, unit_name, "aul"):
             add_recipient(aul, unit_name, "aul")
