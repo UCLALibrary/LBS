@@ -640,8 +640,11 @@ def create_excel_output(
             endowments_df = endowments_df[endowments_cols]
 
             # if there are no fund restrictions, remove that column
-            if all(endowments_df["fund_restriction"].isin([""])):
-                endowments_df.drop(columns=["fund_restriction"], inplace=True)
+            if all(endowments_df["fund_restriction"].isnull()) or all(
+                endowments_df["fund_restriction"].isin(["N/A"])
+            ):
+                # Work around SettingWithCopyWarning by using df.copy() instead of inplace=True
+                endowments_df = endowments_df.drop(columns=["fund_restriction"]).copy()
                 # remove column from Excel template - col U for UL, S for others
                 if report_type == "ul":
                     wb["Endowments"].delete_cols(21)
@@ -655,8 +658,11 @@ def create_excel_output(
             gifts_df = gifts_df[gifts_cols]
 
             # if there are no fund restrictions, remove that column
-            if all(gifts_df["fund_restriction"].isin([""])):
-                gifts_df.drop(columns=["fund_restriction"], inplace=True)
+            if all(gifts_df["fund_restriction"].isnull()) or all(
+                gifts_df["fund_restriction"].isin(["N/A"])
+            ):
+                # Work around SettingWithCopyWarning by using df.copy() instead of inplace=True
+                gifts_df = gifts_df.drop(columns=["fund_restriction"]).copy()
                 # remove column from Excel template - col T for UL, R for others
                 if report_type == "ul":
                     wb["Gifts"].delete_cols(20)

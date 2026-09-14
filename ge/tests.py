@@ -1,3 +1,4 @@
+import pandas as pd
 from datetime import datetime
 from openpyxl import load_workbook
 from django.test import TestCase
@@ -247,22 +248,38 @@ class ReportManipulationTestCase(TestCase):
 
 
 class ExcelOutputTestCase(TestCase):
-    fixtures = [
-        "sample_library_data.json",
-    ]
+    @classmethod
+    def setUpTestData(cls) -> None:
+        # Create DataFrames from real saved data, combining local and
+        # QDB data as of 202607.
+        aul_endowments_df = pd.read_csv("ge/fixtures/aul_endowments.csv")
+        aul_gifts_df = pd.read_csv("ge/fixtures/aul_gifts.csv")
+        ul_endowments_df = pd.read_csv("ge/fixtures/ul_endowments.csv")
+        ul_gifts_df = pd.read_csv("ge/fixtures/ul_gifts.csv")
+        unit_endowments_df = pd.read_csv("ge/fixtures/unit_endowments.csv")
+        unit_gifts_df = pd.read_csv("ge/fixtures/unit_gifts.csv")
+
+        # Master reports use only one set of data.
+        master_df = pd.read_csv("ge/fixtures/master.csv")
+        cls.master_data = (master_df, pd.DataFrame())
+
+        # The others use 2 sets.
+        cls.aul_data = (aul_endowments_df, aul_gifts_df)
+        cls.ul_data = (ul_endowments_df, ul_gifts_df)
+        cls.unit_data = (unit_endowments_df, unit_gifts_df)
 
     def test_master_report_worksheets(self):
-        result = create_excel_output("master")
+        result = create_excel_output("master", self.master_data)
         # Only one worksheet in Master report
         self.assertEqual(len(result.sheetnames), 1)
 
     def test_master_report_cols(self):
-        result = create_excel_output("master")
+        result = create_excel_output("master", self.master_data)
         # Last column is "LBS Notes" in column W
         self.assertEqual(result["G&E"]["W2"].value, "LBS Notes")
 
     def test_master_report_rows(self):
-        result = create_excel_output("master")
+        result = create_excel_output("master", self.master_data)
         # 13 rows in sample data. Data starts on row 5, so we should have data
         # in rows 5-17 and not in 18.
         # Master report isn't sorted, so just check if data exists
@@ -270,12 +287,13 @@ class ExcelOutputTestCase(TestCase):
         self.assertEqual(result["G&E"]["A18"].value, None)
 
     def test_unit_report_worksheets(self):
-        result = create_excel_output("hssd")
-        # two worksheets in HSSD report
+        result = create_excel_output("arts", self.unit_data)
+        # two worksheets in Arts report
         self.assertEqual(len(result.sheetnames), 2)
 
     def test_unit_report_cols(self):
-        result = create_excel_output("hssd")
+        result = create_excel_output("arts", self.unit_data)
+        # TODO: FIX THIS
         # HSSD sample data has fund restriction for Endowments, but not Gifts
         # So "Fund Restriction" should be in column S for Endowments,
         # and Gifts should have "LBS Notes" in column S
@@ -283,15 +301,15 @@ class ExcelOutputTestCase(TestCase):
         self.assertEqual(result["Gifts"]["S2"].value, "LBS Notes")
 
     def test_unit_report_rows(self):
-        result = create_excel_output("hssd")
-        # HSSD data has 1 gift and 2 endowments, starting on row 5
-        self.assertEqual(result["Gifts"]["A5"].value, "HSSD")
+        result = create_excel_output("arts", self.unit_data)
+        # Arts data has 1 gift and 2 endowments, starting on row 5
+        self.assertEqual(result["Gifts"]["A5"].value, "Arts")
         self.assertEqual(result["Gifts"]["A6"].value, None)
-        self.assertEqual(result["Endowments"]["A5"].value, "HSSD")
+        self.assertEqual(result["Endowments"]["A5"].value, "Arts")
         self.assertEqual(result["Endowments"]["A7"].value, None)
 
     def test_unit_report_totals(self):
-        result = create_excel_output("hssd")
+        result = create_excel_output("arts", self.unit_data)
         # Gifts should have totals in cols L, M, N, O. Endowments in L, M, N, O, Q
         # SUM is calculated by Excel, so just check the formulas
         self.assertEqual(result["Gifts"]["L6"].value, "=SUM(L5:L5)")
@@ -305,12 +323,12 @@ class ExcelOutputTestCase(TestCase):
         self.assertEqual(result["Endowments"]["Q7"].value, "=SUM(Q5:Q6)")
 
     def test_ul_report_worksheets(self):
-        result = create_excel_output("ul")
+        result = create_excel_output("ul", self.ul_data)
         # two worksheets in UL report
         self.assertEqual(len(result.sheetnames), 2)
 
     def test_ul_report_cols(self):
-        result = create_excel_output("ul")
+        result = create_excel_output("ul", self.ul_data)
         #  Max MTF Transfer Amt should be in column P on both sheets
         self.assertEqual(result["Endowments"]["P2"].value, "Max MTF Transfer Amt")
         self.assertEqual(result["Gifts"]["P2"].value, "Max MTF Transfer Amt")
@@ -319,7 +337,7 @@ class ExcelOutputTestCase(TestCase):
         self.assertEqual(result["Gifts"]["U2"].value, "LBS Notes")
 
     def test_ul_report_rows(self):
-        result = create_excel_output("ul")
+        result = create_excel_output("ul", self.ul_data)
         # UL data has 1 gift and 1 endowment, starting on row 5
         self.assertEqual(result["Gifts"]["A5"].value, "UL")
         self.assertEqual(result["Gifts"]["A6"].value, None)
@@ -327,7 +345,7 @@ class ExcelOutputTestCase(TestCase):
         self.assertEqual(result["Endowments"]["A6"].value, None)
 
     def test_ul_report_totals(self):
-        result = create_excel_output("ul")
+        result = create_excel_output("ul", self.ul_data)
         # Gifts should have totals in cols L, M, N, O, P, Q. Endowments in L, M, N, O, P, Q, S
         # SUM is calculated by Excel, so just check the formulas
         self.assertEqual(result["Gifts"]["L6"].value, "=SUM(L5:L5)")
@@ -345,28 +363,30 @@ class ExcelOutputTestCase(TestCase):
         self.assertEqual(result["Endowments"]["S6"].value, "=SUM(S5:S5)")
 
     def test_aul_report_worksheets(self):
-        result = create_excel_output("aul_grappone")
+        result = create_excel_output("aul_benedetti", self.aul_data)
         # two worksheets in AUL report
         self.assertEqual(len(result.sheetnames), 2)
 
     def test_aul_report_cols(self):
-        result = create_excel_output("aul_grappone")
-        # Grappone sample data has fund restriction for Gifts, but not Endowments
+        result = create_excel_output("aul_benedetti", self.aul_data)
+        # AUL sample data has fund restriction for Gifts, but not Endowments.
         # So "Fund Restriction" should be in column R for Gifts,
         # and Endowments should have "LBS Notes" in column T
         self.assertEqual(result["Gifts"]["R2"].value, "Fund Restriction")
         self.assertEqual(result["Endowments"]["T2"].value, "LBS Notes")
 
     def test_aul_report_rows(self):
-        result = create_excel_output("aul_grappone")
+        result = create_excel_output("aul_benedetti", self.aul_data)
         # 1 gift and 1 endowment, starting on row 5
-        self.assertEqual(result["Gifts"]["A5"].value, "AUL Grappone")
-        self.assertEqual(result["Gifts"]["A6"].value, None)
-        self.assertEqual(result["Endowments"]["A5"].value, "AUL Grappone")
-        self.assertEqual(result["Endowments"]["A6"].value, None)
+        # Fuzzy match is used for AUL reports, against two columns.
+        # For Gifts, value is in unit name (column A).
+        self.assertIn("Benedetti", result["Gifts"]["A5"].value)
+        # For Endowments, value is in home / unit dept but not unit
+        # (which is populated here, but not relevant).
+        self.assertIn("Benedetti", result["Endowments"]["B5"].value)
 
     def test_aul_report_totals(self):
-        result = create_excel_output("aul_grappone")
+        result = create_excel_output("aul_benedetti", self.aul_data)
         # Gifts should have totals in cols L, M, N, O. Endowments in L, M, N, O, Q
         # SUM is calculated by Excel, so just check the formulas
         self.assertEqual(result["Gifts"]["L6"].value, "=SUM(L5:L5)")
