@@ -293,8 +293,7 @@ class ExcelOutputTestCase(TestCase):
 
     def test_unit_report_cols(self):
         result = create_excel_output("arts", self.unit_data)
-        # TODO: FIX THIS
-        # HSSD sample data has fund restriction for Endowments, but not Gifts
+        # Arts sample data has fund restriction for Endowments, but not Gifts
         # So "Fund Restriction" should be in column S for Endowments,
         # and Gifts should have "LBS Notes" in column S
         self.assertEqual(result["Endowments"]["S2"].value, "Fund Restriction")
