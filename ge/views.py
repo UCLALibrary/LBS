@@ -1,19 +1,8 @@
-from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse
-from ge.forms import (
-    LibraryDataEditForm,
-    LibraryDataSearchForm,
-    ReportForm,
-)
-from ge.models import LibraryData
-from ge.views_utils import (
-    download_excel_file,
-    download_zip_file,
-    get_librarydata_results,
-)
+from ge.forms import ReportForm
+from ge.views_utils import download_excel_file, download_zip_file
 
 
 # TODO: Clean up auth system across qdb/ge apps
@@ -54,62 +43,6 @@ def show_log(request, line_count: int = 200) -> HttpResponse:
 
     # TODO: Move / unify templates across ge and qdb apps
     return render(request, "ge/log.html", {"log_data": log_data})
-
-
-@login_required(login_url="/login/")
-def search(request: HttpRequest) -> HttpResponse:
-    context = {}  # default, for final render
-    if request.method == "POST":
-        form = LibraryDataSearchForm(request.POST)
-        if form.is_valid():
-            search_type = form.cleaned_data["search_type"]
-            search_term = form.cleaned_data["search_term"]
-            results = get_librarydata_results(search_type, search_term)
-            context = {"form": form, "results": results}
-    else:
-        form = LibraryDataSearchForm()
-        context = {"form": form}
-    return render(request, "ge/ge_search.html", context)
-
-
-@login_required(login_url="/login/")
-def edit_fund(request: HttpRequest, item_id: int) -> HttpResponse:
-    # Get the record passed by id.
-    record = LibraryData.objects.get(pk=item_id)
-    if request.method == "POST":
-        form = LibraryDataEditForm(request.POST, instance=record)
-        if form.is_valid():
-            messages.success(request, "Fund data saved.")
-            form.save()
-    else:
-        form = LibraryDataEditForm(instance=record)
-    return render(request, "ge/edit_fund.html", {"form": form})
-
-
-@login_required(login_url="/login/")
-def add_fund(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = LibraryDataEditForm(request.POST)
-        if form.is_valid():
-            new_fund = form.save()
-            messages.success(request, "Fund added successfully.")
-            return redirect(reverse("edit_fund", kwargs={"item_id": new_fund.pk}))
-    else:
-        form = LibraryDataEditForm()
-    return render(request, "ge/add_fund.html", {"form": form})
-
-
-@login_required(login_url="/login/")
-def delete_fund(request: HttpRequest, item_id: int) -> HttpResponse:
-    # Get the record passed by id.
-    record = LibraryData.objects.get(pk=item_id)
-    if request.method == "POST":
-        fund_label = record.fau_fund
-        record.delete()
-        messages.success(request, f"Fund {fund_label} deleted.")
-        return redirect("search")
-    else:
-        return render(request, "ge/edit_fund.html", context={"item_id": item_id})
 
 
 @login_required(login_url="/login/")
