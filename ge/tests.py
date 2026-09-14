@@ -67,8 +67,8 @@ class ExcelOutputTestCase(TestCase):
 
     def test_master_report_cols(self):
         result = create_excel_output("master", self.master_data)
-        # Last column is "LBS Notes" in column W
-        self.assertEqual(result["G&E"]["W2"].value, "LBS Notes")
+        # Last column is "LBS Notes" in column U
+        self.assertEqual(result["G&E"]["U2"].value, "LBS Notes")
 
     def test_master_report_rows(self):
         result = create_excel_output("master", self.master_data)
@@ -120,12 +120,9 @@ class ExcelOutputTestCase(TestCase):
 
     def test_ul_report_cols(self):
         result = create_excel_output("ul", self.ul_data)
-        #  Max MTF Transfer Amt should be in column P on both sheets
-        self.assertEqual(result["Endowments"]["P2"].value, "Max MTF Transfer Amt")
-        self.assertEqual(result["Gifts"]["P2"].value, "Max MTF Transfer Amt")
-        # No fund restrictions, so "LBS Notes" should be in column V for Endowments, U for Gifts
-        self.assertEqual(result["Endowments"]["V2"].value, "LBS Notes")
-        self.assertEqual(result["Gifts"]["U2"].value, "LBS Notes")
+        # No fund restrictions, so "LBS Notes" should be in column T for Endowments, S for Gifts
+        self.assertEqual(result["Endowments"]["T2"].value, "LBS Notes")
+        self.assertEqual(result["Gifts"]["S2"].value, "LBS Notes")
 
     def test_ul_report_rows(self):
         result = create_excel_output("ul", self.ul_data)
@@ -137,21 +134,17 @@ class ExcelOutputTestCase(TestCase):
 
     def test_ul_report_totals(self):
         result = create_excel_output("ul", self.ul_data)
-        # Gifts should have totals in cols L, M, N, O, P, Q. Endowments in L, M, N, O, P, Q, S
+        # Gifts should have totals in cols L, M, N, O. Endowments in L, M, N, O, Q.
         # SUM is calculated by Excel, so just check the formulas
         self.assertEqual(result["Gifts"]["L6"].value, "=SUM(L5:L5)")
         self.assertEqual(result["Gifts"]["M6"].value, "=SUM(M5:M5)")
         self.assertEqual(result["Gifts"]["N6"].value, "=SUM(N5:N5)")
         self.assertEqual(result["Gifts"]["O6"].value, "=SUM(O5:O5)")
-        self.assertEqual(result["Gifts"]["P6"].value, "=SUM(P5:P5)")
-        self.assertEqual(result["Gifts"]["Q6"].value, "=SUM(Q5:Q5)")
         self.assertEqual(result["Endowments"]["L6"].value, "=SUM(L5:L5)")
         self.assertEqual(result["Endowments"]["M6"].value, "=SUM(M5:M5)")
         self.assertEqual(result["Endowments"]["N6"].value, "=SUM(N5:N5)")
         self.assertEqual(result["Endowments"]["O6"].value, "=SUM(O5:O5)")
-        self.assertEqual(result["Endowments"]["P6"].value, "=SUM(P5:P5)")
         self.assertEqual(result["Endowments"]["Q6"].value, "=SUM(Q5:Q5)")
-        self.assertEqual(result["Endowments"]["S6"].value, "=SUM(S5:S5)")
 
     def test_aul_report_worksheets(self):
         result = create_excel_output("aul_benedetti", self.aul_data)

@@ -168,8 +168,6 @@ def get_local_data(report_type: str) -> list[dict]:
             # "fund_type": "REMOVE",
             "reg_fdn": "REMOVE",
             "fau_fund_no": "REMOVE",
-            "max_mtf_trf_amt": "UNKNOWN",
-            "total_balance": "UNKNOWN",
         }
         record.update(placeholders)
 
@@ -197,8 +195,6 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "ytd_expenditure": ["endowments", "gifts", "master"],  # QDB
         "commitments": ["endowments", "gifts", "master"],  # QDB
         "operating_balance": ["endowments", "gifts", "master"],  # QDB
-        "max_mtf_trf_amt": ["master"],  # UNKNOWN
-        "total_balance": ["master"],  # UNKNOWN
         "mtf_authority": ["endowments", "gifts", "master"],  # local
         "projected_annual_income": ["endowments", "master"],  # local
         "fund_purpose": ["endowments", "gifts", "master"],  # local
@@ -211,9 +207,8 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         # All columns are used in master report; tab_type is not relevant.
         return [column_name for column_name in report_columns.keys()]
     elif report_type == "ul":
-        # UL report also gets some columns only master report does
-        # (max_mtf_trf_amt and total_balance), but also needs the
-        # endowments vs. gifts distinctions of tab_type.
+        # UL report needs the endowments vs. gifts distinctions of tab_type,
+        # with the same columns overall as master report.
         return [
             column_name
             for column_name, tab_types in report_columns.items()
@@ -287,7 +282,7 @@ def create_excel_output(
         ws = df_to_excel(df, ws)
 
         # add correct cell formatting
-        for col in ("L", "M", "N", "O", "P", "Q", "S"):
+        for col in ("L", "M", "N", "O", "Q"):
             for row in range(5, len(ws[col]) + 1):
                 # Excel "format code" for Accounting, 2 decimal places, $, comma separator
                 ws[f"{col}{row}"].number_format = (
@@ -299,11 +294,10 @@ def create_excel_output(
         last_row = get_last_row(ws, "A")
         filters.ref = f"A4:{last_col}{last_row}"
 
-        # add as-of dates to L-O balance cols, max MTF col, and projected annual income
+        # add as-of dates to L-O balance cols and projected annual income (Q)
         as_of = get_as_of_date()
         ws["L3"] = as_of
-        ws["P3"] = as_of
-        ws["S3"] = as_of
+        ws["Q3"] = as_of
 
     else:
         # Unpack tuple of dataframes into separate dataframes.
@@ -321,11 +315,8 @@ def create_excel_output(
             ):
                 # Work around SettingWithCopyWarning by using df.copy() instead of inplace=True
                 endowments_df = endowments_df.drop(columns=["fund_restriction"]).copy()
-                # remove column from Excel template - col U for UL, S for others
-                if report_type == "ul":
-                    wb["Endowments"].delete_cols(21)
-                else:
-                    wb["Endowments"].delete_cols(19)
+                # remove column from Excel template - col S for UL and unit reports
+                wb["Endowments"].delete_cols(19)
 
         # basic cols for gifts reports
         gifts_cols = get_columns_for_report(report_type, tab_type="gifts")
@@ -339,11 +330,8 @@ def create_excel_output(
             ):
                 # Work around SettingWithCopyWarning by using df.copy() instead of inplace=True
                 gifts_df = gifts_df.drop(columns=["fund_restriction"]).copy()
-                # remove column from Excel template - col T for UL, R for others
-                if report_type == "ul":
-                    wb["Gifts"].delete_cols(20)
-                else:
-                    wb["Gifts"].delete_cols(18)
+                # remove column from Excel template - col R for UL and unit reports
+                wb["Gifts"].delete_cols(18)
 
         # put data into Excel worksheets
         gifts_ws = wb["Gifts"]
@@ -354,9 +342,6 @@ def create_excel_output(
         # add totals and formatting for money columns
         gifts_money_cols = ["L", "M", "N", "O"]
         endowments_money_cols = ["L", "M", "N", "O", "Q"]
-        if report_type == "ul":
-            gifts_money_cols.extend(["P", "Q"])
-            endowments_money_cols.extend(["P", "S"])
 
         for col in gifts_money_cols:
             sum_col(gifts_ws, col)
@@ -390,15 +375,8 @@ def create_excel_output(
         # L3 is always the start of the 4 common financial cols
         endowments_ws["L3"] = as_of
         gifts_ws["L3"] = as_of
-        if report_type == "ul":
-            # UL has extra MTF col on both sheets (P), and one other extra col
-            # that pushes the Projected Annual Income col to S
-            gifts_ws["P3"] = as_of
-            endowments_ws["P3"] = as_of
-            endowments_ws["S3"] = as_of
-        else:
-            # Projected Annual Income col is Q on non-UL endowments reports
-            endowments_ws["Q3"] = as_of
+        # Projected Annual Income col is Q on endowments reports
+        endowments_ws["Q3"] = as_of
 
         add_border_formatting(endowments_ws)
         add_border_formatting(gifts_ws)
