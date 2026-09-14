@@ -124,7 +124,7 @@ def get_local_data(report_type: str) -> list[dict]:
     if report_type == "master":
         # Master report gets all active funds, no additional filtering.
         pass
-    elif report_type in ["aul_benedetti", "aul_gomez", "aul_grappone"]:
+    elif report_type in ["aul_benedetti", "aul_gomez"]:
         # Only one report_unit is relevant for the AUL reports,
         # but it needs fuzzy matching.
         report_unit = report_units[0]
@@ -252,7 +252,6 @@ def get_units_for_report(report_type: str) -> list[str]:
         "ul": ["UL"],
         "aul_benedetti": ["Benedetti"],
         "aul_gomez": ["Gomez"],
-        "aul_grappone": ["Grappone"],
     }
     return report_units.get(report_type, [])
 
