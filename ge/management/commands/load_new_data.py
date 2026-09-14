@@ -10,10 +10,11 @@ def import_excel_data(self, funds_file):
         aul = row["UL/AUL"]
         head = row["Unit Head"]
         unit_name = row["Unit"]
-        if not recipient_exists(aul, unit_name, "AUL"):
-            add_recipient(aul, unit_name, "AUL")
-        if not recipient_exists(head, unit_name, "Head"):
-            add_recipient(head, unit_name, "Head")
+        # Values for roles need to be lower case, to match model choices.
+        if not recipient_exists(aul, unit_name, "aul"):
+            add_recipient(aul, unit_name, "aul")
+        if not recipient_exists(head, unit_name, "head"):
+            add_recipient(head, unit_name, "head")
         if fund_exists(row["Account"], row["CC"], row["Fund"]):
             update_fund(self, row)
         else:
