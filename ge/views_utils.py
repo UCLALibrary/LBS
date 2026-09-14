@@ -83,13 +83,15 @@ def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
 def get_data_for_report(
     report_type: str, ledger_year_month: str
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Returns Pandas DataFrames with the set(s) of data needed for a given report.
+    This combines local and QDB data.
+    """
     all_data = list()
     # Get local fund data first.
     local_data = get_local_data(report_type)
     # Add current QDB data associated with the local funds.
     for fund in local_data:
         qdb_data = get_qdb_data(
-            report_type,
             fund.get("account", ""),
             fund.get("cost_center", ""),
             fund.get("fund", ""),
@@ -117,6 +119,7 @@ def get_data_for_report(
 
 
 def get_local_data(report_type: str) -> list[dict]:
+    """Returns data from the local `GeFund` table, based on `report_type`."""
     # Get associated units, needed for some queries.
     report_units = get_units_for_report(report_type)
     # Start with all active funds.
@@ -175,7 +178,11 @@ def get_local_data(report_type: str) -> list[dict]:
 
 
 def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[str]:
-    # Most columns are used in all reports, but not all.
+    """Returns a list of columns for filtering a Pandas dataframe created from queries.
+    This allows customization of the consistent data returned by the queries.
+    These were more varied originally; now *almost* all fields are used in all reports...
+    but not quite consistent.
+    """
     # Column order matters, but from Python 3.7 dict key order is preserved;
     # using a dict here allows removing unwanted columns by name instead of by position.
     # These are: column_name : [tab_type, ...]
@@ -224,7 +231,8 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
 
 
 def get_units_for_report(report_type: str) -> list[str]:
-    # map each report type to list of strings needed for query
+    """Returns a list of unit names associated with a `report_type` code."""
+    # Map each report type to list of strings needed for query
     report_units = {
         "archives": ["Archives"],
         "arts": ["Arts"],
@@ -274,7 +282,6 @@ def create_excel_output(
         # clear label in template
         ws["A1"] = ""
 
-        # TODO: Consider passing columns and report type to one method?
         # Only one sheet in master report, so only one set of data.
         endowments_df = data[0]
         master_cols = get_columns_for_report(report_type)
@@ -456,17 +463,15 @@ def add_border_formatting(ws: Worksheet) -> None:
     )
 
 
-def get_qdb_query(report_type: str) -> str:
-    # TODO: Splice this into create_excel_output() or similar, when local data is finalized.
+def get_qdb_query() -> str:
+    """Returns the query which will be used to retrieve data from QDB."""
     QDB_GE_QUERY = """
 SELECT
     fun.fund_title
 ,	fun.foundatn_fund_num AS ucop_fdn_no
-,	glb.account_number
-,	glb.cost_center_code
-,	glb.fund_number
-,	fun.fund_purpose_code
-,	fun.fund_restr_code
+,	glb.account_number as account
+,	glb.cost_center_code as cost_center
+,	glb.fund_number as fund
 ,	sum(-glb.ytd_appropriation) AS ytd_appropriation
 ,	sum(glb.ytd_financial) AS ytd_expenditure
 ,	sum(glb.encumbrance) AS commitments
@@ -495,8 +500,6 @@ GROUP BY
 ,	glb.account_number
 ,	glb.cost_center_code
 ,	glb.fund_number
-,	fun.fund_purpose_code
-,	fun.fund_restr_code
 ORDER BY glb.account_number, glb.cost_center_code, glb.fund_number
 ;
 """
@@ -504,25 +507,23 @@ ORDER BY glb.account_number, glb.cost_center_code, glb.fund_number
 
 
 def get_qdb_data(
-    report_type,
-    account_number: str,
-    cost_center_code: str,
-    fund_number: str,
+    account: str,
+    cost_center: str,
+    fund: str,
     ledger_year_month: str,
 ) -> list[dict]:
+    """Retrieves data from QDB, using the query from `get_qdb_query()`
+    and the parameters passed to this method.
+    """
     conn = pytds.connect(DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD)
     # Connection and cursor are closed automatically via 'with'
     with conn:
         conn.as_dict = True
         cursor = conn.cursor()
-        # TODO: Query will be built based on parameters passed to this method.
         # For now, just use static query.
-        qdb_query = get_qdb_query(report_type)
-        # Run query with the other, real, parameters
-        cursor.execute(
-            qdb_query
-            % (account_number, cost_center_code, fund_number, ledger_year_month)
-        )
+        qdb_query = get_qdb_query()
+        # Run query with the real parameters.
+        cursor.execute(qdb_query % (account, cost_center, fund, ledger_year_month))
         # This query should only return one row at most, but return all rows
         # and let the caller decide what to do.
         rows = cursor.fetchall()
@@ -530,6 +531,9 @@ def get_qdb_data(
 
 
 def add_qdb_to_local_data(fund: dict, qdb_data: list) -> dict:
+    """Merges `qdb_data` into `local_data`.  The result
+    represents one complete row of data, for use in a report.
+    """
     # `qdb_data` should have just one row, but make sure.
     if len(qdb_data) == 1:
         # Add fields from the one row of qdb data to local fund data.
@@ -540,6 +544,10 @@ def add_qdb_to_local_data(fund: dict, qdb_data: list) -> dict:
 
 
 def get_fund_type(fund: str) -> str:
+    """Determines the type of fund, based on its value.
+    Returns "Unknown" if it can't be matched, mainly for
+    manual LBS review.
+    """
     # Ideally this would be on the GeFund model,
     # but can't use a model property or method in a query.
     match fund:
