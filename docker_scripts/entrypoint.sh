@@ -25,7 +25,7 @@ if [ "$DJANGO_RUN_ENV" = "dev" ]; then
   python manage.py createsuperuser --no-input
 
   # Load GE fixtures, only in dev environment.
-  python manage.py loaddata --app ge library_data
+  python manage.py loaddata --app ge ge_data
 fi
 
 # Start cron (via sudo).
