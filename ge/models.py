@@ -158,6 +158,7 @@ class GeStaff(models.Model):
         return self.name
 
     class Meta:
+        verbose_name = "GE Staff"
         verbose_name_plural = "GE Staff"
 
 
@@ -169,6 +170,7 @@ class GeUnit(models.Model):
         return self.name
 
     class Meta:
+        verbose_name = "GE Unit"
         verbose_name_plural = "GE Units"
 
 
@@ -195,6 +197,7 @@ class GeFund(models.Model):
         return f"{self.account}-{self.cost_center}-{self.fund}"
 
     class Meta:
+        verbose_name = "GE Fund"
         verbose_name_plural = "GE Funds"
 
 
@@ -208,4 +211,5 @@ class GeRecipient(models.Model):
         return self.recipient.name
 
     class Meta:
+        verbose_name = "GE Recipient"
         verbose_name_plural = "GE Recipients"

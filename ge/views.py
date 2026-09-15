@@ -1,20 +1,8 @@
-from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse
-from ge.forms import (
-    LibraryDataEditForm,
-    LibraryDataSearchForm,
-    ReportForm,
-)
-from ge.models import LibraryData
-from ge.views_utils import (
-    download_excel_file,
-    download_zip_file,
-    get_librarydata_results,
-    get_qdb_data,
-)
+from ge.forms import ReportForm
+from ge.views_utils import download_excel_file, download_zip_file
 
 
 # TODO: Clean up auth system across qdb/ge apps
@@ -25,15 +13,18 @@ def report(request: HttpRequest) -> HttpResponse:
         # Make sure report_form is initialized, for later use.
         report_form = ReportForm()
 
-    if "report_submit" in request.GET:
+    if request.method == "GET":
         report_form = ReportForm(request.GET)
         if report_form.is_valid():
-            return download_excel_file(request.GET.get("report_type", ""))
-    elif "download_zip_submit" in request.GET:
-        return download_zip_file()
-    else:
-        report_form = ReportForm()
-        context = {"report_form": report_form}
+            report_type = request.GET.get("report_type", "")
+            ledger_year_month = request.GET.get("ledger_year_month", "")
+            if "report_submit" in request.GET:
+                return download_excel_file(report_type, ledger_year_month)
+            elif "download_zip_submit" in request.GET:
+                return download_zip_file(ledger_year_month)
+        else:
+            report_form = ReportForm()
+            context = {"report_form": report_form}
 
     return render(request, "ge/ge_report.html", context)
 
@@ -55,84 +46,5 @@ def show_log(request, line_count: int = 200) -> HttpResponse:
 
 
 @login_required(login_url="/login/")
-def search(request: HttpRequest) -> HttpResponse:
-    context = {}  # default, for final render
-    if request.method == "POST":
-        form = LibraryDataSearchForm(request.POST)
-        if form.is_valid():
-            search_type = form.cleaned_data["search_type"]
-            search_term = form.cleaned_data["search_term"]
-            results = get_librarydata_results(search_type, search_term)
-            context = {"form": form, "results": results}
-    else:
-        form = LibraryDataSearchForm()
-        context = {"form": form}
-    return render(request, "ge/ge_search.html", context)
-
-
-@login_required(login_url="/login/")
-def edit_fund(request: HttpRequest, item_id: int) -> HttpResponse:
-    # Get the record passed by id.
-    record = LibraryData.objects.get(pk=item_id)
-    if request.method == "POST":
-        form = LibraryDataEditForm(request.POST, instance=record)
-        if form.is_valid():
-            messages.success(request, "Fund data saved.")
-            form.save()
-    else:
-        form = LibraryDataEditForm(instance=record)
-    return render(request, "ge/edit_fund.html", {"form": form})
-
-
-@login_required(login_url="/login/")
-def add_fund(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = LibraryDataEditForm(request.POST)
-        if form.is_valid():
-            new_fund = form.save()
-            messages.success(request, "Fund added successfully.")
-            return redirect(reverse("edit_fund", kwargs={"item_id": new_fund.pk}))
-    else:
-        form = LibraryDataEditForm()
-    return render(request, "ge/add_fund.html", {"form": form})
-
-
-@login_required(login_url="/login/")
-def delete_fund(request: HttpRequest, item_id: int) -> HttpResponse:
-    # Get the record passed by id.
-    record = LibraryData.objects.get(pk=item_id)
-    if request.method == "POST":
-        fund_label = record.fau_fund
-        record.delete()
-        messages.success(request, f"Fund {fund_label} deleted.")
-        return redirect("search")
-    else:
-        return render(request, "ge/edit_fund.html", context={"item_id": item_id})
-
-
-@login_required(login_url="/login/")
 def release_notes(request: HttpRequest) -> HttpResponse:
     return render(request, "ge/release_notes.html")
-
-
-@login_required(login_url="/login/")
-def report_from_qdb_temp(request: HttpRequest) -> HttpResponse:
-    context = {}
-    if request.method == "POST":
-        # Make sure report_form is initialized, for later use.
-        report_form = ReportForm()
-    elif "report_submit" in request.GET:
-        report_form = ReportForm(request.GET)
-        if report_form.is_valid():
-            report_type = request.GET.get("report_type", "")
-            # Original method
-            # return download_excel_file(report_type)
-            # Temporary new method
-            qdb_data = get_qdb_data(report_type)
-            context = {"report_form": report_form, "qdb_data": qdb_data}
-    elif "download_zip_submit" in request.GET:
-        return download_zip_file()
-    else:
-        report_form = ReportForm()
-        context = {"report_form": report_form}
-    return render(request, "ge/report_from_qdb_temp.html", context)
