@@ -238,11 +238,12 @@ def get_units_for_report(report_type: str) -> list[str]:
         "arts": ["Arts"],
         "biomed": ["Biomed"],
         "digilib": ["DigiLib", "Digital Library"],
+        "dsc": ["DSC"],
         "eal": ["EAL"],
         "ftva": ["FTVA"],
         "hsc": ["History & SC Sciences"],
         "hssd": ["HSSD", "SSHD"],
-        "ias": ["Int'l Studies"],
+        "ias": ["Int'l Studies", "Intl & Area Studies"],
         "lhr": ["LHR"],
         "lsc": ["LSC"],
         "management": ["Management"],
@@ -253,6 +254,7 @@ def get_units_for_report(report_type: str) -> list[str]:
         "preservation": ["Preservation"],
         "sel": ["SEL"],
         "ul": ["UL"],
+        # Fuzzy matching will be done for AUL values.
         "aul_benedetti": ["Benedetti"],
         "aul_gomez": ["Gomez"],
     }

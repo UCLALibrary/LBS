@@ -10,7 +10,8 @@ def get_year_month_choices() -> list[tuple[str, str]]:
     today = datetime.now()
     current_year = int(today.strftime("%Y"))
     # Combine year & month, in reverse chronological order.
-    months = ["01", "04", "07", "10"]
+    # Use months which reflect ends of fiscal quarters.
+    months = ["03", "06", "09", "12"]
     months.reverse()
     # Current and previous 2 calendar years.
     for year in range(current_year, current_year - 3, -1):
@@ -32,6 +33,7 @@ class ReportForm(forms.Form):
             ("arts", "Arts"),
             ("biomed", "Biomed"),
             ("digilib", "Digital Library"),
+            ("dsc", "DSC"),
             ("eal", "East Asian Library"),
             ("ftva", "Film & TV Archive"),
             ("hsc", "History & SC Sciences"),
