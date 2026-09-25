@@ -120,24 +120,23 @@ def get_data_for_report(
 
 def get_local_data(report_type: str) -> list[dict]:
     """Returns data from the local `GeFund` table, based on `report_type`."""
-    # Get associated units, needed for some queries.
-    report_units = get_units_for_report(report_type)
     # Start with all active funds.
     funds = GeFund.objects.filter(active=True)
     if report_type == "master":
         # Master report gets all active funds, no additional filtering.
         pass
     elif report_type in ["aul_benedetti", "aul_gomez"]:
-        # Only one report_unit is relevant for the AUL reports,
-        # but it needs fuzzy matching.
-        report_unit = report_units[0]
+        # AUL reports require fuzzy matching against multiple fields.
+        # Strip off the prefix and search for the last name anywhere in
+        # the GeUnit.name or the GeFund.home_unit_dept fields.
+        report_unit = report_type.replace("aul_", "")
         funds = funds.filter(
             Q(unit__name__icontains=report_unit)
             | Q(home_unit_dept__icontains=report_unit)
         )
     else:
-        # There can be multiple units associated with a fund.
-        funds = funds.filter(unit__name__in=report_units)
+        # report_type values are derived from GeUnit.name, so find exact matches.
+        funds = funds.filter(unit__name=report_type)
 
     # Sort the remaining funds by unit and FAU components.
     funds = funds.order_by("unit__name", "account", "cost_center", "fund")
@@ -228,37 +227,6 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
             for column_name, tab_types in report_columns.items()
             if tab_type in tab_types
         ]
-
-
-def get_units_for_report(report_type: str) -> list[str]:
-    """Returns a list of unit names associated with a `report_type` code."""
-    # Map each report type to list of strings needed for query
-    report_units = {
-        "archives": ["Archives"],
-        "arts": ["Arts"],
-        "biomed": ["Biomed"],
-        "digilib": ["DigiLib", "Digital Library"],
-        "dsc": ["DSC"],
-        "eal": ["EAL"],
-        "ftva": ["FTVA"],
-        "hsc": ["History & SC Sciences"],
-        "hssd": ["HSSD", "SSHD"],
-        "ias": ["Int'l Studies", "Intl & Area Studies"],
-        "lhr": ["LHR"],
-        "lsc": ["LSC"],
-        "management": ["Management"],
-        "music": ["Music"],
-        "oh": ["Oral History"],
-        "pa": ["Performing Arts"],
-        "powell": ["Powell"],
-        "preservation": ["Preservation"],
-        "sel": ["SEL"],
-        "ul": ["UL"],
-        # Fuzzy matching will be done for AUL values.
-        "aul_benedetti": ["Benedetti"],
-        "aul_gomez": ["Gomez"],
-    }
-    return report_units.get(report_type, [])
 
 
 def create_excel_output(

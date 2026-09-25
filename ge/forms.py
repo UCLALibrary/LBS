@@ -1,5 +1,6 @@
 from django import forms
 from datetime import datetime
+from ge.models import GeFund
 
 
 def get_year_month_choices() -> list[tuple[str, str]]:
@@ -27,30 +28,14 @@ def get_year_month_choices() -> list[tuple[str, str]]:
 class ReportForm(forms.Form):
     report_type = forms.ChoiceField(
         label="Report Type:",
+        # Previous coding for human entered variable values is no longer needed.
+        # Now (2026), use values derived from active funds, so this list of form choices
+        # is dynamic based on data maintained by LBS.
         choices=[
-            ("master", "Master"),
-            ("archives", "Archives"),
-            ("arts", "Arts"),
-            ("biomed", "Biomed"),
-            ("digilib", "Digital Library"),
-            ("dsc", "DSC"),
-            ("eal", "East Asian Library"),
-            ("ftva", "Film & TV Archive"),
-            ("hsc", "History & SC Sciences"),
-            ("hssd", "HSSD"),
-            ("ias", "Intl & Area Studies"),
-            ("lhr", "LHR"),
-            ("lsc", "LSC"),
-            ("management", "Management"),
-            ("music", "Music"),
-            ("oh", "Oral History"),
-            ("pa", "Performing Arts"),
-            ("powell", "Powell"),
-            ("preservation", "Preservation"),
-            ("sel", "SEL"),
-            ("ul", "UL"),
-            ("aul_benedetti", "AUL Benedetti"),
-            ("aul_gomez", "AUL Gomez"),
+            (unit_name, unit_name)
+            for unit_name in sorted(
+                set([r.unit.name for r in GeFund.objects.filter(active=True)])
+            )
         ],
         widget=forms.Select(),
     )
