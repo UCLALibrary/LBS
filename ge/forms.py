@@ -25,10 +25,10 @@ def get_year_month_choices() -> list[tuple[str, str]]:
     return year_month_choices
 
 
-class ReportForm(forms.Form):
-    # Previous coding for human entered variable values is no longer needed.
-    # Now (2026), use values derived from active funds, so this list of form choices
+def get_report_choices() -> list[tuple[str, str]]:
+    # Return values derived from active funds, so this list of form choices
     # is dynamic based on data maintained by LBS.
+    # Previous coding for human entered variable values is no longer needed.
     # Master report is an exception: it's not a "unit", and needs to be first.
     # Use lower-case "master" form value due to legacy use in views_utils code.
     report_choices = [("master", "Master")]
@@ -40,11 +40,15 @@ class ReportForm(forms.Form):
             )
         ]
     )
+    return report_choices
+
+
+class ReportForm(forms.Form):
 
     report_type = forms.ChoiceField(
         label="Report Type:",
         widget=forms.Select(),
-        choices=report_choices,
+        choices=get_report_choices,
     )
 
     ledger_year_month = forms.ChoiceField(
