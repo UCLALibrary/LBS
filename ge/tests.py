@@ -42,6 +42,9 @@ class ReportManipulationTestCase(TestCase):
 class ExcelOutputTestCase(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
+        # TODO: Consider simplifying / combining tests and data fixtures, now that
+        # AUL, UL, and generic Unit reports are essentially the same.
+
         # Create DataFrames from real saved data, combining local and
         # QDB data as of 202607.
         aul_endowments_df = pd.read_csv("ge/fixtures/aul_endowments.csv")

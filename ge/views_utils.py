@@ -340,6 +340,18 @@ def create_excel_output(
         add_border_formatting(endowments_ws)
         add_border_formatting(gifts_ws)
 
+    # Make some general column width adjustments per LBS preference.
+    # These columns are consistent on all worksheets & workbooks.
+    # Unfortunately, ColumnDimension.bestFit appears to be ignored by Excel;
+    # I found widths had to be set manually.
+    for worksheet in wb.worksheets:
+        # Unit (column A): size to fit data.
+        set_max_width(worksheet, column_letter="A")
+        # Home Unit / Dept (column B): LBS wants it "smaller"; 15 seems right.
+        worksheet.column_dimensions["B"].width = 15
+        # Fund Title (column C); LBS wants it "smaller"; 40 seems right.
+        worksheet.column_dimensions["C"].width = 40
+
     return wb
 
 
@@ -513,3 +525,16 @@ def get_fund_type(fund: str) -> str:
             return "Endowment"
         case _:
             return "Unknown"
+
+
+def set_max_width(ws: Worksheet, column_letter: "str") -> None:
+    """Given a worksheet and a column letter reference (e.g., "A", "Q"),
+    return the worksheet (by reference) with that column set to the maximum width of data
+    in that column, plus padding apparently needed by Excel.
+    """
+    cells = ws[column_letter]
+    max_width = max({len(cell.value) for cell in cells if cell.value})
+    # 4 characters of extra padding seems right. This should be constant, not dynamic.
+    padding = 4
+    max_width += padding
+    ws.column_dimensions[column_letter].width = max_width
