@@ -26,18 +26,25 @@ def get_year_month_choices() -> list[tuple[str, str]]:
 
 
 class ReportForm(forms.Form):
-    report_type = forms.ChoiceField(
-        label="Report Type:",
-        # Previous coding for human entered variable values is no longer needed.
-        # Now (2026), use values derived from active funds, so this list of form choices
-        # is dynamic based on data maintained by LBS.
-        choices=[
+    # Previous coding for human entered variable values is no longer needed.
+    # Now (2026), use values derived from active funds, so this list of form choices
+    # is dynamic based on data maintained by LBS.
+    # Master report is an exception: it's not a "unit", and needs to be first.
+    # Use lower-case "master" form value due to legacy use in views_utils code.
+    report_choices = [("master", "Master")]
+    report_choices.extend(
+        [
             (unit_name, unit_name)
             for unit_name in sorted(
                 set([r.unit.name for r in GeFund.objects.filter(active=True)])
             )
-        ],
+        ]
+    )
+
+    report_type = forms.ChoiceField(
+        label="Report Type:",
         widget=forms.Select(),
+        choices=report_choices,
     )
 
     ledger_year_month = forms.ChoiceField(
