@@ -120,24 +120,23 @@ def get_data_for_report(
 
 def get_local_data(report_type: str) -> list[dict]:
     """Returns data from the local `GeFund` table, based on `report_type`."""
-    # Get associated units, needed for some queries.
-    report_units = get_units_for_report(report_type)
     # Start with all active funds.
     funds = GeFund.objects.filter(active=True)
     if report_type == "master":
         # Master report gets all active funds, no additional filtering.
         pass
     elif report_type in ["aul_benedetti", "aul_gomez"]:
-        # Only one report_unit is relevant for the AUL reports,
-        # but it needs fuzzy matching.
-        report_unit = report_units[0]
+        # AUL reports require fuzzy matching against multiple fields.
+        # Strip off the prefix and search for the last name anywhere in
+        # the GeUnit.name or the GeFund.home_unit_dept fields.
+        report_unit = report_type.replace("aul_", "")
         funds = funds.filter(
             Q(unit__name__icontains=report_unit)
             | Q(home_unit_dept__icontains=report_unit)
         )
     else:
-        # There can be multiple units associated with a fund.
-        funds = funds.filter(unit__name__in=report_units)
+        # report_type values are derived from GeUnit.name, so find exact matches.
+        funds = funds.filter(unit__name=report_type)
 
     # Sort the remaining funds by unit and FAU components.
     funds = funds.order_by("unit__name", "account", "cost_center", "fund")
@@ -166,14 +165,6 @@ def get_local_data(report_type: str) -> list[dict]:
     for record in fund_data:
         record["fund_type"] = get_fund_type(record.get("fund", ""))
 
-        # TODO: For now, preserve unwanted to-be-removed columns with placeholders.
-        placeholders = {
-            # "fund_type": "REMOVE",
-            "reg_fdn": "REMOVE",
-            "fau_fund_no": "REMOVE",
-        }
-        record.update(placeholders)
-
     return fund_data
 
 
@@ -190,11 +181,9 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "unit__name": ["endowments", "gifts", "master"],  # local
         "home_unit_dept": ["endowments", "gifts", "master"],  # local
         "title": ["endowments", "gifts", "master"],  # local
-        "fund_type": ["endowments", "gifts", "master"],  # REMOVE
-        "reg_fdn": ["endowments", "gifts", "master"],  # REMOVE
+        "fund_type": ["master"],  # derived from QDB data, only used in master report
         "manager": ["endowments", "gifts", "master"],  # local
         "ucop_fdn_no": ["endowments", "gifts", "master"],  # QDB
-        "fau_fund_no": ["endowments", "gifts", "master"],  # REMOVE
         "account": ["endowments", "gifts", "master"],  # local
         "cost_center": ["endowments", "gifts", "master"],  # local
         "fund": ["endowments", "gifts", "master"],  # local
@@ -213,14 +202,6 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
     if report_type == "master":
         # All columns are used in master report; tab_type is not relevant.
         return [column_name for column_name in report_columns.keys()]
-    elif report_type == "ul":
-        # UL report needs the endowments vs. gifts distinctions of tab_type,
-        # with the same columns overall as master report.
-        return [
-            column_name
-            for column_name, tab_types in report_columns.items()
-            if "master" in tab_types and tab_type in tab_types
-        ]
     else:
         # Ordinary reports, with fewer fields, and tab_type matters.
         return [
@@ -230,35 +211,6 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         ]
 
 
-def get_units_for_report(report_type: str) -> list[str]:
-    """Returns a list of unit names associated with a `report_type` code."""
-    # Map each report type to list of strings needed for query
-    report_units = {
-        "archives": ["Archives"],
-        "arts": ["Arts"],
-        "biomed": ["Biomed"],
-        "digilib": ["DigiLib", "Digital Library"],
-        "eal": ["EAL"],
-        "ftva": ["FTVA"],
-        "hsc": ["History & SC Sciences"],
-        "hssd": ["HSSD", "SSHD"],
-        "ias": ["Int'l Studies"],
-        "lhr": ["LHR"],
-        "lsc": ["LSC"],
-        "management": ["Management"],
-        "music": ["Music"],
-        "oh": ["Oral History"],
-        "pa": ["Performing Arts"],
-        "powell": ["Powell"],
-        "preservation": ["Preservation"],
-        "sel": ["SEL"],
-        "ul": ["UL"],
-        "aul_benedetti": ["Benedetti"],
-        "aul_gomez": ["Gomez"],
-    }
-    return report_units.get(report_type, [])
-
-
 def create_excel_output(
     report_type: str, data: tuple[pd.DataFrame, pd.DataFrame]
 ) -> Workbook:
@@ -266,8 +218,8 @@ def create_excel_output(
 
     Returns a Workbook, for direct download or archiving as needed.
     """
-    # UL and Master reports have extra columns, so use a different template
-    if report_type in ("master", "ul"):
+    # Master report has extra columns, so usee a different template.
+    if report_type in ("master"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
     else:
         template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
@@ -289,7 +241,7 @@ def create_excel_output(
         ws = df_to_excel(df, ws)
 
         # add correct cell formatting
-        for col in ("L", "M", "N", "O", "Q"):
+        for col in ("J", "K", "L", "M", "O"):
             for row in range(5, len(ws[col]) + 1):
                 # Excel "format code" for Accounting, 2 decimal places, $, comma separator
                 ws[f"{col}{row}"].number_format = (
@@ -301,10 +253,10 @@ def create_excel_output(
         last_row = get_last_row(ws, "A")
         filters.ref = f"A4:{last_col}{last_row}"
 
-        # add as-of dates to L-O balance cols and projected annual income (Q)
+        # add as-of dates to J-M balance cols and projected annual income (O)
         as_of = get_as_of_date()
-        ws["L3"] = as_of
-        ws["Q3"] = as_of
+        ws["J3"] = as_of
+        ws["O3"] = as_of
 
     else:
         # Unpack tuple of dataframes into separate dataframes.
@@ -322,8 +274,8 @@ def create_excel_output(
             ):
                 # Work around SettingWithCopyWarning by using df.copy() instead of inplace=True
                 endowments_df = endowments_df.drop(columns=["fund_restriction"]).copy()
-                # remove column from Excel template - col S for UL and unit reports
-                wb["Endowments"].delete_cols(19)
+                # remove column from Excel template - col P for UL and unit reports
+                wb["Endowments"].delete_cols(16)
 
         # basic cols for gifts reports
         gifts_cols = get_columns_for_report(report_type, tab_type="gifts")
@@ -337,8 +289,8 @@ def create_excel_output(
             ):
                 # Work around SettingWithCopyWarning by using df.copy() instead of inplace=True
                 gifts_df = gifts_df.drop(columns=["fund_restriction"]).copy()
-                # remove column from Excel template - col R for UL and unit reports
-                wb["Gifts"].delete_cols(18)
+                # remove column from Excel template - col O for UL and unit reports
+                wb["Gifts"].delete_cols(15)
 
         # put data into Excel worksheets
         gifts_ws = wb["Gifts"]
@@ -347,8 +299,8 @@ def create_excel_output(
         endowments_ws = df_to_excel(endowments_df, endowments_ws)
 
         # add totals and formatting for money columns
-        gifts_money_cols = ["L", "M", "N", "O"]
-        endowments_money_cols = ["L", "M", "N", "O", "Q"]
+        gifts_money_cols = ["I", "J", "K", "L"]
+        endowments_money_cols = ["I", "J", "K", "L", "N"]
 
         for col in gifts_money_cols:
             sum_col(gifts_ws, col)
@@ -379,14 +331,26 @@ def create_excel_output(
 
         # add as-of dates
         as_of = get_as_of_date()
-        # L3 is always the start of the 4 common financial cols
-        endowments_ws["L3"] = as_of
-        gifts_ws["L3"] = as_of
-        # Projected Annual Income col is Q on endowments reports
-        endowments_ws["Q3"] = as_of
+        # I3 is always the start of the 4 common financial cols
+        endowments_ws["I3"] = as_of
+        gifts_ws["I3"] = as_of
+        # Projected Annual Income col is N on endowments reports
+        endowments_ws["N3"] = as_of
 
         add_border_formatting(endowments_ws)
         add_border_formatting(gifts_ws)
+
+    # Make some general column width adjustments per LBS preference.
+    # These columns are consistent on all worksheets & workbooks.
+    # Unfortunately, ColumnDimension.bestFit appears to be ignored by Excel;
+    # I found widths had to be set manually.
+    for worksheet in wb.worksheets:
+        # Unit (column A): size to fit data.
+        set_max_width(worksheet, column_letter="A")
+        # Home Unit / Dept (column B): LBS wants it "smaller"; 15 seems right.
+        worksheet.column_dimensions["B"].width = 15
+        # Fund Title (column C); LBS wants it "smaller"; 40 seems right.
+        worksheet.column_dimensions["C"].width = 40
 
     return wb
 
@@ -561,3 +525,16 @@ def get_fund_type(fund: str) -> str:
             return "Endowment"
         case _:
             return "Unknown"
+
+
+def set_max_width(ws: Worksheet, column_letter: "str") -> None:
+    """Given a worksheet and a column letter reference (e.g., "A", "Q"),
+    return the worksheet (by reference) with that column set to the maximum width of data
+    in that column, plus padding apparently needed by Excel.
+    """
+    cells = ws[column_letter]
+    max_width = max({len(cell.value) for cell in cells if cell.value})
+    # 4 characters of extra padding seems right. This should be constant, not dynamic.
+    padding = 4
+    max_width += padding
+    ws.column_dimensions[column_letter].width = max_width

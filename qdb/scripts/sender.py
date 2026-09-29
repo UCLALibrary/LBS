@@ -69,7 +69,7 @@ def send_report(data: dict, filename: str, recipients: list[str] | set[str]):
         part.set_payload(attachment.read())
 
     encoders.encode_base64(part)
-
+    # TODO: Consider replacing non-ASCII characters in filename, per DLSR-635.
     part.add_header(
         "Content-Disposition", f"attachment; filename={os.path.split(filename)[1]}"
     )

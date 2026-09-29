@@ -1,5 +1,6 @@
 from django import forms
 from datetime import datetime
+from ge.models import GeFund
 
 
 def get_year_month_choices() -> list[tuple[str, str]]:
@@ -10,7 +11,8 @@ def get_year_month_choices() -> list[tuple[str, str]]:
     today = datetime.now()
     current_year = int(today.strftime("%Y"))
     # Combine year & month, in reverse chronological order.
-    months = ["01", "04", "07", "10"]
+    # Use months which reflect ends of fiscal quarters.
+    months = ["03", "06", "09", "12"]
     months.reverse()
     # Current and previous 2 calendar years.
     for year in range(current_year, current_year - 3, -1):
@@ -23,34 +25,30 @@ def get_year_month_choices() -> list[tuple[str, str]]:
     return year_month_choices
 
 
+def get_report_choices() -> list[tuple[str, str]]:
+    # Return values derived from active funds, so this list of form choices
+    # is dynamic based on data maintained by LBS.
+    # Previous coding for human entered variable values is no longer needed.
+    # Master report is an exception: it's not a "unit", and needs to be first.
+    # Use lower-case "master" form value due to legacy use in views_utils code.
+    report_choices = [("master", "Master")]
+    report_choices.extend(
+        [
+            (unit_name, unit_name)
+            for unit_name in sorted(
+                set([r.unit.name for r in GeFund.objects.filter(active=True)])
+            )
+        ]
+    )
+    return report_choices
+
+
 class ReportForm(forms.Form):
+
     report_type = forms.ChoiceField(
         label="Report Type:",
-        choices=[
-            ("master", "Master"),
-            ("archives", "Archives"),
-            ("arts", "Arts"),
-            ("biomed", "Biomed"),
-            ("digilib", "Digital Library"),
-            ("eal", "East Asian Library"),
-            ("ftva", "Film & TV Archive"),
-            ("hsc", "History & SC Sciences"),
-            ("hssd", "HSSD"),
-            ("ias", "Intl & Area Studies"),
-            ("lhr", "LHR"),
-            ("lsc", "LSC"),
-            ("management", "Management"),
-            ("music", "Music"),
-            ("oh", "Oral History"),
-            ("pa", "Performing Arts"),
-            ("powell", "Powell"),
-            ("preservation", "Preservation"),
-            ("sel", "SEL"),
-            ("ul", "UL"),
-            ("aul_benedetti", "AUL Benedetti"),
-            ("aul_gomez", "AUL Gomez"),
-        ],
         widget=forms.Select(),
+        choices=get_report_choices,
     )
 
     ledger_year_month = forms.ChoiceField(
