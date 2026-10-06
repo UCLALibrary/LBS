@@ -7,6 +7,7 @@ from ge.views_utils import (
     get_as_of_date,
     get_last_col,
     get_last_row,
+    is_fye,
     sum_col,
 )
 
@@ -192,3 +193,21 @@ class ExcelOutputTestCase(TestCase):
         self.assertEqual(result["Endowments"]["K6"].value, "=SUM(K5:K5)")
         self.assertEqual(result["Endowments"]["L6"].value, "=SUM(L5:L5)")
         self.assertEqual(result["Endowments"]["N6"].value, "=SUM(N5:N5)")
+
+
+class DataManipulationTestCase(TestCase):
+    # Tests related to data manipulation & transformation.
+    def test_june_is_fye(self):
+        # June reports represent fiscal year end (fye).
+        ledger_year_month = "202606"
+        self.assertTrue(is_fye(ledger_year_month))
+
+    def test_not_june_is_not_fye(self):
+        # June reports represent fiscal year end (fye).
+        # Any of the other quarters is not fye.
+        ledger_year_month_cases = ["202603", "202609", "202612"]
+        for ledger_year_month in ledger_year_month_cases:
+            with self.subTest(
+                f"Testing {ledger_year_month}", ledger_year_month=ledger_year_month
+            ):
+                self.assertFalse(is_fye(ledger_year_month))

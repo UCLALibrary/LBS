@@ -427,9 +427,16 @@ def add_border_formatting(ws: Worksheet) -> None:
     )
 
 
-def get_qdb_query() -> str:
-    """Returns the query which will be used to retrieve data from QDB."""
-    QDB_GE_QUERY = """
+def get_qdb_ge_query(fye: bool = False) -> str:
+    """Get the QDB query string for GE reports,
+    with or without fiscal year end (fye) filter.
+    The fye filter is used only for the June report, which requires
+    using "preliminary" funds values.
+
+    :param is_fye: Whether to include the fiscal year end (fye) filter
+    :return: The complete QDB GE query string
+    """
+    QDB_GE_SELECT_CLAUSE = """
 SELECT
     fun.fund_title
 ,	fun.foundatn_fund_num AS ucop_fdn_no
@@ -458,6 +465,14 @@ AND glb.account_number = '%s'
 AND glb.cost_center_code = '%s'
 AND glb.fund_number = '%s'
 AND glb.ledger_year_month = '%s'
+"""
+
+    QDB_GE_FYE_FILTER = """
+-- For fiscal year end, also limit to "preliminary" closeout
+AND glb.fye_proc_ind = 'P'
+"""
+
+    QDB_GE_GROUP_ORDER_CLAUSE = """
 GROUP BY
     fun.fund_title
 ,	fun.foundatn_fund_num
@@ -467,7 +482,11 @@ GROUP BY
 ORDER BY glb.account_number, glb.cost_center_code, glb.fund_number
 ;
 """
-    return QDB_GE_QUERY
+    # Assemble the query, including the FYE filter if needed.
+    query = QDB_GE_SELECT_CLAUSE
+    if fye:
+        query += QDB_GE_FYE_FILTER
+    return query + QDB_GE_GROUP_ORDER_CLAUSE
 
 
 def get_qdb_data(
@@ -484,8 +503,10 @@ def get_qdb_data(
     with conn:
         conn.as_dict = True
         cursor = conn.cursor()
-        # For now, just use static query.
-        qdb_query = get_qdb_query()
+        # June reports need to use "preliminary" amounts, as the FYE
+        # (fiscal year end) process is not yet completed.
+        fye = is_fye(ledger_year_month)
+        qdb_query = get_qdb_ge_query(fye)
         # Run query with the real parameters.
         cursor.execute(qdb_query % (account, cost_center, fund, ledger_year_month))
         # This query should only return one row at most, but return all rows
@@ -525,6 +546,13 @@ def get_fund_type(fund: str) -> str:
             return "Endowment"
         case _:
             return "Unknown"
+
+
+def is_fye(ledger_year_month: str) -> bool:
+    """Returns True if the given month represents the end of the fiscal year
+    (June), False otherwise.
+    """
+    return ledger_year_month.endswith("06")
 
 
 def set_max_width(ws: Worksheet, column_letter: "str") -> None:
