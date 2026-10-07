@@ -156,12 +156,9 @@ def get_local_data(report_type: str) -> list[dict]:
             "fund_restriction",
             "general_notes",
             "lbs_notes",
+            "fund_type",
         )
     )
-    # Add a fund_type field, calculated from relevant data. This will be needed for reports.
-    # This is not in the database, and not on the model as a property can't be used for queries.
-    for record in fund_data:
-        record["fund_type"] = get_fund_type(record.get("fund", ""))
 
     return fund_data
 
@@ -531,26 +528,6 @@ def add_qdb_to_local_data(fund: dict, qdb_data: list) -> dict:
         return fund
     else:
         raise ValueError("qdb_data did not contain 1 row.")
-
-
-def get_fund_type(fund: str) -> str:
-    """Determines the type of fund, based on its value.
-    Returns "Unknown" if it can't be matched, mainly for
-    manual LBS review.
-    """
-    # Ideally this would be on the GeFund model,
-    # but can't use a model property or method in a query.
-    match fund:
-        case f if "10000" <= f <= "19999":
-            return "Endowment"
-        case f if "34100" <= f <= "39799":
-            return "Endowment"
-        case f if "39800" <= f <= "56999":
-            return "Gift"
-        case f if "93014" <= f <= "95215":
-            return "Endowment"
-        case _:
-            return "Unknown"
 
 
 def is_fye(ledger_year_month: str) -> bool:

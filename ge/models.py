@@ -178,6 +178,7 @@ class GeFund(models.Model):
     account = models.CharField(max_length=6)
     cost_center = models.CharField(max_length=2)
     fund = models.CharField(max_length=5)
+    fund_type = models.CharField(max_length=20, blank=True)
     title = models.CharField(max_length=250)
     manager = models.CharField(max_length=50, blank=True)
     mtf_authority = models.CharField(max_length=50, blank=True)
@@ -192,6 +193,27 @@ class GeFund(models.Model):
     fund_restriction = models.TextField(blank=True)
     general_notes = models.TextField(blank=True)
     lbs_notes = models.TextField(blank=True)
+
+    def set_fund_type(self) -> str:
+        match self.fund:
+            case f if "10000" <= f <= "19999":
+                return "Endowment"
+            case f if "34100" <= f <= "39799":
+                return "Endowment"
+            case f if "39800" <= f <= "56999":
+                return "Gift"
+            case f if "93014" <= f <= "95215":
+                return "Endowment"
+            case _:
+                return "Unknown"
+
+    def save(self, **kwargs):
+        """Override default `save()` method to set `fund_type`,
+        based on the `fund` value, if not already set.
+        """
+        if not self.fund_type:
+            self.fund_type = self.set_fund_type()
+        super().save(**kwargs)  # Call the "real" save() metho
 
     def __str__(self):
         return f"{self.account}-{self.cost_center}-{self.fund}"
