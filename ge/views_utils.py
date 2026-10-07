@@ -3,6 +3,7 @@ import zipfile
 import pandas as pd
 import pytds
 
+from calendar import monthrange
 from django.db.models import Q
 from datetime import datetime
 from django.http import HttpResponse
@@ -44,29 +45,26 @@ def get_last_col(ws: Worksheet, row: int) -> int:
     return last_col
 
 
-def get_as_of_date(date: datetime = datetime.now()) -> str:
+def get_as_of_date(ledger_year_month: str) -> str:
     """Get the as-of label for use in column headers,
-    defined as the last day of the previous quarter.
+    defined as the last day of the ledger_year_month selected
+    when a user runs the report.
     """
-    current_month = date.month
-    # Jan - Mar
-    if current_month <= 3:
-        end_date = "12/31"
-        year = date.year - 1
-    # Apr - Jun
-    elif current_month <= 6:
-        end_date = "3/31"
-        year = date.year
-    # Jul - Sep
-    elif current_month <= 9:
-        end_date = "6/30"
-        year = date.year
-    # Oct - Dec
-    else:
-        end_date = "9/30"
-        year = date.year
-    # return as-of date in MM/DD/YY format
-    return f"as of {end_date}/{year % 100}"
+    # Convert given YYYYMM to a date (start of month)
+    report_date = datetime.strptime(ledger_year_month, "%Y%m")
+    # calendar.monthrange returns weekday of month start (unneeded here)
+    # and number of days in month, and is leap-year aware.
+    _, days_in_month = monthrange(report_date.year, report_date.month)
+    # Set day in report_date to the final day of the month.
+    as_of_date = report_date.replace(day=days_in_month)
+    # return as-of date in MM/DD/YY format, with text.
+    return f"as of {datetime.strftime(as_of_date, "%m/%d/%y")}"
+
+
+def get_month_name(ledger_year_month: str) -> str:
+    """Returns the full name of the month (only), given ledger_year_month
+    in yyyymm format."""
+    return datetime.strptime(ledger_year_month, "%Y%m").strftime("%B")
 
 
 def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
@@ -212,18 +210,26 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
 
 
 def create_excel_output(
-    report_type: str, data: tuple[pd.DataFrame, pd.DataFrame]
+    report_type: str, ledger_year_month: str, data: tuple[pd.DataFrame, pd.DataFrame]
 ) -> Workbook:
     """Create Excel output for a report.
 
     Returns a Workbook, for direct download or archiving as needed.
     """
-    # Master report has extra columns, so usee a different template.
+    # Master report has extra columns, so use a different template.
     if report_type in ("master"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
     else:
         template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
     wb = load_workbook(template_file)
+
+    # Tweaks based on the date of the report, via ledger_year_month.
+    month_name = get_month_name(ledger_year_month)
+    report_title = (
+        f"University Library and Associated Departments: Gift and Endowment Summary, "
+        f"and YTD Financial Results through the Month Ending: {month_name}"
+    )
+    as_of_date = get_as_of_date(ledger_year_month)
 
     if report_type == "master":
         # only one sheet in master report, so remove the other and rename
@@ -231,8 +237,6 @@ def create_excel_output(
         wb.remove(gifts)
         ws = wb["Endowments"]
         ws.title = "G&E"
-        # clear label in template
-        ws["A1"] = ""
 
         # Only one sheet in master report, so only one set of data.
         endowments_df = data[0]
@@ -254,9 +258,8 @@ def create_excel_output(
         filters.ref = f"A4:{last_col}{last_row}"
 
         # add as-of dates to J-M balance cols and projected annual income (O)
-        as_of = get_as_of_date()
-        ws["J3"] = as_of
-        ws["O3"] = as_of
+        ws["J3"] = as_of_date
+        ws["O3"] = as_of_date
 
     else:
         # Unpack tuple of dataframes into separate dataframes.
@@ -330,12 +333,11 @@ def create_excel_output(
         gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
 
         # add as-of dates
-        as_of = get_as_of_date()
         # I3 is always the start of the 4 common financial cols
-        endowments_ws["I3"] = as_of
-        gifts_ws["I3"] = as_of
+        endowments_ws["I3"] = as_of_date
+        gifts_ws["I3"] = as_of_date
         # Projected Annual Income col is N on endowments reports
-        endowments_ws["N3"] = as_of
+        endowments_ws["N3"] = as_of_date
 
         add_border_formatting(endowments_ws)
         add_border_formatting(gifts_ws)
@@ -352,6 +354,9 @@ def create_excel_output(
         # Fund Title (column C); LBS wants it "smaller"; 40 seems right.
         worksheet.column_dimensions["C"].width = 40
 
+        # Set report title
+        worksheet["A1"] = report_title
+
     return wb
 
 
@@ -367,7 +372,7 @@ def get_bytes_from_workbook(workbook: Workbook) -> bytes:
 def download_excel_file(report_type: str, ledger_year_month: str) -> HttpResponse:
     """Get Excel file via HTTP response."""
     data = get_data_for_report(report_type, ledger_year_month)
-    workbook = create_excel_output(report_type, data)
+    workbook = create_excel_output(report_type, ledger_year_month, data)
 
     stream = get_bytes_from_workbook(workbook)
 
@@ -397,7 +402,7 @@ def download_zip_file(ledger_year_month: str) -> HttpResponse:
     # Get Excel workbook for each, convert to bytes, and add to zip file.
     for report_type in report_types:
         data = get_data_for_report(report_type, ledger_year_month)
-        workbook = create_excel_output(report_type, data)
+        workbook = create_excel_output(report_type, ledger_year_month, data)
         excel_filename = f"{report_type}-Report-{timestamp}.xlsx"
         stream = get_bytes_from_workbook(workbook)
         zip_file.writestr(excel_filename, stream)
