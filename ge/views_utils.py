@@ -3,6 +3,7 @@ import zipfile
 import pandas as pd
 import pytds
 
+from calendar import monthrange
 from django.db.models import Q
 from datetime import datetime
 from django.http import HttpResponse
@@ -44,29 +45,26 @@ def get_last_col(ws: Worksheet, row: int) -> int:
     return last_col
 
 
-def get_as_of_date(date: datetime = datetime.now()) -> str:
+def get_as_of_date(ledger_year_month: str) -> str:
     """Get the as-of label for use in column headers,
-    defined as the last day of the previous quarter.
+    defined as the last day of the ledger_year_month selected
+    when a user runs the report.
     """
-    current_month = date.month
-    # Jan - Mar
-    if current_month <= 3:
-        end_date = "12/31"
-        year = date.year - 1
-    # Apr - Jun
-    elif current_month <= 6:
-        end_date = "3/31"
-        year = date.year
-    # Jul - Sep
-    elif current_month <= 9:
-        end_date = "6/30"
-        year = date.year
-    # Oct - Dec
-    else:
-        end_date = "9/30"
-        year = date.year
-    # return as-of date in MM/DD/YY format
-    return f"as of {end_date}/{year % 100}"
+    # Convert given YYYYMM to a date (start of month)
+    report_date = datetime.strptime(ledger_year_month, "%Y%m")
+    # calendar.monthrange returns weekday of month start (unneeded here)
+    # and number of days in month, and is leap-year aware.
+    _, days_in_month = monthrange(report_date.year, report_date.month)
+    # Set day in report_date to the final day of the month.
+    as_of_date = report_date.replace(day=days_in_month)
+    # return as-of date in MM/DD/YY format, with text.
+    return f"as of {datetime.strftime(as_of_date, "%m/%d/%y")}"
+
+
+def get_month_name(ledger_year_month: str) -> str:
+    """Returns the full name of the month (only), given ledger_year_month
+    in yyyymm format."""
+    return datetime.strptime(ledger_year_month, "%Y%m").strftime("%B")
 
 
 def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
@@ -158,12 +156,9 @@ def get_local_data(report_type: str) -> list[dict]:
             "fund_restriction",
             "general_notes",
             "lbs_notes",
+            "fund_type",
         )
     )
-    # Add a fund_type field, calculated from relevant data. This will be needed for reports.
-    # This is not in the database, and not on the model as a property can't be used for queries.
-    for record in fund_data:
-        record["fund_type"] = get_fund_type(record.get("fund", ""))
 
     return fund_data
 
@@ -212,18 +207,26 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
 
 
 def create_excel_output(
-    report_type: str, data: tuple[pd.DataFrame, pd.DataFrame]
+    report_type: str, ledger_year_month: str, data: tuple[pd.DataFrame, pd.DataFrame]
 ) -> Workbook:
     """Create Excel output for a report.
 
     Returns a Workbook, for direct download or archiving as needed.
     """
-    # Master report has extra columns, so usee a different template.
+    # Master report has extra columns, so use a different template.
     if report_type in ("master"):
         template_file = path.join(BASE_DIR, "ge/ge_template_ul.xlsx")
     else:
         template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
     wb = load_workbook(template_file)
+
+    # Tweaks based on the date of the report, via ledger_year_month.
+    month_name = get_month_name(ledger_year_month)
+    report_title = (
+        f"University Library and Associated Departments: Gift and Endowment Summary, "
+        f"and YTD Financial Results through the Month Ending: {month_name}"
+    )
+    as_of_date = get_as_of_date(ledger_year_month)
 
     if report_type == "master":
         # only one sheet in master report, so remove the other and rename
@@ -231,8 +234,6 @@ def create_excel_output(
         wb.remove(gifts)
         ws = wb["Endowments"]
         ws.title = "G&E"
-        # clear label in template
-        ws["A1"] = ""
 
         # Only one sheet in master report, so only one set of data.
         endowments_df = data[0]
@@ -254,9 +255,8 @@ def create_excel_output(
         filters.ref = f"A4:{last_col}{last_row}"
 
         # add as-of dates to J-M balance cols and projected annual income (O)
-        as_of = get_as_of_date()
-        ws["J3"] = as_of
-        ws["O3"] = as_of
+        ws["J3"] = as_of_date
+        ws["O3"] = as_of_date
 
     else:
         # Unpack tuple of dataframes into separate dataframes.
@@ -330,12 +330,11 @@ def create_excel_output(
         gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
 
         # add as-of dates
-        as_of = get_as_of_date()
         # I3 is always the start of the 4 common financial cols
-        endowments_ws["I3"] = as_of
-        gifts_ws["I3"] = as_of
+        endowments_ws["I3"] = as_of_date
+        gifts_ws["I3"] = as_of_date
         # Projected Annual Income col is N on endowments reports
-        endowments_ws["N3"] = as_of
+        endowments_ws["N3"] = as_of_date
 
         add_border_formatting(endowments_ws)
         add_border_formatting(gifts_ws)
@@ -352,6 +351,9 @@ def create_excel_output(
         # Fund Title (column C); LBS wants it "smaller"; 40 seems right.
         worksheet.column_dimensions["C"].width = 40
 
+        # Set report title
+        worksheet["A1"] = report_title
+
     return wb
 
 
@@ -367,7 +369,7 @@ def get_bytes_from_workbook(workbook: Workbook) -> bytes:
 def download_excel_file(report_type: str, ledger_year_month: str) -> HttpResponse:
     """Get Excel file via HTTP response."""
     data = get_data_for_report(report_type, ledger_year_month)
-    workbook = create_excel_output(report_type, data)
+    workbook = create_excel_output(report_type, ledger_year_month, data)
 
     stream = get_bytes_from_workbook(workbook)
 
@@ -397,7 +399,7 @@ def download_zip_file(ledger_year_month: str) -> HttpResponse:
     # Get Excel workbook for each, convert to bytes, and add to zip file.
     for report_type in report_types:
         data = get_data_for_report(report_type, ledger_year_month)
-        workbook = create_excel_output(report_type, data)
+        workbook = create_excel_output(report_type, ledger_year_month, data)
         excel_filename = f"{report_type}-Report-{timestamp}.xlsx"
         stream = get_bytes_from_workbook(workbook)
         zip_file.writestr(excel_filename, stream)
@@ -427,9 +429,16 @@ def add_border_formatting(ws: Worksheet) -> None:
     )
 
 
-def get_qdb_query() -> str:
-    """Returns the query which will be used to retrieve data from QDB."""
-    QDB_GE_QUERY = """
+def get_qdb_ge_query(fye: bool = False) -> str:
+    """Get the QDB query string for GE reports,
+    with or without fiscal year end (fye) filter.
+    The fye filter is used only for the June report, which requires
+    using "preliminary" funds values.
+
+    :param is_fye: Whether to include the fiscal year end (fye) filter
+    :return: The complete QDB GE query string
+    """
+    QDB_GE_SELECT_CLAUSE = """
 SELECT
     fun.fund_title
 ,	fun.foundatn_fund_num AS ucop_fdn_no
@@ -458,6 +467,14 @@ AND glb.account_number = '%s'
 AND glb.cost_center_code = '%s'
 AND glb.fund_number = '%s'
 AND glb.ledger_year_month = '%s'
+"""
+
+    QDB_GE_FYE_FILTER = """
+-- For fiscal year end, also limit to "preliminary" closeout
+AND glb.fye_proc_ind = 'P'
+"""
+
+    QDB_GE_GROUP_ORDER_CLAUSE = """
 GROUP BY
     fun.fund_title
 ,	fun.foundatn_fund_num
@@ -467,7 +484,11 @@ GROUP BY
 ORDER BY glb.account_number, glb.cost_center_code, glb.fund_number
 ;
 """
-    return QDB_GE_QUERY
+    # Assemble the query, including the FYE filter if needed.
+    query = QDB_GE_SELECT_CLAUSE
+    if fye:
+        query += QDB_GE_FYE_FILTER
+    return query + QDB_GE_GROUP_ORDER_CLAUSE
 
 
 def get_qdb_data(
@@ -484,8 +505,10 @@ def get_qdb_data(
     with conn:
         conn.as_dict = True
         cursor = conn.cursor()
-        # For now, just use static query.
-        qdb_query = get_qdb_query()
+        # June reports need to use "preliminary" amounts, as the FYE
+        # (fiscal year end) process is not yet completed.
+        fye = is_fye(ledger_year_month)
+        qdb_query = get_qdb_ge_query(fye)
         # Run query with the real parameters.
         cursor.execute(qdb_query % (account, cost_center, fund, ledger_year_month))
         # This query should only return one row at most, but return all rows
@@ -507,24 +530,11 @@ def add_qdb_to_local_data(fund: dict, qdb_data: list) -> dict:
         raise ValueError("qdb_data did not contain 1 row.")
 
 
-def get_fund_type(fund: str) -> str:
-    """Determines the type of fund, based on its value.
-    Returns "Unknown" if it can't be matched, mainly for
-    manual LBS review.
+def is_fye(ledger_year_month: str) -> bool:
+    """Returns True if the given month represents the end of the fiscal year
+    (June), False otherwise.
     """
-    # Ideally this would be on the GeFund model,
-    # but can't use a model property or method in a query.
-    match fund:
-        case f if "10000" <= f <= "19999":
-            return "Endowment"
-        case f if "34100" <= f <= "39799":
-            return "Endowment"
-        case f if "39800" <= f <= "56999":
-            return "Gift"
-        case f if "93014" <= f <= "95215":
-            return "Endowment"
-        case _:
-            return "Unknown"
+    return ledger_year_month.endswith("06")
 
 
 def set_max_width(ws: Worksheet, column_letter: "str") -> None:
