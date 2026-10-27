@@ -178,6 +178,7 @@ class GeFund(models.Model):
     account = models.CharField(max_length=6)
     cost_center = models.CharField(max_length=2)
     fund = models.CharField(max_length=5)
+    ucop_fdn_no = models.CharField(max_length=6, blank=True)
     fund_type = models.CharField(max_length=20, blank=True)
     title = models.CharField(max_length=250)
     manager = models.CharField(max_length=50, blank=True)
@@ -192,7 +193,7 @@ class GeFund(models.Model):
     fund_summary = models.TextField(blank=True)
     fund_restriction = models.TextField(blank=True)
     general_notes = models.TextField(blank=True)
-    lbs_notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
 
     def set_fund_type(self) -> str:
         match self.fund:
