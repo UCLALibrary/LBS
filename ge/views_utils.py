@@ -154,7 +154,7 @@ def get_local_data(report_type: str) -> list[dict]:
             "fund_purpose",
             "fund_summary",
             "fund_restriction",
-            "general_notes",
+            # "general_notes",
             "notes",
             "fund_type",
         )
@@ -190,7 +190,7 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "projected_annual_income": ["endowments", "master"],  # local
         "fund_purpose": ["endowments", "gifts", "master"],  # local
         "fund_restriction": ["endowments", "gifts", "master"],  # local
-        "general_notes": ["endowments", "gifts", "master"],  # local
+        # "general_notes": ["endowments", "gifts", "master"],  # local
         "notes": ["endowments", "gifts", "master"],  # local
     }
 
