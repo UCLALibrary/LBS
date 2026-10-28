@@ -155,7 +155,7 @@ def get_local_data(report_type: str) -> list[dict]:
             "fund_summary",
             "fund_restriction",
             "general_notes",
-            "lbs_notes",
+            "notes",
             "fund_type",
         )
     )
@@ -178,7 +178,7 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "title": ["endowments", "gifts", "master"],  # local
         "fund_type": ["master"],  # derived from QDB data, only used in master report
         "manager": ["endowments", "gifts", "master"],  # local
-        "ucop_fdn_no": ["endowments", "gifts", "master"],  # QDB
+        "ucop_fdn_no": ["endowments", "gifts", "master"],  # local
         "account": ["endowments", "gifts", "master"],  # local
         "cost_center": ["endowments", "gifts", "master"],  # local
         "fund": ["endowments", "gifts", "master"],  # local
@@ -191,7 +191,7 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "fund_purpose": ["endowments", "gifts", "master"],  # local
         "fund_restriction": ["endowments", "gifts", "master"],  # local
         "general_notes": ["endowments", "gifts", "master"],  # local
-        "lbs_notes": ["endowments", "gifts", "master"],  # local
+        "notes": ["endowments", "gifts", "master"],  # local
     }
 
     if report_type == "master":
@@ -441,7 +441,6 @@ def get_qdb_ge_query(fye: bool = False) -> str:
     QDB_GE_SELECT_CLAUSE = """
 SELECT
     fun.fund_title
-,	fun.foundatn_fund_num AS ucop_fdn_no
 ,	glb.account_number as account
 ,	glb.cost_center_code as cost_center
 ,	glb.fund_number as fund
@@ -481,7 +480,7 @@ GROUP BY
 ,	glb.account_number
 ,	glb.cost_center_code
 ,	glb.fund_number
-ORDER BY glb.account_number, glb.cost_center_code, glb.fund_number
+ORDER BY glb.fund_number, glb.account_number, glb.cost_center_code
 ;
 """
     # Assemble the query, including the FYE filter if needed.
