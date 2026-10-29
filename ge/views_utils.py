@@ -466,6 +466,8 @@ AND glb.account_number = '%s'
 AND glb.cost_center_code = '%s'
 AND glb.fund_number = '%s'
 AND glb.ledger_year_month = '%s'
+AND (sum(-glb.ytd_appropriation) <> 0 AND sum(glb.ytd_financial) <> 0 AND sum(glb.encumbrance) <> 0
+     AND sum(-glb.bal_operating) <> 0)
 """
 
     QDB_GE_FYE_FILTER = """
