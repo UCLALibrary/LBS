@@ -292,52 +292,58 @@ def create_excel_output(
                 # remove column from Excel template - col O for UL and unit reports
                 wb["Gifts"].delete_cols(15)
 
-        # put data into Excel worksheets
-        gifts_ws = wb["Gifts"]
-        endowments_ws = wb["Endowments"]
-        gifts_ws = df_to_excel(gifts_df, gifts_ws)
-        endowments_ws = df_to_excel(endowments_df, endowments_ws)
+        # put data into Excel worksheets if there is any data to put in
+        if not endowments_df.empty:
+            endowments_ws = wb["Endowments"]
+            endowments_ws = df_to_excel(endowments_df, endowments_ws)
 
-        # add totals and formatting for money columns
-        gifts_money_cols = ["I", "J", "K", "L"]
-        endowments_money_cols = ["I", "J", "K", "L", "N"]
+            # add totals and formatting for money columns
+            endowments_money_cols = ["I", "J", "K", "L", "N"]
 
-        for col in gifts_money_cols:
-            sum_col(gifts_ws, col)
-            for row in range(5, len(gifts_ws[col]) + 1):
-                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
-                gifts_ws[f"{col}{row}"].number_format = (
-                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
-                )
+            for col in endowments_money_cols:
+                sum_col(endowments_ws, col)
+                for row in range(5, len(endowments_ws[col]) + 1):
+                    # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                    endowments_ws[f"{col}{row}"].number_format = (
+                        """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                    )
 
-        for col in endowments_money_cols:
-            sum_col(endowments_ws, col)
-            for row in range(5, len(endowments_ws[col]) + 1):
-                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
-                endowments_ws[f"{col}{row}"].number_format = (
-                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
-                )
+            # set filters on all columns with data
+            endowments_filters = endowments_ws.auto_filter
+            last_endowment_col = get_column_letter(get_last_col(endowments_ws, 5))
+            last_endowment_row = get_last_row(endowments_ws, "A")
+            endowments_filters.ref = f"A4:{last_endowment_col}{last_endowment_row}"
 
-        # set filters on all columns with data
-        endowments_filters = endowments_ws.auto_filter
-        last_endowment_col = get_column_letter(get_last_col(endowments_ws, 5))
-        last_endowment_row = get_last_row(endowments_ws, "A")
-        endowments_filters.ref = f"A4:{last_endowment_col}{last_endowment_row}"
+            # add as-of dates
+            # I3 is always the start of the 4 common financial cols
+            endowments_ws["I3"] = as_of_date
+            # Projected Annual Income col is N on endowments reports
+            endowments_ws["N3"] = as_of_date
 
-        gifts_filters = gifts_ws.auto_filter
-        last_gifts_col = get_column_letter(get_last_col(gifts_ws, 5))
-        last_gifts_row = get_last_row(gifts_ws, "A")
-        gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
-
-        # add as-of dates
-        # I3 is always the start of the 4 common financial cols
-        endowments_ws["I3"] = as_of_date
-        gifts_ws["I3"] = as_of_date
-        # Projected Annual Income col is N on endowments reports
-        endowments_ws["N3"] = as_of_date
-
-        add_border_formatting(endowments_ws)
-        add_border_formatting(gifts_ws)
+            add_border_formatting(endowments_ws)
+        else:
+            ws = wb["Endowments"]
+            wb.remove(ws)
+        if not gifts_df.empty:
+            gifts_ws = wb["Gifts"]
+            gifts_ws = df_to_excel(gifts_df, gifts_ws)
+            gifts_money_cols = ["I", "J", "K", "L"]
+            for col in gifts_money_cols:
+                sum_col(gifts_ws, col)
+                for row in range(5, len(gifts_ws[col]) + 1):
+                    # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                    gifts_ws[f"{col}{row}"].number_format = (
+                        """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                    )
+            gifts_filters = gifts_ws.auto_filter
+            last_gifts_col = get_column_letter(get_last_col(gifts_ws, 5))
+            last_gifts_row = get_last_row(gifts_ws, "A")
+            gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
+            gifts_ws["I3"] = as_of_date
+            add_border_formatting(gifts_ws)
+        else:
+            gifts = wb["Gifts"]
+            wb.remove(gifts)
 
     # Make some general column width adjustments per LBS preference.
     # These columns are consistent on all worksheets & workbooks.
