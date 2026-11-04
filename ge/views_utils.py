@@ -472,8 +472,6 @@ AND glb.account_number = '%s'
 AND glb.cost_center_code = '%s'
 AND glb.fund_number = '%s'
 AND glb.ledger_year_month = '%s'
-AND (sum(-glb.ytd_appropriation) <> 0 AND sum(glb.ytd_financial) <> 0 AND sum(glb.encumbrance) <> 0
-     AND sum(-glb.bal_operating) <> 0)
 """
 
     QDB_GE_FYE_FILTER = """
@@ -484,10 +482,11 @@ AND glb.fye_proc_ind = 'P'
     QDB_GE_GROUP_ORDER_CLAUSE = """
 GROUP BY
     fun.fund_title
-,	fun.foundatn_fund_num
 ,	glb.account_number
 ,	glb.cost_center_code
 ,	glb.fund_number
+HAVING (sum(-glb.ytd_appropriation) <> 0 AND sum(glb.ytd_financial) <> 0
+    AND sum(glb.encumbrance) <> 0 AND sum(-glb.bal_operating) <> 0)
 ORDER BY glb.fund_number, glb.account_number, glb.cost_center_code
 ;
 """
