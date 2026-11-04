@@ -255,7 +255,7 @@ def create_excel_output(
         filters.ref = f"A4:{last_col}{last_row}"
 
         # add as-of dates to J-M balance cols and projected annual income (O)
-        ws["J3"] = as_of_date
+        ws["A4"] = as_of_date
         ws["O3"] = as_of_date
 
     else:
