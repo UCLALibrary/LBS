@@ -157,6 +157,7 @@ def get_local_data(report_type: str) -> list[dict]:
             # "general_notes",
             "notes",
             "fund_type",
+            "ucop_fdn_no",
         )
     )
 
