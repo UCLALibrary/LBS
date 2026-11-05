@@ -421,7 +421,7 @@ def add_border_formatting(ws: Worksheet) -> None:
     # row 2 contains top of column headers, and is sometimes merged with 3
     # so we count row 2, but apply the border to row 3
     last_border_col = get_last_col(ws, 2)
-    # last col (LBS Notes) is excluded from border formatting, and Excel cols are 1-indexed
+    # last col (Notes) is excluded from border formatting, and Excel cols are 1-indexed
     # so we use range(1, last_border_col) to get all but the last col
     for header_cell_index in range(1, last_border_col):
         current_cell = ws[f"{get_column_letter(header_cell_index)}3"]
@@ -430,7 +430,7 @@ def add_border_formatting(ws: Worksheet) -> None:
             left=Side(border_style="thin"),
             right=Side(border_style="thin"),
         )
-    # Last col before LBS notes needs medium border on right and bottom
+    # Last col before Notes needs medium border on right and bottom
     ws[f"{get_column_letter(last_border_col - 1)}3"].border = Border(
         right=Side(border_style="medium"), bottom=Side(border_style="medium")
     )
@@ -486,8 +486,8 @@ GROUP BY
 ,	glb.account_number
 ,	glb.cost_center_code
 ,	glb.fund_number
-HAVING (sum(-glb.ytd_appropriation) <> 0 AND sum(glb.ytd_financial) <> 0
-    AND sum(glb.encumbrance) <> 0 AND sum(-glb.bal_operating) <> 0)
+HAVING (sum(-glb.ytd_appropriation) <> 0 OR sum(glb.ytd_financial) <> 0
+    OR sum(glb.encumbrance) <> 0 OR sum(-glb.bal_operating) <> 0)
 ORDER BY glb.fund_number, glb.account_number, glb.cost_center_code
 ;
 """
