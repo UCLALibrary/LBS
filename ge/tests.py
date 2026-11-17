@@ -77,7 +77,7 @@ class ExcelOutputTestCase(TestCase):
             self.unit_master, self.ledger_year_month, self.master_data
         )
         # Last column is "Notes" in column S
-        self.assertEqual(result["G&E"]["S2"].value, "Notes")
+        self.assertEqual(result["G&E"]["R2"].value, "Notes")
 
     def test_master_report_rows(self):
         result = create_excel_output(
@@ -102,9 +102,9 @@ class ExcelOutputTestCase(TestCase):
         )
         # Arts sample data has fund restriction for Endowments, but not Gifts
         # So "Fund Restriction" should be in column P for Endowments,
-        # and Gifts should have "Notes" in column P
+        # and Gifts should have "Notes" in column O
         self.assertEqual(result["Endowments"]["P2"].value, "Fund Restriction")
-        self.assertEqual(result["Gifts"]["P2"].value, "Notes")
+        self.assertEqual(result["Gifts"]["O2"].value, "Notes")
 
     def test_unit_report_rows(self):
         result = create_excel_output(
@@ -140,8 +140,8 @@ class ExcelOutputTestCase(TestCase):
     def test_ul_report_cols(self):
         result = create_excel_output(self.unit_ul, self.ledger_year_month, self.ul_data)
         # No fund restrictions, so "Notes" should be in column Q for Endowments, P for Gifts
-        self.assertEqual(result["Endowments"]["Q2"].value, "Notes")
-        self.assertEqual(result["Gifts"]["P2"].value, "Notes")
+        self.assertEqual(result["Endowments"]["P2"].value, "Notes")
+        self.assertEqual(result["Gifts"]["O2"].value, "Notes")
 
     def test_ul_report_rows(self):
         result = create_excel_output(self.unit_ul, self.ledger_year_month, self.ul_data)
@@ -180,7 +180,7 @@ class ExcelOutputTestCase(TestCase):
         # So "Fund Restriction" should be in column O for Gifts,
         # and Endowments should have "Notes" in column Q
         self.assertEqual(result["Gifts"]["O2"].value, "Fund Restriction")
-        self.assertEqual(result["Endowments"]["Q2"].value, "Notes")
+        self.assertEqual(result["Endowments"]["P2"].value, "Notes")
 
     def test_aul_report_rows(self):
         result = create_excel_output(
