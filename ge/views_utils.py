@@ -67,6 +67,11 @@ def get_month_name(ledger_year_month: str) -> str:
     return datetime.strptime(ledger_year_month, "%Y%m").strftime("%B")
 
 
+def get_run_date() -> str:
+    """Returns the current date in MM/DD/YY format, for use in report headers."""
+    return datetime.now().strftime("%m/%d/%y")
+
+
 def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     """Puts dataframe into Excel worksheet, with data starting at row 7."""
     # convert to rows for use in spreadsheet
@@ -223,10 +228,10 @@ def create_excel_output(
 
     # Tweaks based on the date of the report, via ledger_year_month.
     month_name = get_month_name(ledger_year_month)
-    report_title = (
-        f"University Library and Associated Departments: Gift and Endowment Summary, "
-        f"and YTD Financial Results through the Month Ending: {month_name}"
-    )
+    # report_title = (
+    #     f"University Library and Associated Departments: Gift and Endowment Summary, "
+    #     f"and YTD Financial Results through the Month Ending: {month_name}"
+    # )
     as_of_date = get_as_of_date(ledger_year_month)
 
     if report_type == "master":
@@ -256,8 +261,8 @@ def create_excel_output(
         filters.ref = f"A4:{last_col}{last_row}"
 
         # add as-of dates to J-M balance cols and projected annual income (O)
-        ws["A4"] = as_of_date
-        ws["O3"] = as_of_date
+        ws["J5"] = as_of_date
+        ws["O5"] = as_of_date
 
     else:
         # Unpack tuple of dataframes into separate dataframes.
@@ -317,9 +322,9 @@ def create_excel_output(
 
             # add as-of dates
             # I3 is always the start of the 4 common financial cols
-            endowments_ws["I3"] = as_of_date
+            endowments_ws["I5"] = as_of_date
             # Projected Annual Income col is N on endowments reports
-            endowments_ws["N3"] = as_of_date
+            endowments_ws["N5"] = as_of_date
 
             add_border_formatting(endowments_ws)
         else:
@@ -340,7 +345,7 @@ def create_excel_output(
             last_gifts_col = get_column_letter(get_last_col(gifts_ws, 5))
             last_gifts_row = get_last_row(gifts_ws, "A")
             gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
-            gifts_ws["I3"] = as_of_date
+            gifts_ws["I5"] = as_of_date
             add_border_formatting(gifts_ws)
         else:
             gifts = wb["Gifts"]
@@ -359,7 +364,10 @@ def create_excel_output(
         worksheet.column_dimensions["C"].width = 40
 
         # Set report title
-        worksheet["C3"] = report_title
+        worksheet["C2"] = worksheet["C2"].value.replace("{month_name}", month_name)
+
+        # Set run date in upper right corner of report
+        worksheet["C1"] = get_run_date()
 
     return wb
 
