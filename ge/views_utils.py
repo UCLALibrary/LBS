@@ -359,7 +359,7 @@ def create_excel_output(
         worksheet.column_dimensions["C"].width = 40
 
         # Set report title
-        worksheet["A1"] = report_title
+        worksheet["C3"] = report_title
 
     return wb
 
