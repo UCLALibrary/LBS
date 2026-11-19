@@ -23,7 +23,7 @@ from qdb.scripts.settings import DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD
 logger = logging.getLogger(__name__)
 
 
-def sum_col(ws: Worksheet, col: str, col_top: int = 5) -> None:
+def sum_col(ws: Worksheet, col: str, col_top: int = 7) -> None:
     """Add a total row to an Excel spreadsheet column."""
     last_row = get_last_row(ws, col)
     ws[f"{col}{last_row + 1}"] = f"=SUM({col}{col_top}:{col}{last_row})"
@@ -68,13 +68,13 @@ def get_month_name(ledger_year_month: str) -> str:
 
 
 def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
-    """Puts dataframe into Excel worksheet, with data starting at row 5."""
+    """Puts dataframe into Excel worksheet, with data starting at row 7."""
     # convert to rows for use in spreadsheet
     rows = dataframe_to_rows(df, index=False, header=False)
-    # add rows to spreadsheet, starting at row 5
+    # add rows to spreadsheet, starting at row 7
     for r_col_id, row in enumerate(rows, 1):
         for c_col_id, value in enumerate(row, 1):
-            ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+            ws.cell(row=r_col_id + 6, column=c_col_id, value=value)
     return ws
 
 
@@ -418,13 +418,13 @@ def download_zip_file(ledger_year_month: str) -> HttpResponse:
 
 def add_border_formatting(ws: Worksheet) -> None:
     """Fix formatting for borders on Excel sheet header cells."""
-    # row 2 contains top of column headers, and is sometimes merged with 3
-    # so we count row 2, but apply the border to row 3
-    last_border_col = get_last_col(ws, 2)
+    # row 4 contains top of column headers, and is sometimes merged with 5
+    # so we count row 4, but apply the border to row 5
+    last_border_col = get_last_col(ws, 4)
     # last col (Notes) is excluded from border formatting, and Excel cols are 1-indexed
     # so we use range(1, last_border_col) to get all but the last col
     for header_cell_index in range(1, last_border_col):
-        current_cell = ws[f"{get_column_letter(header_cell_index)}3"]
+        current_cell = ws[f"{get_column_letter(header_cell_index)}5"]
         current_cell.border = Border(
             bottom=Side(border_style="medium"),
             left=Side(border_style="thin"),
