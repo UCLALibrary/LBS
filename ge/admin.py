@@ -53,7 +53,7 @@ class GeFundAdmin(admin.ModelAdmin):
         "fund_summary",
         "fund_restriction",
         "general_notes",
-        "lbs_notes",
+        "notes",
     )
     list_filter = ["active", "manager", "mtf_authority"]
 

@@ -4,6 +4,7 @@ from django.test import TestCase
 from ge.views_utils import (
     create_excel_output,
     get_as_of_date,
+    get_fiscal_year,
     get_last_col,
     get_last_row,
     is_fye,
@@ -18,17 +19,17 @@ class ReportManipulationTestCase(TestCase):
     gifts_ws = wb["Gifts"]
 
     def test_last_row(self):
-        # Last row in sample report is 6 on non-summed columns, like Unit (A)
-        self.assertEqual(get_last_row(self.gifts_ws, "A"), 6)
+        # Last row in sample report is 8 on non-summed columns, like Unit (A)
+        self.assertEqual(get_last_row(self.gifts_ws, "A"), 8)
 
     def test_last_col(self):
-        # Last column in sample report is S (19), and data is in row 5
-        self.assertEqual(get_last_col(self.gifts_ws, 5), 19)
+        # Last column in sample report is S (19), and data is in row 8
+        self.assertEqual(get_last_col(self.gifts_ws, 8), 19)
 
     def test_sum_col(self):
         # add a sum in column L (YTD Appropriation)
         sum_col(self.gifts_ws, "L")
-        self.assertEqual(self.gifts_ws["L7"].value, "=SUM(L5:L6)")
+        self.assertEqual(self.gifts_ws["L9"].value, "=SUM(L7:L8)")
 
 
 class ExcelOutputTestCase(TestCase):
@@ -76,18 +77,18 @@ class ExcelOutputTestCase(TestCase):
         result = create_excel_output(
             self.unit_master, self.ledger_year_month, self.master_data
         )
-        # Last column is "LBS Notes" in column S
-        self.assertEqual(result["G&E"]["S2"].value, "LBS Notes")
+        # Last column is "Notes" in column R
+        self.assertEqual(result["G&E"]["R4"].value, "Notes")
 
     def test_master_report_rows(self):
         result = create_excel_output(
             self.unit_master, self.ledger_year_month, self.master_data
         )
-        # 13 rows in sample data. Data starts on row 5, so we should have data
-        # in rows 5-17 and not in 18.
+        # 13 rows in sample data. Data starts on row 7, so we should have data
+        # in rows 7-19 and not in 20.
         # Master report isn't sorted, so just check if data exists
-        self.assertNotEqual(result["G&E"]["A17"].value, None)
-        self.assertEqual(result["G&E"]["A18"].value, None)
+        self.assertNotEqual(result["G&E"]["A19"].value, None)
+        self.assertEqual(result["G&E"]["A20"].value, None)
 
     def test_unit_report_worksheets(self):
         result = create_excel_output(
@@ -102,19 +103,19 @@ class ExcelOutputTestCase(TestCase):
         )
         # Arts sample data has fund restriction for Endowments, but not Gifts
         # So "Fund Restriction" should be in column P for Endowments,
-        # and Gifts should have "LBS Notes" in column P
-        self.assertEqual(result["Endowments"]["P2"].value, "Fund Restriction")
-        self.assertEqual(result["Gifts"]["P2"].value, "LBS Notes")
+        # and Gifts should have "Notes" in column O
+        self.assertEqual(result["Endowments"]["P4"].value, "Fund Restriction")
+        self.assertEqual(result["Gifts"]["O4"].value, "Notes")
 
     def test_unit_report_rows(self):
         result = create_excel_output(
             self.unit_generic, self.ledger_year_month, self.unit_data
         )
-        # Arts data has 1 gift and 2 endowments, starting on row 5
-        self.assertEqual(result["Gifts"]["A5"].value, "Arts")
-        self.assertEqual(result["Gifts"]["A6"].value, None)
-        self.assertEqual(result["Endowments"]["A5"].value, "Arts")
-        self.assertEqual(result["Endowments"]["A7"].value, None)
+        # Arts data has 1 gift and 2 endowments, starting on row 7
+        self.assertEqual(result["Gifts"]["A7"].value, "Arts")
+        self.assertEqual(result["Gifts"]["A8"].value, None)
+        self.assertEqual(result["Endowments"]["A8"].value, "Arts")
+        self.assertEqual(result["Endowments"]["A9"].value, None)
 
     def test_unit_report_totals(self):
         result = create_excel_output(
@@ -122,15 +123,15 @@ class ExcelOutputTestCase(TestCase):
         )
         # Gifts should have totals in cols I, J, K, L. Endowments in I, J, K, L, N.
         # SUM is calculated by Excel, so just check the formulas
-        self.assertEqual(result["Gifts"]["I6"].value, "=SUM(I5:I5)")
-        self.assertEqual(result["Gifts"]["J6"].value, "=SUM(J5:J5)")
-        self.assertEqual(result["Gifts"]["K6"].value, "=SUM(K5:K5)")
-        self.assertEqual(result["Gifts"]["L6"].value, "=SUM(L5:L5)")
-        self.assertEqual(result["Endowments"]["I7"].value, "=SUM(I5:I6)")
-        self.assertEqual(result["Endowments"]["J7"].value, "=SUM(J5:J6)")
-        self.assertEqual(result["Endowments"]["K7"].value, "=SUM(K5:K6)")
-        self.assertEqual(result["Endowments"]["L7"].value, "=SUM(L5:L6)")
-        self.assertEqual(result["Endowments"]["N7"].value, "=SUM(N5:N6)")
+        self.assertEqual(result["Gifts"]["I8"].value, "=SUM(I7:I7)")
+        self.assertEqual(result["Gifts"]["J8"].value, "=SUM(J7:J7)")
+        self.assertEqual(result["Gifts"]["K8"].value, "=SUM(K7:K7)")
+        self.assertEqual(result["Gifts"]["L8"].value, "=SUM(L7:L7)")
+        self.assertEqual(result["Endowments"]["I9"].value, "=SUM(I7:I8)")
+        self.assertEqual(result["Endowments"]["J9"].value, "=SUM(J7:J8)")
+        self.assertEqual(result["Endowments"]["K9"].value, "=SUM(K7:K8)")
+        self.assertEqual(result["Endowments"]["L9"].value, "=SUM(L7:L8)")
+        self.assertEqual(result["Endowments"]["N9"].value, "=SUM(N7:N8)")
 
     def test_ul_report_worksheets(self):
         result = create_excel_output(self.unit_ul, self.ledger_year_month, self.ul_data)
@@ -139,31 +140,31 @@ class ExcelOutputTestCase(TestCase):
 
     def test_ul_report_cols(self):
         result = create_excel_output(self.unit_ul, self.ledger_year_month, self.ul_data)
-        # No fund restrictions, so "LBS Notes" should be in column Q for Endowments, P for Gifts
-        self.assertEqual(result["Endowments"]["Q2"].value, "LBS Notes")
-        self.assertEqual(result["Gifts"]["P2"].value, "LBS Notes")
+        # No fund restrictions, so "Notes" should be in column P for Endowments, O for Gifts
+        self.assertEqual(result["Endowments"]["P4"].value, "Notes")
+        self.assertEqual(result["Gifts"]["O4"].value, "Notes")
 
     def test_ul_report_rows(self):
         result = create_excel_output(self.unit_ul, self.ledger_year_month, self.ul_data)
-        # UL data has 1 gift and 1 endowment, starting on row 5
-        self.assertEqual(result["Gifts"]["A5"].value, "UL")
-        self.assertEqual(result["Gifts"]["A6"].value, None)
-        self.assertEqual(result["Endowments"]["A5"].value, "UL")
-        self.assertEqual(result["Endowments"]["A6"].value, None)
+        # UL data has 1 gift and 1 endowment, starting on row 7
+        self.assertEqual(result["Gifts"]["A7"].value, "UL")
+        self.assertEqual(result["Gifts"]["A8"].value, None)
+        self.assertEqual(result["Endowments"]["A7"].value, "UL")
+        self.assertEqual(result["Endowments"]["A8"].value, None)
 
     def test_ul_report_totals(self):
         result = create_excel_output(self.unit_ul, self.ledger_year_month, self.ul_data)
         # Gifts should have totals in cols I, J, K, L. Endowments in I, J, K, L, N.
         # SUM is calculated by Excel, so just check the formulas
-        self.assertEqual(result["Gifts"]["I6"].value, "=SUM(I5:I5)")
-        self.assertEqual(result["Gifts"]["J6"].value, "=SUM(J5:J5)")
-        self.assertEqual(result["Gifts"]["K6"].value, "=SUM(K5:K5)")
-        self.assertEqual(result["Gifts"]["L6"].value, "=SUM(L5:L5)")
-        self.assertEqual(result["Endowments"]["I6"].value, "=SUM(I5:I5)")
-        self.assertEqual(result["Endowments"]["J6"].value, "=SUM(J5:J5)")
-        self.assertEqual(result["Endowments"]["K6"].value, "=SUM(K5:K5)")
-        self.assertEqual(result["Endowments"]["L6"].value, "=SUM(L5:L5)")
-        self.assertEqual(result["Endowments"]["N6"].value, "=SUM(N5:N5)")
+        self.assertEqual(result["Gifts"]["I8"].value, "=SUM(I7:I7)")
+        self.assertEqual(result["Gifts"]["J8"].value, "=SUM(J7:J7)")
+        self.assertEqual(result["Gifts"]["K8"].value, "=SUM(K7:K7)")
+        self.assertEqual(result["Gifts"]["L8"].value, "=SUM(L7:L7)")
+        self.assertEqual(result["Endowments"]["I8"].value, "=SUM(I7:I7)")
+        self.assertEqual(result["Endowments"]["J8"].value, "=SUM(J7:J7)")
+        self.assertEqual(result["Endowments"]["K8"].value, "=SUM(K7:K7)")
+        self.assertEqual(result["Endowments"]["L8"].value, "=SUM(L7:L7)")
+        self.assertEqual(result["Endowments"]["N8"].value, "=SUM(N7:N7)")
 
     def test_aul_report_worksheets(self):
         result = create_excel_output(
@@ -178,21 +179,21 @@ class ExcelOutputTestCase(TestCase):
         )
         # AUL sample data has fund restriction for Gifts, but not Endowments.
         # So "Fund Restriction" should be in column O for Gifts,
-        # and Endowments should have "LBS Notes" in column Q
-        self.assertEqual(result["Gifts"]["O2"].value, "Fund Restriction")
-        self.assertEqual(result["Endowments"]["Q2"].value, "LBS Notes")
+        # and Endowments should have "Notes" in column P
+        self.assertEqual(result["Gifts"]["O4"].value, "Fund Restriction")
+        self.assertEqual(result["Endowments"]["P4"].value, "Notes")
 
     def test_aul_report_rows(self):
         result = create_excel_output(
             self.unit_aul, self.ledger_year_month, self.aul_data
         )
-        # 1 gift and 1 endowment, starting on row 5
+        # 1 gift and 1 endowment, starting on row 7
         # Fuzzy match is used for AUL reports, against two columns.
         # For Gifts, value is in unit name (column A).
-        self.assertIn("Benedetti", result["Gifts"]["A5"].value)
+        self.assertIn("Benedetti", result["Gifts"]["A7"].value)
         # For Endowments, value is in home / unit dept but not unit
         # (which is populated here, but not relevant).
-        self.assertIn("Benedetti", result["Endowments"]["B5"].value)
+        self.assertIn("Benedetti", result["Endowments"]["B7"].value)
 
     def test_aul_report_totals(self):
         result = create_excel_output(
@@ -200,15 +201,15 @@ class ExcelOutputTestCase(TestCase):
         )
         # Gifts should have totals in cols I, J, K, L. Endowments in I, J, K, L, N
         # SUM is calculated by Excel, so just check the formulas
-        self.assertEqual(result["Gifts"]["I6"].value, "=SUM(I5:I5)")
-        self.assertEqual(result["Gifts"]["J6"].value, "=SUM(J5:J5)")
-        self.assertEqual(result["Gifts"]["K6"].value, "=SUM(K5:K5)")
-        self.assertEqual(result["Gifts"]["L6"].value, "=SUM(L5:L5)")
-        self.assertEqual(result["Endowments"]["I6"].value, "=SUM(I5:I5)")
-        self.assertEqual(result["Endowments"]["J6"].value, "=SUM(J5:J5)")
-        self.assertEqual(result["Endowments"]["K6"].value, "=SUM(K5:K5)")
-        self.assertEqual(result["Endowments"]["L6"].value, "=SUM(L5:L5)")
-        self.assertEqual(result["Endowments"]["N6"].value, "=SUM(N5:N5)")
+        self.assertEqual(result["Gifts"]["I8"].value, "=SUM(I7:I7)")
+        self.assertEqual(result["Gifts"]["J8"].value, "=SUM(J7:J7)")
+        self.assertEqual(result["Gifts"]["K8"].value, "=SUM(K7:K7)")
+        self.assertEqual(result["Gifts"]["L8"].value, "=SUM(L7:L7)")
+        self.assertEqual(result["Endowments"]["I8"].value, "=SUM(I7:I7)")
+        self.assertEqual(result["Endowments"]["J8"].value, "=SUM(J7:J7)")
+        self.assertEqual(result["Endowments"]["K8"].value, "=SUM(K7:K7)")
+        self.assertEqual(result["Endowments"]["L8"].value, "=SUM(L7:L7)")
+        self.assertEqual(result["Endowments"]["N8"].value, "=SUM(N7:N7)")
 
 
 class DataManipulationTestCase(TestCase):
@@ -231,3 +232,11 @@ class DataManipulationTestCase(TestCase):
     def test_get_as_of_date(self):
         ledger_year_month = "202606"
         self.assertEqual(get_as_of_date(ledger_year_month), "as of 06/30/26")
+
+    def test_get_fiscal_year(self):
+        ledger_year_month = "202609"
+        self.assertEqual(get_fiscal_year(ledger_year_month), "as of 06/30/26")
+
+    def test_get_fiscal_year_next_year(self):
+        ledger_year_month = "202706"
+        self.assertEqual(get_fiscal_year(ledger_year_month), "as of 06/30/26")

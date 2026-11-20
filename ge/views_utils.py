@@ -23,10 +23,15 @@ from qdb.scripts.settings import DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD
 logger = logging.getLogger(__name__)
 
 
-def sum_col(ws: Worksheet, col: str, col_top: int = 5) -> None:
-    """Add a total row to an Excel spreadsheet column."""
+def sum_col(ws: Worksheet, col: str, first_data_row: int = 7) -> None:
+    """Add a total row to an Excel spreadsheet column.
+    param ws: The worksheet to add the total to.
+    param col: The column letter to sum (e.g., "A", "B", "C").
+    param first_data_row: The first row of data to sum
+      (default is 7, as the first 6 rows are headers).
+    """
     last_row = get_last_row(ws, col)
-    ws[f"{col}{last_row + 1}"] = f"=SUM({col}{col_top}:{col}{last_row})"
+    ws[f"{col}{last_row + 1}"] = f"=SUM({col}{first_data_row}:{col}{last_row})"
 
 
 def get_last_row(ws: Worksheet, col: str) -> int:
@@ -67,14 +72,38 @@ def get_month_name(ledger_year_month: str) -> str:
     return datetime.strptime(ledger_year_month, "%Y%m").strftime("%B")
 
 
+def get_run_date() -> str:
+    """Returns the current date in MM/DD/YY format, for use in report headers."""
+    return datetime.now().strftime("%m/%d/%y")
+
+
+def get_fiscal_year(ledger_year_month: str) -> str:
+    """Get the fiscal-year label for use with “Projected Annual Income”
+    defined as 06/30 of previous fiscal year (e.g., for
+    09/26, 12/26, 03/27, and 06/27 reports, return
+    06/30/26) relative to ledger_year_month value.
+    """
+    millennium = 2000
+    millennium_plus_one = 2001
+    fiscal_date_base = "as of 06/30"
+    # Convert given YYYYMM to a year
+    report_year = datetime.strptime(ledger_year_month, "%Y%m").year
+    report_month = datetime.strptime(ledger_year_month, "%Y%m").month
+    if report_month == 9 or report_month == 12:
+        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium)
+    else:
+        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium_plus_one)
+    return fiscal_year
+
+
 def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
-    """Puts dataframe into Excel worksheet, with data starting at row 5."""
+    """Puts dataframe into Excel worksheet, with data starting at row 7."""
     # convert to rows for use in spreadsheet
     rows = dataframe_to_rows(df, index=False, header=False)
-    # add rows to spreadsheet, starting at row 5
+    # add rows to spreadsheet, starting at row 7
     for r_col_id, row in enumerate(rows, 1):
         for c_col_id, value in enumerate(row, 1):
-            ws.cell(row=r_col_id + 4, column=c_col_id, value=value)
+            ws.cell(row=r_col_id + 6, column=c_col_id, value=value)
     return ws
 
 
@@ -154,9 +183,9 @@ def get_local_data(report_type: str) -> list[dict]:
             "fund_purpose",
             "fund_summary",
             "fund_restriction",
-            "general_notes",
-            "lbs_notes",
+            "notes",
             "fund_type",
+            "ucop_fdn_no",
         )
     )
 
@@ -178,7 +207,7 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "title": ["endowments", "gifts", "master"],  # local
         "fund_type": ["master"],  # derived from QDB data, only used in master report
         "manager": ["endowments", "gifts", "master"],  # local
-        "ucop_fdn_no": ["endowments", "gifts", "master"],  # QDB
+        "ucop_fdn_no": ["endowments", "gifts", "master"],  # local
         "account": ["endowments", "gifts", "master"],  # local
         "cost_center": ["endowments", "gifts", "master"],  # local
         "fund": ["endowments", "gifts", "master"],  # local
@@ -190,8 +219,7 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "projected_annual_income": ["endowments", "master"],  # local
         "fund_purpose": ["endowments", "gifts", "master"],  # local
         "fund_restriction": ["endowments", "gifts", "master"],  # local
-        "general_notes": ["endowments", "gifts", "master"],  # local
-        "lbs_notes": ["endowments", "gifts", "master"],  # local
+        "notes": ["endowments", "gifts", "master"],  # local
     }
 
     if report_type == "master":
@@ -220,12 +248,8 @@ def create_excel_output(
         template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
     wb = load_workbook(template_file)
 
-    # Tweaks based on the date of the report, via ledger_year_month.
+    # Determine month name based on ledger_year_month.
     month_name = get_month_name(ledger_year_month)
-    report_title = (
-        f"University Library and Associated Departments: Gift and Endowment Summary, "
-        f"and YTD Financial Results through the Month Ending: {month_name}"
-    )
     as_of_date = get_as_of_date(ledger_year_month)
 
     if report_type == "master":
@@ -255,8 +279,8 @@ def create_excel_output(
         filters.ref = f"A4:{last_col}{last_row}"
 
         # add as-of dates to J-M balance cols and projected annual income (O)
-        ws["J3"] = as_of_date
-        ws["O3"] = as_of_date
+        ws["J5"] = as_of_date
+        ws["O5"] = as_of_date
 
     else:
         # Unpack tuple of dataframes into separate dataframes.
@@ -292,52 +316,58 @@ def create_excel_output(
                 # remove column from Excel template - col O for UL and unit reports
                 wb["Gifts"].delete_cols(15)
 
-        # put data into Excel worksheets
-        gifts_ws = wb["Gifts"]
-        endowments_ws = wb["Endowments"]
-        gifts_ws = df_to_excel(gifts_df, gifts_ws)
-        endowments_ws = df_to_excel(endowments_df, endowments_ws)
+        # put data into Excel worksheets if there is any data to put in
+        if not endowments_df.empty:
+            endowments_ws = wb["Endowments"]
+            endowments_ws = df_to_excel(endowments_df, endowments_ws)
 
-        # add totals and formatting for money columns
-        gifts_money_cols = ["I", "J", "K", "L"]
-        endowments_money_cols = ["I", "J", "K", "L", "N"]
+            # add totals and formatting for money columns
+            endowments_money_cols = ["I", "J", "K", "L", "N"]
 
-        for col in gifts_money_cols:
-            sum_col(gifts_ws, col)
-            for row in range(5, len(gifts_ws[col]) + 1):
-                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
-                gifts_ws[f"{col}{row}"].number_format = (
-                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
-                )
+            for col in endowments_money_cols:
+                sum_col(endowments_ws, col)
+                for row in range(5, len(endowments_ws[col]) + 1):
+                    # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                    endowments_ws[f"{col}{row}"].number_format = (
+                        """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                    )
 
-        for col in endowments_money_cols:
-            sum_col(endowments_ws, col)
-            for row in range(5, len(endowments_ws[col]) + 1):
-                # Excel "format code" for Accounting, 2 decimal places, $, comma separator
-                endowments_ws[f"{col}{row}"].number_format = (
-                    """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
-                )
+            # set filters on all columns with data
+            endowments_filters = endowments_ws.auto_filter
+            last_endowment_col = get_column_letter(get_last_col(endowments_ws, 5))
+            last_endowment_row = get_last_row(endowments_ws, "A")
+            endowments_filters.ref = f"A4:{last_endowment_col}{last_endowment_row}"
 
-        # set filters on all columns with data
-        endowments_filters = endowments_ws.auto_filter
-        last_endowment_col = get_column_letter(get_last_col(endowments_ws, 5))
-        last_endowment_row = get_last_row(endowments_ws, "A")
-        endowments_filters.ref = f"A4:{last_endowment_col}{last_endowment_row}"
+            # add as-of dates
+            # I3 is always the start of the 4 common financial cols
+            endowments_ws["I5"] = as_of_date
+            # Projected Annual Income col is N on endowments reports
+            endowments_ws["N5"] = get_fiscal_year(ledger_year_month)
 
-        gifts_filters = gifts_ws.auto_filter
-        last_gifts_col = get_column_letter(get_last_col(gifts_ws, 5))
-        last_gifts_row = get_last_row(gifts_ws, "A")
-        gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
-
-        # add as-of dates
-        # I3 is always the start of the 4 common financial cols
-        endowments_ws["I3"] = as_of_date
-        gifts_ws["I3"] = as_of_date
-        # Projected Annual Income col is N on endowments reports
-        endowments_ws["N3"] = as_of_date
-
-        add_border_formatting(endowments_ws)
-        add_border_formatting(gifts_ws)
+            add_border_formatting(endowments_ws)
+        else:
+            ws = wb["Endowments"]
+            wb.remove(ws)
+        if not gifts_df.empty:
+            gifts_ws = wb["Gifts"]
+            gifts_ws = df_to_excel(gifts_df, gifts_ws)
+            gifts_money_cols = ["I", "J", "K", "L"]
+            for col in gifts_money_cols:
+                sum_col(gifts_ws, col)
+                for row in range(5, len(gifts_ws[col]) + 1):
+                    # Excel "format code" for Accounting, 2 decimal places, $, comma separator
+                    gifts_ws[f"{col}{row}"].number_format = (
+                        """_($* #,##0.00_);_($* (#,##0.00);_($* " - "??_);_(@_)"""
+                    )
+            gifts_filters = gifts_ws.auto_filter
+            last_gifts_col = get_column_letter(get_last_col(gifts_ws, 5))
+            last_gifts_row = get_last_row(gifts_ws, "A")
+            gifts_filters.ref = f"A4:{last_gifts_col}{last_gifts_row}"
+            gifts_ws["I5"] = as_of_date
+            add_border_formatting(gifts_ws)
+        else:
+            gifts = wb["Gifts"]
+            wb.remove(gifts)
 
     # Make some general column width adjustments per LBS preference.
     # These columns are consistent on all worksheets & workbooks.
@@ -351,8 +381,11 @@ def create_excel_output(
         # Fund Title (column C); LBS wants it "smaller"; 40 seems right.
         worksheet.column_dimensions["C"].width = 40
 
-        # Set report title
-        worksheet["A1"] = report_title
+        # Set report title--replace {month_name} placeholder in template with actual month name.
+        worksheet["C2"] = worksheet["C2"].value.replace("{month_name}", month_name)
+
+        # Set run date in first row, left of center on report
+        worksheet["C1"] = get_run_date()
 
     return wb
 
@@ -411,19 +444,19 @@ def download_zip_file(ledger_year_month: str) -> HttpResponse:
 
 def add_border_formatting(ws: Worksheet) -> None:
     """Fix formatting for borders on Excel sheet header cells."""
-    # row 2 contains top of column headers, and is sometimes merged with 3
-    # so we count row 2, but apply the border to row 3
-    last_border_col = get_last_col(ws, 2)
-    # last col (LBS Notes) is excluded from border formatting, and Excel cols are 1-indexed
+    # row 4 contains top of column headers, and is sometimes merged with 5
+    # so we count row 4, but apply the border to row 5
+    last_border_col = get_last_col(ws, 4)
+    # last col (Notes) is excluded from border formatting, and Excel cols are 1-indexed
     # so we use range(1, last_border_col) to get all but the last col
     for header_cell_index in range(1, last_border_col):
-        current_cell = ws[f"{get_column_letter(header_cell_index)}3"]
+        current_cell = ws[f"{get_column_letter(header_cell_index)}5"]
         current_cell.border = Border(
             bottom=Side(border_style="medium"),
             left=Side(border_style="thin"),
             right=Side(border_style="thin"),
         )
-    # Last col before LBS notes needs medium border on right and bottom
+    # Last col before Notes needs medium border on right and bottom
     ws[f"{get_column_letter(last_border_col - 1)}3"].border = Border(
         right=Side(border_style="medium"), bottom=Side(border_style="medium")
     )
@@ -441,7 +474,6 @@ def get_qdb_ge_query(fye: bool = False) -> str:
     QDB_GE_SELECT_CLAUSE = """
 SELECT
     fun.fund_title
-,	fun.foundatn_fund_num AS ucop_fdn_no
 ,	glb.account_number as account
 ,	glb.cost_center_code as cost_center
 ,	glb.fund_number as fund
@@ -477,11 +509,12 @@ AND glb.fye_proc_ind = 'P'
     QDB_GE_GROUP_ORDER_CLAUSE = """
 GROUP BY
     fun.fund_title
-,	fun.foundatn_fund_num
 ,	glb.account_number
 ,	glb.cost_center_code
 ,	glb.fund_number
-ORDER BY glb.account_number, glb.cost_center_code, glb.fund_number
+HAVING (sum(-glb.ytd_appropriation) <> 0 OR sum(glb.ytd_financial) <> 0
+    OR sum(glb.encumbrance) <> 0 OR sum(-glb.bal_operating) <> 0)
+ORDER BY glb.fund_number, glb.account_number, glb.cost_center_code
 ;
 """
     # Assemble the query, including the FYE filter if needed.
