@@ -186,7 +186,6 @@ def get_local_data(report_type: str) -> list[dict]:
             "fund_purpose",
             "fund_summary",
             "fund_restriction",
-            # "general_notes",
             "notes",
             "fund_type",
             "ucop_fdn_no",
@@ -223,7 +222,6 @@ def get_columns_for_report(report_type: str, tab_type: str = "master") -> list[s
         "projected_annual_income": ["endowments", "master"],  # local
         "fund_purpose": ["endowments", "gifts", "master"],  # local
         "fund_restriction": ["endowments", "gifts", "master"],  # local
-        # "general_notes": ["endowments", "gifts", "master"],  # local
         "notes": ["endowments", "gifts", "master"],  # local
     }
 
@@ -255,10 +253,6 @@ def create_excel_output(
 
     # Determine month name based on ledger_year_month.
     month_name = get_month_name(ledger_year_month)
-    # report_title = (
-    #     f"University Library and Associated Departments: Gift and Endowment Summary, "
-    #     f"and YTD Financial Results through the Month Ending: {month_name}"
-    # )
     as_of_date = get_as_of_date(ledger_year_month)
 
     if report_type == "master":
