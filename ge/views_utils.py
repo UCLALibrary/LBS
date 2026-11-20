@@ -77,6 +77,28 @@ def get_run_date() -> str:
     return datetime.now().strftime("%m/%d/%y")
 
 
+def get_fiscal_year(ledger_year_month: str) -> str:
+    """Get the fiscal-year label for use with “Projected Annual Income”
+    defined as 06/30 of previous fiscal year (e.g., for
+    09/26, 12/26, 03/27, and 06/27 reports, return
+    06/30/26) relative to ledger_year_month value.
+    """
+    millennium = 2000
+    millennium_plus_one = 2001
+    fiscal_date_base = "06/30"
+    # Convert given YYYYMM to a year
+    report_year = datetime.strptime(ledger_year_month, "%Y%m").year
+    report_month = datetime.strptime(ledger_year_month, "%Y%m").month
+    current_year = datetime.now().year
+    if report_month == 9 or report_month == 12:
+        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium)
+    elif report_year == current_year:
+        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium_plus_one)
+    else:
+        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium)
+    return fiscal_year
+
+
 def df_to_excel(df: pd.DataFrame, ws: Worksheet) -> Worksheet:
     """Puts dataframe into Excel worksheet, with data starting at row 7."""
     # convert to rows for use in spreadsheet
@@ -329,7 +351,7 @@ def create_excel_output(
             # I3 is always the start of the 4 common financial cols
             endowments_ws["I5"] = as_of_date
             # Projected Annual Income col is N on endowments reports
-            endowments_ws["N5"] = as_of_date
+            endowments_ws["N5"] = get_fiscal_year(ledger_year_month)
 
             add_border_formatting(endowments_ws)
         else:
