@@ -4,6 +4,7 @@ from django.test import TestCase
 from ge.views_utils import (
     create_excel_output,
     get_as_of_date,
+    get_fiscal_year,
     get_last_col,
     get_last_row,
     is_fye,
@@ -231,3 +232,11 @@ class DataManipulationTestCase(TestCase):
     def test_get_as_of_date(self):
         ledger_year_month = "202606"
         self.assertEqual(get_as_of_date(ledger_year_month), "as of 06/30/26")
+
+    def test_get_fiscal_year(self):
+        ledger_year_month = "202609"
+        self.assertEqual(get_fiscal_year(ledger_year_month), "as of 06/30/26")
+
+    def test_get_fiscal_year_next_year(self):
+        ledger_year_month = "202706"
+        self.assertEqual(get_fiscal_year(ledger_year_month), "as of 06/30/26")
