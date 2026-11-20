@@ -18,11 +18,11 @@ class ReportManipulationTestCase(TestCase):
     gifts_ws = wb["Gifts"]
 
     def test_last_row(self):
-        # Last row in sample report is 6 on non-summed columns, like Unit (A)
+        # Last row in sample report is 8 on non-summed columns, like Unit (A)
         self.assertEqual(get_last_row(self.gifts_ws, "A"), 8)
 
     def test_last_col(self):
-        # Last column in sample report is S (19), and data is in row 5
+        # Last column in sample report is S (19), and data is in row 8
         self.assertEqual(get_last_col(self.gifts_ws, 8), 19)
 
     def test_sum_col(self):
@@ -76,7 +76,7 @@ class ExcelOutputTestCase(TestCase):
         result = create_excel_output(
             self.unit_master, self.ledger_year_month, self.master_data
         )
-        # Last column is "Notes" in column S
+        # Last column is "Notes" in column R
         self.assertEqual(result["G&E"]["R4"].value, "Notes")
 
     def test_master_report_rows(self):
@@ -145,7 +145,7 @@ class ExcelOutputTestCase(TestCase):
 
     def test_ul_report_rows(self):
         result = create_excel_output(self.unit_ul, self.ledger_year_month, self.ul_data)
-        # UL data has 1 gift and 1 endowment, starting on row 5
+        # UL data has 1 gift and 1 endowment, starting on row 7
         self.assertEqual(result["Gifts"]["A7"].value, "UL")
         self.assertEqual(result["Gifts"]["A8"].value, None)
         self.assertEqual(result["Endowments"]["A7"].value, "UL")

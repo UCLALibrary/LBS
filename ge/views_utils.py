@@ -253,7 +253,7 @@ def create_excel_output(
         template_file = path.join(BASE_DIR, "ge/ge_template.xlsx")
     wb = load_workbook(template_file)
 
-    # Tweaks based on the date of the report, via ledger_year_month.
+    # Determine month name based on ledger_year_month.
     month_name = get_month_name(ledger_year_month)
     # report_title = (
     #     f"University Library and Associated Departments: Gift and Endowment Summary, "
@@ -390,10 +390,10 @@ def create_excel_output(
         # Fund Title (column C); LBS wants it "smaller"; 40 seems right.
         worksheet.column_dimensions["C"].width = 40
 
-        # Set report title
+        # Set report title--replace {month_name} placeholder in template with actual month name.
         worksheet["C2"] = worksheet["C2"].value.replace("{month_name}", month_name)
 
-        # Set run date in upper right corner of report
+        # Set run date in first row, left of center on report
         worksheet["C1"] = get_run_date()
 
     return wb
