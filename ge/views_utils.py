@@ -85,17 +85,14 @@ def get_fiscal_year(ledger_year_month: str) -> str:
     """
     millennium = 2000
     millennium_plus_one = 2001
-    fiscal_date_base = "06/30"
+    fiscal_date_base = "as of 06/30"
     # Convert given YYYYMM to a year
     report_year = datetime.strptime(ledger_year_month, "%Y%m").year
     report_month = datetime.strptime(ledger_year_month, "%Y%m").month
-    current_year = datetime.now().year
     if report_month == 9 or report_month == 12:
         fiscal_year = fiscal_date_base + "/" + str(report_year - millennium)
-    elif report_year == current_year:
-        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium_plus_one)
     else:
-        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium)
+        fiscal_year = fiscal_date_base + "/" + str(report_year - millennium_plus_one)
     return fiscal_year
 
 
