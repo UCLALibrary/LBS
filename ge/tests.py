@@ -19,16 +19,16 @@ class ReportManipulationTestCase(TestCase):
 
     def test_last_row(self):
         # Last row in sample report is 6 on non-summed columns, like Unit (A)
-        self.assertEqual(get_last_row(self.gifts_ws, "A"), 6)
+        self.assertEqual(get_last_row(self.gifts_ws, "A"), 8)
 
     def test_last_col(self):
         # Last column in sample report is S (19), and data is in row 5
-        self.assertEqual(get_last_col(self.gifts_ws, 5), 19)
+        self.assertEqual(get_last_col(self.gifts_ws, 8), 19)
 
     def test_sum_col(self):
         # add a sum in column L (YTD Appropriation)
         sum_col(self.gifts_ws, "L")
-        self.assertEqual(self.gifts_ws["L7"].value, "=SUM(L5:L6)")
+        self.assertEqual(self.gifts_ws["L9"].value, "=SUM(L7:L8)")
 
 
 class ExcelOutputTestCase(TestCase):

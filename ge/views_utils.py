@@ -23,10 +23,15 @@ from qdb.scripts.settings import DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD
 logger = logging.getLogger(__name__)
 
 
-def sum_col(ws: Worksheet, col: str, col_top: int = 7) -> None:
-    """Add a total row to an Excel spreadsheet column."""
+def sum_col(ws: Worksheet, col: str, first_data_row: int = 7) -> None:
+    """Add a total row to an Excel spreadsheet column.
+    param ws: The worksheet to add the total to.
+    param col: The column letter to sum (e.g., "A", "B", "C").
+    param first_data_row: The first row of data to sum
+      (default is 7, as the first 6 rows are headers).
+    """
     last_row = get_last_row(ws, col)
-    ws[f"{col}{last_row + 1}"] = f"=SUM({col}{col_top}:{col}{last_row})"
+    ws[f"{col}{last_row + 1}"] = f"=SUM({col}{first_data_row}:{col}{last_row})"
 
 
 def get_last_row(ws: Worksheet, col: str) -> int:
